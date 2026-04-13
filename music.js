@@ -5,19 +5,31 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = 80;
+// Cloud port detection with local fallback to 80
+const PORT = process.env.PORT || 80;
+
 const DATA_FILE = path.join(__dirname, 'data.json');
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); 
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Ensure uploads directory exists for cloud environments
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
 if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify([]));
 if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ headerTitle: "DJ Music Library", bannerUrl: "" }));
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify([]));
+
+// --- THE FIX: AUTO REDIRECT TO LOGIN ---
+app.get('/', (req, res) => {
+    res.redirect('/register.html');
+});
+// ---------------------------------------
 
 function getSongs() {
     let songs = [];
@@ -92,31 +104,30 @@ app.post('/api/users/:username/profile-pic', (req, res) => {
     } else res.status(404).send('User not found');
 });
 
+// Edit Profile Information
 app.put('/api/users/:username/change-username', (req, res) => {
     const { newUsername } = req.body; let users = getUsers();
-    if (users.find(u => u.username.toLowerCase() === newUsername.toLowerCase())) return res.status(400).send('Username taken.');
+    if (users.find(u => u.username.toLowerCase() === newUsername.toLowerCase())) return res.status(400).send('Username already taken.');
     let user = users.find(u => u.username === req.params.username);
     if(user) { user.username = newUsername; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, username: newUsername }); } else res.status(404).send('User not found');
 });
 
-// NEW: Edit Email
-app.put('/api/users/:username/email', (req, res) => {
+app.put('/api/users/:username/change-email', (req, res) => {
     const { newEmail } = req.body; let users = getUsers(); let user = users.find(u => u.username === req.params.username);
-    if(user) { user.email = newEmail; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true }); } else res.status(404).send('User not found');
+    if(user) { user.email = newEmail; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Email updated'); } else res.status(404).send('User not found');
 });
 
-// NEW: Edit Phone
-app.put('/api/users/:username/phone', (req, res) => {
+app.put('/api/users/:username/change-phone', (req, res) => {
     const { newPhone } = req.body; let users = getUsers(); let user = users.find(u => u.username === req.params.username);
-    if(user) { user.phone = newPhone; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true }); } else res.status(404).send('User not found');
+    if(user) { user.phone = newPhone; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Phone updated'); } else res.status(404).send('User not found');
 });
 
-// NEW: Delete Account
 app.delete('/api/users/:username', (req, res) => {
     let users = getUsers(); const userIndex = users.findIndex(u => u.username === req.params.username);
-    if(userIndex !== -1) { users.splice(userIndex, 1); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true }); } else res.status(404).send('User not found');
+    if(userIndex !== -1) { users.splice(userIndex, 1); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Account deleted'); } else res.status(404).send('User not found');
 });
 
+// Economy
 app.post('/api/users/:username/topup', (req, res) => {
     let users = getUsers(); let user = users.find(u => u.username === req.params.username);
     if(user) { user.tokens = (user.tokens || 0) + req.body.amount; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ tokens: user.tokens }); } else res.status(404).send('User not found');
@@ -131,8 +142,7 @@ app.post('/api/users/:username/purchase', (req, res) => {
         if(user.purchases.find(p => p.songId === songId)) return res.status(400).send('Already purchased');
         const price = song.price !== undefined ? song.price : 10;
         if(user.tokens >= price) {
-            user.tokens -= price;
-            user.purchases.push({ songId: song.id, songName: song.filename, filepath: song.filepath, tokensSpent: price });
+            user.tokens -= price; user.purchases.push({ songId: song.id, songName: song.filename, filepath: song.filepath, tokensSpent: price });
             fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
         } else res.status(400).send('Insufficient tokens');
     } else res.status(404).send('User not found');
@@ -140,8 +150,8 @@ app.post('/api/users/:username/purchase', (req, res) => {
 
 // Passwords reset
 app.post('/api/forgot-password', (req, res) => {
-    const { contact } = req.body; let users = getUsers(); const user = users.find(u => u.contact === contact);
-    if (user) res.json({ success: true, resetToken: user.id }); else res.status(400).send('Email/Phone not found.');
+    const { contact } = req.body; let users = getUsers(); const user = users.find(u => u.contact === contact || u.email === contact || u.phone === contact);
+    if (user) res.json({ success: true, resetToken: user.id }); else res.status(400).send('Account not found.');
 });
 app.post('/api/reset-password', (req, res) => {
     const { token, newPassword } = req.body; let users = getUsers(); const userIndex = users.findIndex(u => u.id === token);
@@ -151,11 +161,9 @@ app.post('/api/reset-password', (req, res) => {
 // Admin / Library APIs
 app.get('/api/settings', (req, res) => res.json(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'))));
 app.put('/api/settings', (req, res) => { let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.headerTitle = req.body.headerTitle; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.send('Settings updated'); });
-app.post('/api/upload-banner', upload.single('bannerFile'), (req, res) => {
-    if (!req.file) return res.status(400).send('No file uploaded.'); let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.bannerUrl = '/uploads/' + req.file.filename; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.json(settings);
-});
-
+app.post('/api/upload-banner', upload.single('bannerFile'), (req, res) => { if (!req.file) return res.status(400).send('No file uploaded.'); let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.bannerUrl = '/uploads/' + req.file.filename; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.json(settings); });
 app.get('/api/songs', (req, res) => res.json(getSongs()));
+
 app.post('/api/upload', (req, res) => {
     upload.single('mp3file')(req, res, function (err) {
         if (err) return res.status(400).send(err.message); if (!req.file) return res.status(400).send('No file uploaded.');
@@ -164,6 +172,7 @@ app.post('/api/upload', (req, res) => {
         songs.push(newSong); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.json(newSong);
     });
 });
+
 app.post('/api/transload', async (req, res) => {
     const { url } = req.body; if (!url || url.toLowerCase().includes('.html') || !url.toLowerCase().split('?')[0].endsWith('.m4a')) return res.status(400).send('Only .m4a request URLs allowed.');
     try {
@@ -174,6 +183,7 @@ app.post('/api/transload', async (req, res) => {
         songs.push(newSong); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.json(newSong);
     } catch (error) { res.status(400).send('Failed to download.'); }
 });
+
 app.put('/api/songs/:id/settings', (req, res) => {
     let songs = getSongs(); const song = songs.find(s => s.id === req.params.id);
     if (song) { 
@@ -182,16 +192,8 @@ app.put('/api/songs/:id/settings', (req, res) => {
         fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Settings updated'); 
     } else res.status(404).send('Not found');
 });
-app.put('/api/songs/reorder', (req, res) => {
-    let songs = getSongs(); req.body.orderedIds.forEach((id, index) => { const song = songs.find(s => s.id === id); if (song) song.sequence = index + 1; });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Reordered');
-});
-app.delete('/api/songs/:id', (req, res) => {
-    let songs = getSongs(); const songIndex = songs.findIndex(s => s.id === req.params.id);
-    if(songIndex !== -1) {
-        const fullPath = path.join(__dirname, songs[songIndex].filepath); if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-        songs.splice(songIndex, 1); songs.forEach((s, i) => s.sequence = i + 1); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Deleted');
-    } else res.status(404).send('Not found');
-});
+
+app.put('/api/songs/reorder', (req, res) => { let songs = getSongs(); req.body.orderedIds.forEach((id, index) => { const song = songs.find(s => s.id === id); if (song) song.sequence = index + 1; }); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Reordered'); });
+app.delete('/api/songs/:id', (req, res) => { let songs = getSongs(); const songIndex = songs.findIndex(s => s.id === req.params.id); if(songIndex !== -1) { const fullPath = path.join(__dirname, songs[songIndex].filepath); if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath); songs.splice(songIndex, 1); songs.forEach((s, i) => s.sequence = i + 1); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Deleted'); } else res.status(404).send('Not found'); });
 
 app.listen(PORT, () => console.log(`Server running`));
