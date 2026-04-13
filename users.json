@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1775674107599",
+    "contact": "raramen02@gmail.com",
+    "username": "ramen",
+    "password": "clement1405",
+    "tokens": 230,
+    "purchases": [
+      {
+        "songId": "1775552751155",
+        "songName": "Flying Bird.mp3",
+        "filepath": "/uploads/1775552751140-Flying Bird.mp3",
+        "date": "4/12/2026",
+        "time": "12:17 PM",
+        "tokensSpent": 10
+      }
+    ],
+    "profilePic": "/uploads/profile-1776001314265.png"
+  }
+]
