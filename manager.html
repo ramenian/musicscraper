@@ -7,41 +7,48 @@
     <style>
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffd60a;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
+        
+        .header-top { width: 100%; max-width: 1000px; margin-bottom: 20px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; display: flex; justify-content: space-between; align-items: center;}
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
         
+        /* Sidebar */
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
         .sidebar-btn { text-align: left; padding: 12px 20px; background: transparent; border: none; color: var(--text-muted); font-size: 16px; font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
         .sidebar-btn.active { background: rgba(255,255,255,0.1); color: var(--text-main); }
         .sidebar-btn:hover:not(.active) { background: rgba(255,255,255,0.05); }
 
-        .content-area { flex: 1; min-width: 0; }
+        .content-area { flex: 1; overflow: hidden;}
         .view-section { display: none; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .global-banner { width: 100%; height: 200px; object-fit: cover; border-radius: 18px; margin-bottom: 20px; display: none; box-shadow: 0 4px 24px rgba(0,0,0,0.3); border: 1px solid var(--border-color);}
-        .glass-panel { background: var(--card-bg); backdrop-filter: blur(30px); border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); border: 1px solid var(--border-color); margin-bottom: 20px;}
+        .glass-panel { background: var(--card-bg); backdrop-filter: blur(30px); border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); border: 1px solid var(--border-color); margin-bottom: 20px; overflow: hidden;}
         
         .upload-bar { padding: 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid var(--border-color); justify-content: space-between;}
         .upload-bar input[type="file"] { display: none; }
         .settings-bar { padding: 20px; display: flex; gap: 15px; align-items: center; }
         .input-text { padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; flex: 1; outline: none; background: rgba(0,0,0,0.3); color: white;}
         .btn-primary { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: 0.2s;}
+        .btn-primary:hover { transform: scale(1.02); }
         
         .action-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; border-top: 1px solid var(--border-color); }
-        .btn-danger { background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 10px 20px; border-radius: 14px; font-weight: bold; cursor: pointer; opacity: 0.5; pointer-events: none; }
+        .btn-danger { background-color: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 14px; font-weight: 500; cursor: pointer; opacity: 0.5; pointer-events: none; }
         .btn-danger.active { opacity: 1; pointer-events: auto; }
 
-        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; width: 100%; }
-        .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 100%; max-width: 300px;}
+        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
+        .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 250px; }
 
-        /* Scrollable Tables */
-        .table-wrapper { overflow-x: auto; width: 100%; }
-        .header-row, .song-row, .user-row { min-width: 600px; display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); }
-        .grid-songs { grid-template-columns: 40px 50px 2.5fr 80px 100px 80px 60px; }
-        .grid-users { grid-template-columns: 1.5fr 2fr 1.5fr 100px; }
+        /* Tables */
+        .table-container { overflow-x: auto; }
+        .table-inner { min-width: 750px; }
+
+        .header-row, .song-row, .user-row { display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); }
         .header-row { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         
+        .song-grid { grid-template-columns: 40px 50px 2fr 80px 100px 80px 80px; }
+        .user-grid { grid-template-columns: 1.5fr 2fr 1.5fr 100px; }
+
         .song-row { cursor: grab; background: transparent; transition: background 0.2s;}
         .song-row.drag-over { border-top: 2px solid var(--accent); }
         .song-row:hover, .user-row:hover { background-color: rgba(255, 255, 255, 0.05); }
@@ -54,35 +61,44 @@
         .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
         svg { width: 18px; height: 18px; fill: currentColor; }
 
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center;}
+        /* Modals & Toasts */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
         .toast.show { transform: translateX(-50%) translateY(0); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 340px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden;}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
+        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden;}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; text-align: left; }
         .input-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; display: block; margin-top: 15px;}
         .modal-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
+        
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
         .modal-btn { flex: 1; padding: 14px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 500; transition: 0.2s;}
+        .modal-btn:hover { background: rgba(255,255,255,0.05); }
         .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-main); font-weight: 400;}
-        .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
         
-        /* Mobile Responses */
+        .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
+        .btn-danger-full:hover { background: var(--danger); color: white; }
+
         @media (max-width: 768px) {
             body { padding: 20px 10px; }
-            .container { flex-direction: column; gap: 15px; }
-            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 5px; }
+            .container { flex-direction: column; gap: 20px; }
+            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px;}
             .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
-            .upload-bar, .settings-bar { flex-direction: column; align-items: stretch; }
-            .toolbar { flex-direction: column; align-items: stretch; }
+            .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
+            .upload-bar > div { flex-direction: column; align-items: stretch; }
+            .toolbar { flex-direction: column; align-items: flex-start; }
+            .search-input { width: 100%; box-sizing: border-box; }
         }
     </style>
 </head>
 <body>
+
 <div id="toast" class="toast"></div>
+<div class="header-top">Admin Dashboard</div>
 
 <div class="container">
+    
     <div class="sidebar">
         <button class="sidebar-btn active" onclick="switchView('general')" id="btn-general">General</button>
         <button class="sidebar-btn" onclick="switchView('users')" id="btn-users">Users</button>
@@ -91,58 +107,82 @@
     <div class="content-area">
         
         <div id="view-general" class="view-section active">
-            <img id="bannerImage" class="global-banner" src="" alt="Banner">
+            <img id="bannerImage" class="global-banner" src="" alt="Global Banner">
 
             <div class="glass-panel">
                 <div class="upload-bar">
-                    <div style="display:flex; flex-direction:column; gap: 10px; flex:1;">
-                        <label class="btn-primary" style="text-align:center;">Upload Local Audio<input type="file" id="fileInput" accept="audio/*"></label>
-                        <button class="btn-primary" onclick="openTransloadModal()">Transload URL (.m4a)</button>
+                    <div style="display:flex; align-items:center; gap: 10px; width: 100%;">
+                        <label class="btn-primary" style="flex: 1; text-align:center;">Upload Audio<input type="file" id="fileInput" accept="audio/*"></label>
+                        <button class="btn-primary" style="flex: 1;" onclick="openTransloadModal()">Transload (.m4a)</button>
                     </div>
-                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align:center;">
-                        Change Banner Image <input type="file" id="bannerInput" accept="image/*">
+                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">
+                        Change Banner
+                        <input type="file" id="bannerInput" accept="image/*">
                     </label>
                 </div>
                 <div class="settings-bar">
-                    <input type="text" id="headerInput" class="input-text" placeholder="Main Header Title">
-                    <button class="btn-primary" onclick="saveSettings()">Save Header</button>
+                    <div style="font-weight: 600; white-space: nowrap;">Main Header:</div>
+                    <input type="text" id="headerInput" class="input-text">
+                    <button class="btn-primary" onclick="saveSettings()">Save</button>
                 </div>
-                <div class="action-bar"><h3 style="margin: 0;">File Manager</h3><button id="bulkDeleteBtn" class="btn-danger" onclick="executeDelete()">Delete Permanently</button></div>
             </div>
 
-            <div class="toolbar">
-                <span style="font-size: 13px; color: var(--text-muted);">Drag rows or double-click sequence #.</span>
-                <input type="text" id="searchInput" class="search-input" placeholder="Search song..." oninput="handleSearch()">
-            </div>
-
-            <div class="glass-panel table-wrapper">
-                <div class="header-row grid-songs">
-                    <div><input type="checkbox" id="selectAll" onchange="toggleAll()"></div>
-                    <div>Seq</div><div>Song Name</div><div>Price</div><div>Size</div><div>Uploaded</div><div>Set</div>
+            <div class="glass-panel">
+                <div class="toolbar">
+                    <span style="font-size: 13px; color: var(--text-muted);">Drag or double-click Seq #</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search song..." oninput="handleSearch()">
                 </div>
-                <div id="songList"></div>
+                <div class="table-container">
+                    <div class="table-inner">
+                        <div class="header-row song-grid">
+                            <div><input type="checkbox" id="selectAll" onchange="toggleAll()"></div>
+                            <div>Seq</div><div>Song Name</div><div>Price</div><div>Size</div><div>Uploaded</div><div>Set</div>
+                        </div>
+                        <div id="songList"></div>
+                    </div>
+                </div>
+                <div class="action-bar"><h3 style="margin: 0; font-size: 16px;">Bulk Actions</h3><button id="bulkDeleteBtn" class="btn-danger" onclick="executeDelete()">Delete Selected</button></div>
             </div>
         </div>
 
         <div id="view-users" class="view-section">
-            <div class="toolbar">
-                <h3 style="margin:0;">User Database</h3>
-                <input type="text" id="searchUserInput" class="search-input" placeholder="Search user..." oninput="handleUserSearch()">
-            </div>
-
-            <div class="glass-panel table-wrapper">
-                <div class="header-row grid-users">
-                    <div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div>
+            <div class="glass-panel">
+                <div class="toolbar">
+                    <span style="font-size: 15px; font-weight: 600;">Registered Users</span>
+                    <input type="text" id="userSearchInput" class="search-input" placeholder="Search user..." oninput="handleUserSearch()">
                 </div>
-                <div id="userList"></div>
+                <div class="table-container">
+                    <div class="table-inner">
+                        <div class="header-row user-grid">
+                            <div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div>
+                        </div>
+                        <div id="userList"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
     </div>
 </div>
 
-<div class="modal-overlay" id="transloadModal"><div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center;">Transload .m4a</h3><input type="text" id="transloadInput" class="modal-input" placeholder="https://.../song.m4a" style="margin-top:15px;"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" id="confirmTransloadBtn" style="font-weight: 600;">Fetch</button></div></div></div>
-<div class="modal-overlay" id="songSettingsModal"><div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 5px 0; text-align:center;">Song Settings</h3><label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input"><label class="input-label">Token Cost (0 = Free)</label><input type="number" id="settingPrice" class="modal-input" min="0"><button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Permanently</button></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveSongSettings()">Save</button></div></div></div>
+<div class="modal-overlay" id="transloadModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center;">Transload URL</h3><input type="text" id="transloadInput" class="modal-input" placeholder="https://.../song.m4a"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" id="confirmTransloadBtn" style="font-weight: 600;">Fetch File</button></div></div>
+</div>
+
+<div class="modal-overlay" id="songSettingsModal">
+    <div class="modal-box">
+        <div class="modal-content">
+            <h3 style="margin: 0 0 5px 0; text-align:center;">Song Settings</h3>
+            <label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input">
+            <label class="input-label">Token Cost (0 = Free)</label><input type="number" id="settingPrice" class="modal-input" min="0">
+            <button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
+            <button class="modal-btn" onclick="saveSongSettings()">Save Changes</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const API_URL = '/api'; 
@@ -156,75 +196,123 @@
         document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
         document.getElementById(`btn-${view}`).classList.add('active');
         document.getElementById(`view-${view}`).classList.add('active');
+        if(view === 'users') loadUsers();
     }
 
     async function loadSettings() { 
         const res = await fetch(`${API_URL}/settings`);
         if(res.ok) {
             const data = await res.json();
-            document.getElementById('headerInput').value = data.headerTitle || "DJ Music"; 
+            document.getElementById('headerInput').value = data.headerTitle || "DJ Music Library"; 
             if(data.bannerUrl) { const banner = document.getElementById('bannerImage'); banner.src = data.bannerUrl; banner.style.display = 'block'; }
         }
     }
     async function saveSettings() { await fetch(`${API_URL}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({headerTitle: document.getElementById('headerInput').value})}); showToast("Saved!"); }
     function formatBytes(bytes) { if (bytes === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
 
-    async function loadData() { 
-        allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); 
-        allUsers = await (await fetch(`${API_URL}/users`)).json(); handleUserSearch();
-    }
-
-    // -- SONGS LOGIC --
+    // --- SONG DATA ---
+    async function loadData() { allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); }
     function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.filename.toLowerCase().includes(query)); selectedIds = []; document.getElementById('selectAll').checked = false; renderList(filtered); }
-    function renderList(songs) {
+
+    function renderList(songsToRender) {
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
-        songs.forEach(song => {
+        songsToRender.forEach(song => {
             const isChecked = selectedIds.includes(song.id) ? 'checked' : '';
-            const row = document.createElement('div'); row.className = 'song-row grid-songs'; row.draggable = true; row.dataset.id = song.id;
+            const row = document.createElement('div'); row.className = 'song-row song-grid'; row.draggable = true; row.dataset.id = song.id;
+
             row.addEventListener('dragstart', (e) => { draggedId = song.id; e.dataTransfer.effectAllowed = 'move'; });
             row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
             row.addEventListener('dragleave', () => { row.classList.remove('drag-over'); });
             row.addEventListener('drop', (e) => { e.preventDefault(); row.classList.remove('drag-over'); if (draggedId && draggedId !== song.id) handleDropReorder(draggedId, song.id); });
 
             const price = song.price !== undefined ? song.price : 10;
-            row.innerHTML = `<div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSelection(this)" ${isChecked}></div><div class="seq-num" ondblclick="editSequence(this, '${song.id}', ${song.sequence})">${song.sequence}</div><div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div><div style="color: var(--gold); font-weight: bold;">${price}</div><div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div><div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div><div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${price})"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>`;
+
+            row.innerHTML = `
+                <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSelection(this)" ${isChecked}></div>
+                <div class="seq-num" ondblclick="editSequence(this, '${song.id}', ${song.sequence})">${song.sequence}</div>
+                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
+                <div style="color: var(--gold); font-weight: bold;">${price}</div>
+                <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
+                <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
+                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${price})"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+            `;
             listDiv.appendChild(row);
         });
     }
 
-    // -- USERS LOGIC --
+    // --- USER DATA ---
+    async function loadUsers() { 
+        const res = await fetch(`${API_URL}/all-users`);
+        if(res.ok) { allUsers = await res.json(); handleUserSearch(); }
+    }
     function handleUserSearch() {
-        const query = document.getElementById('searchUserInput').value.toLowerCase();
+        const query = document.getElementById('userSearchInput').value.toLowerCase();
         const filtered = allUsers.filter(u => u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query) || u.phone.includes(query));
-        renderUserList(filtered);
-    }
-    function renderUserList(users) {
         const listDiv = document.getElementById('userList'); listDiv.innerHTML = '';
-        users.forEach(user => {
-            const row = document.createElement('div'); row.className = 'user-row grid-users';
-            row.innerHTML = `<div style="font-weight:600;">${user.username}</div><div style="color:var(--text-muted);">${user.email}</div><div style="color:var(--text-muted);">${user.phone}</div><div style="color:var(--gold); font-weight:bold;">${user.tokens}</div>`;
+        filtered.forEach(u => {
+            const row = document.createElement('div'); row.className = 'user-row user-grid';
+            row.innerHTML = `
+                <div style="font-weight: 500;">${u.username}</div>
+                <div style="color: var(--text-muted); font-size: 14px; overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
+                <div style="color: var(--text-muted); font-size: 14px;">${u.phone}</div>
+                <div style="color: var(--gold); font-weight: bold;">${u.tokens}</div>
+            `;
             listDiv.appendChild(row);
         });
     }
 
-    // -- EDITING / DRAGGING --
-    function editSequence(div, id, currentSeq) { div.innerHTML = `<input type="number" class="seq-input" value="${currentSeq}" id="seqInput-${id}">`; const input = document.getElementById(`seqInput-${id}`); input.focus(); input.addEventListener('blur', () => { let newSeq = parseInt(input.value); if (isNaN(newSeq) || newSeq < 1) newSeq = 1; if (newSeq > allSongs.length) newSeq = allSongs.length; const songIndex = allSongs.findIndex(s => s.id === id); const [movedSong] = allSongs.splice(songIndex, 1); allSongs.splice(newSeq - 1, 0, movedSong); saveReorderToServer(); }); input.addEventListener('keypress', (e) => { if (e.key === 'Enter') input.blur(); }); }
+    function editSequence(div, id, currentSeq) {
+        div.innerHTML = `<input type="number" class="seq-input" value="${currentSeq}" id="seqInput-${id}">`;
+        const input = document.getElementById(`seqInput-${id}`); input.focus();
+        input.addEventListener('blur', () => {
+            let newSeq = parseInt(input.value); if (isNaN(newSeq) || newSeq < 1) newSeq = 1; if (newSeq > allSongs.length) newSeq = allSongs.length;
+            const songIndex = allSongs.findIndex(s => s.id === id); const [movedSong] = allSongs.splice(songIndex, 1);
+            allSongs.splice(newSeq - 1, 0, movedSong); saveReorderToServer();
+        });
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') input.blur(); });
+    }
+
     function handleDropReorder(dragId, dropTargetId) { const fromIndex = allSongs.findIndex(s => s.id === dragId); const toIndex = allSongs.findIndex(s => s.id === dropTargetId); const [movedSong] = allSongs.splice(fromIndex, 1); allSongs.splice(toIndex, 0, movedSong); saveReorderToServer(); }
     async function saveReorderToServer() { const orderedIds = allSongs.map(s => s.id); await fetch(`${API_URL}/songs/reorder`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({orderedIds}) }); loadData(); showToast("Sequence Updated"); }
+
     function toggleSelection(cb) { if (cb.checked) selectedIds.push(cb.value); else selectedIds = selectedIds.filter(id => id !== cb.value); updateBulkBtn(); }
     function toggleAll() { const master = document.getElementById('selectAll'); selectedIds = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedIds.push(cb.value); }); updateBulkBtn(); }
     function updateBulkBtn() { const btn = document.getElementById('bulkDeleteBtn'); if (selectedIds.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedIds.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Permanently'; } }
+    
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); currentEditId = null; }
-    function openSettingsModal(id, name, price) { currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price; document.getElementById('songSettingsModal').style.display = 'flex'; }
-    async function saveSongSettings() { if(!currentEditId) return; const newName = document.getElementById('settingName').value; const newPrice = document.getElementById('settingPrice').value; await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName, newPrice}) }); closeModals(); loadData(); showToast("Updated"); }
-    async function executeDeleteFromModal() { if(!currentEditId) return; if(confirm("Permanently delete?")) { await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); loadData(); showToast("Deleted."); } }
-    async function executeDelete() { if(confirm(`Delete ${selectedIds.length} songs?`)) { await fetch(`${API_URL}/songs/bulk-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedIds }) }); loadData(); showToast("Deleted."); } }
+    
+    function openSettingsModal(id, name, price) {
+        currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price;
+        document.getElementById('songSettingsModal').style.display = 'flex';
+    }
 
-    // UPLOADS
-    document.getElementById('fileInput').addEventListener('change', async (e) => { if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); showToast("Uploading Audio..."); const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Uploaded!"); loadData(); } });
-    document.getElementById('bannerInput').addEventListener('change', async (e) => { if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showToast("Uploading Banner..."); const res = await fetch(`${API_URL}/upload-banner`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Updated!"); const s = await res.json(); const b = document.getElementById('bannerImage'); b.src = s.bannerUrl; b.style.display = 'block'; } });
+    async function saveSongSettings() {
+        if(!currentEditId) return;
+        const newName = document.getElementById('settingName').value; const newPrice = document.getElementById('settingPrice').value;
+        await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName, newPrice}) });
+        closeModals(); loadData(); showToast("Settings Updated");
+    }
+
+    async function executeDeleteFromModal() { if(!currentEditId) return; if(confirm("Permanently delete this song?")) { await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); loadData(); showToast("Deleted successfully."); } }
+    async function executeDelete() { if(confirm(`Permanently delete ${selectedIds.length} songs?`)) { await fetch(`${API_URL}/songs/bulk-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedIds }) }); loadData(); showToast("Deleted successfully."); } }
+
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); showToast("Uploading Audio...");
+        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } 
+    });
+
+    document.getElementById('bannerInput').addEventListener('change', async (e) => {
+        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showToast("Uploading Banner...");
+        const res = await fetch(`${API_URL}/upload-banner`, { method: 'POST', body: fd });
+        if (res.ok) { e.target.value = ''; showToast("Banner Updated!"); const settings = await res.json(); const banner = document.getElementById('bannerImage'); banner.src = settings.bannerUrl; banner.style.display = 'block'; } 
+    });
+
     function openTransloadModal() { document.getElementById('transloadInput').value = ''; document.getElementById('transloadModal').style.display = 'flex'; }
-    document.getElementById('confirmTransloadBtn').addEventListener('click', async () => { const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); showToast("Fetching..."); const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) }); if (res.ok) { const newSong = await res.json(); await loadData(); openSettingsModal(newSong.id, newSong.filename, newSong.price); showToast("Success!"); } });
+    document.getElementById('confirmTransloadBtn').addEventListener('click', async () => {
+        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); showToast("Fetching...");
+        const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+        if (res.ok) { const newSong = await res.json(); await loadData(); openSettingsModal(newSong.id, newSong.filename, newSong.price); showToast("Fetch successful!"); } else { showToast(await res.text(), true); }
+    });
 
     loadSettings(); loadData();
 </script>
