@@ -5,9 +5,7 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-// Cloud port detection with local fallback to 80
 const PORT = process.env.PORT || 80;
-
 const DATA_FILE = path.join(__dirname, 'data.json');
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 const USERS_FILE = path.join(__dirname, 'users.json');
@@ -18,18 +16,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-// Ensure uploads directory exists for cloud environments
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
-
 if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify([]));
 if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ headerTitle: "DJ Music Library", bannerUrl: "" }));
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify([]));
 
-// --- THE FIX: AUTO REDIRECT TO LOGIN ---
-app.get('/', (req, res) => {
-    res.redirect('/register.html');
-});
-// ---------------------------------------
+app.get('/', (req, res) => { res.redirect('/register.html'); });
 
 function getSongs() {
     let songs = [];
@@ -70,12 +62,8 @@ app.post('/api/register', (req, res) => {
     let users = getUsers();
     if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) return res.status(400).send('Username taken.');
     if (users.find(u => u.contact.toLowerCase() === contact.toLowerCase())) return res.status(400).send('Email/Phone registered.');
-    
     const isEmail = contact.includes('@');
-    const email = isEmail ? contact : '-';
-    const phone = isEmail ? '-' : contact;
-
-    const newUser = { id: Date.now().toString(), contact, email, phone, username, password, tokens: 0, purchases: [], profilePic: '' };
+    const newUser = { id: Date.now().toString(), contact, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact, username, password, tokens: 0, purchases: [], profilePic: '' };
     users.push(newUser); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, username: newUser.username });
 });
 
@@ -87,12 +75,14 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/users/:username', (req, res) => {
     const user = getUsers().find(u => u.username === req.params.username);
-    if(user) {
-        res.json({ 
-            username: user.username, tokens: user.tokens || 0, purchases: user.purchases || [],
-            profilePic: user.profilePic || '', email: user.email || '-', phone: user.phone || '-'
-        });
-    } else res.status(404).send('User not found');
+    if(user) res.json({ username: user.username, tokens: user.tokens || 0, purchases: user.purchases || [], profilePic: user.profilePic || '', email: user.email || '-', phone: user.phone || '-' });
+    else res.status(404).send('User not found');
+});
+
+// NEW: Fetch all users for Admin Panel safely (no passwords)
+app.get('/api/admin/users', (req, res) => {
+    const safeUsers = getUsers().map(u => ({ username: u.username, email: u.email || '-', phone: u.phone || '-', tokens: u.tokens || 0 }));
+    res.json(safeUsers);
 });
 
 app.post('/api/users/:username/profile-pic', (req, res) => {
@@ -104,7 +94,6 @@ app.post('/api/users/:username/profile-pic', (req, res) => {
     } else res.status(404).send('User not found');
 });
 
-// Edit Profile Information
 app.put('/api/users/:username/change-username', (req, res) => {
     const { newUsername } = req.body; let users = getUsers();
     if (users.find(u => u.username.toLowerCase() === newUsername.toLowerCase())) return res.status(400).send('Username already taken.');
@@ -127,7 +116,6 @@ app.delete('/api/users/:username', (req, res) => {
     if(userIndex !== -1) { users.splice(userIndex, 1); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Account deleted'); } else res.status(404).send('User not found');
 });
 
-// Economy
 app.post('/api/users/:username/topup', (req, res) => {
     let users = getUsers(); let user = users.find(u => u.username === req.params.username);
     if(user) { user.tokens = (user.tokens || 0) + req.body.amount; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ tokens: user.tokens }); } else res.status(404).send('User not found');
@@ -148,7 +136,6 @@ app.post('/api/users/:username/purchase', (req, res) => {
     } else res.status(404).send('User not found');
 });
 
-// Passwords reset
 app.post('/api/forgot-password', (req, res) => {
     const { contact } = req.body; let users = getUsers(); const user = users.find(u => u.contact === contact || u.email === contact || u.phone === contact);
     if (user) res.json({ success: true, resetToken: user.id }); else res.status(400).send('Account not found.');
@@ -158,7 +145,7 @@ app.post('/api/reset-password', (req, res) => {
     if (userIndex !== -1) { users[userIndex].password = newPassword; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Password reset successfully.'); } else res.status(400).send('Invalid reset token.');
 });
 
-// Admin / Library APIs
+// --- ADMIN / LIBRARY API ---
 app.get('/api/settings', (req, res) => res.json(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'))));
 app.put('/api/settings', (req, res) => { let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.headerTitle = req.body.headerTitle; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.send('Settings updated'); });
 app.post('/api/upload-banner', upload.single('bannerFile'), (req, res) => { if (!req.file) return res.status(400).send('No file uploaded.'); let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.bannerUrl = '/uploads/' + req.file.filename; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.json(settings); });
