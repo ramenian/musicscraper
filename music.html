@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DJ Music</title>
     <style>
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffd60a;}
@@ -38,7 +38,10 @@
         .toolbar { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
         .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 250px; }
 
-        .list-section { display: flex; flex-direction: column; }
+        /* Responsive List Section */
+        .list-section { display: flex; flex-direction: column; overflow-x: auto; }
+        .table-container { min-width: 700px; } /* Prevent squishing on mobile */
+
         .header-row { display: grid; grid-template-columns: 50px 2.5fr 60px 100px 140px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         .header-row.mysongs { grid-template-columns: 2.5fr 100px 60px 100px; }
         
@@ -56,7 +59,7 @@
         .btn-buy:hover { transform: scale(1.05); }
         svg { width: 18px; height: 18px; fill: currentColor; }
 
-        .expanded-player { display: none; grid-column: 1 / -1; padding: 15px 30px; background: rgba(0,0,0,0.3); align-items: center; gap: 15px; }
+        .expanded-player { display: none; padding: 15px 30px; background: rgba(0,0,0,0.3); align-items: center; gap: 15px; }
         .expanded-player.show { display: flex; }
         .time-display { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-muted); font-weight: 500; min-width: 35px; text-align: center;}
         
@@ -74,8 +77,8 @@
         .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); animation: shake 0.4s; }
         @keyframes shake { 0%, 100% { transform: translateX(-50%); } 25% { transform: translateX(-55%); } 75% { transform: translateX(-45%); } }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 320px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden;}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
+        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 320px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden;}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; }
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
@@ -85,6 +88,15 @@
         .topup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .topup-card { background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.2s; font-size: 18px; font-weight: 600; color: var(--gold);}
         .topup-card:hover { background: rgba(255, 214, 10, 0.1); border-color: var(--gold); transform: scale(1.05);}
+
+        /* MOBILE RESPONSIVE QUERIES */
+        @media (max-width: 768px) {
+            body { padding: 20px 10px; }
+            .header-top { flex-direction: column; align-items: stretch; gap: 15px; }
+            .profile-dropdown { width: 100%; top: 50px; }
+            .toolbar { flex-direction: column; }
+            .search-input { width: 100%; box-sizing: border-box; }
+        }
     </style>
 </head>
 <body onclick="closeDropdowns(event)">
@@ -120,8 +132,10 @@
         <div class="toolbar"><input type="text" id="searchInput" class="search-input" placeholder="Search..." oninput="handleSearch()"></div>
 
         <div class="list-section">
-            <div class="header-row" id="listHeader"></div>
-            <div id="songList"></div>
+            <div class="table-container">
+                <div class="header-row" id="listHeader"></div>
+                <div id="songList"></div>
+            </div>
             <div class="pagination">
                 <button class="page-btn" id="prevBtn" onclick="changePage(-1)">Prev</button>
                 <span id="pageIndicator" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">1 / 1</span>
@@ -147,15 +161,10 @@
     const playIcon = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
     const pauseIcon = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
 
-    // Simple Language Sync
     const lang = localStorage.getItem('djLang') || 'en';
-    const dict = {
-        zh: { library: "音乐库", mysongs: "我的音乐", profile: "个人资料", logout: "登出", tokenbal: "代币余额", topup: "充值", buy: "购买" }
-    };
+    const dict = { zh: { library: "音乐库", mysongs: "我的音乐", profile: "个人资料", logout: "登出", tokenbal: "代币余额", topup: "充值", buy: "购买" } };
     if (lang === 'zh') {
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n'); if(dict.zh[key]) el.innerText = dict.zh[key];
-        });
+        document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(dict.zh[key]) el.innerText = dict.zh[key]; });
         document.getElementById('searchInput').placeholder = "搜索...";
     }
 
@@ -176,11 +185,9 @@
             const settings = await setRes.json();
             if(settings.bannerUrl) { const banner = document.getElementById('bannerImage'); banner.src = settings.bannerUrl; banner.style.display = 'block'; }
         }
-
         const uRes = await fetch(`${API_URL}/users/${username}`);
         if(uRes.ok) { 
-            const data = await uRes.json(); 
-            userTokens = data.tokens; userPurchases = data.purchases; updateTokenUI(); 
+            const data = await uRes.json(); userTokens = data.tokens; userPurchases = data.purchases; updateTokenUI(); 
             document.getElementById('mainHeader').innerText = data.username;
             if(data.profilePic) document.getElementById('headerProfilePic').src = data.profilePic;
         }
