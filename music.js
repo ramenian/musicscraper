@@ -25,11 +25,8 @@ app.get('/', (req, res) => { res.redirect('/register.html'); });
 
 function getSongs() {
     let songs = [];
-    try {
-        const rawData = fs.readFileSync(DATA_FILE, 'utf8');
-        songs = JSON.parse(rawData);
-        if (!Array.isArray(songs)) songs = [];
-    } catch (e) { songs = []; }
+    try { const rawData = fs.readFileSync(DATA_FILE, 'utf8'); songs = JSON.parse(rawData); if (!Array.isArray(songs)) songs = []; } 
+    catch (e) { songs = []; }
     return songs.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
 }
 
@@ -40,10 +37,7 @@ function getUsers() {
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => {
-        const safeName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-        cb(null, Date.now() + '-' + safeName);
-    }
+    filename: (req, file, cb) => { const safeName = Buffer.from(file.originalname, 'latin1').toString('utf8'); cb(null, Date.now() + '-' + safeName); }
 });
 
 const upload = multer({ 
@@ -51,19 +45,17 @@ const upload = multer({
     fileFilter: (req, file, cb) => {
         const isAudio = file.mimetype.includes('audio') || file.originalname.endsWith('.mp3') || file.originalname.endsWith('.m4a');
         const isImage = file.mimetype.includes('image');
-        if (isAudio || isImage) cb(null, true);
-        else cb(new Error('Invalid file type.'));
+        if (isAudio || isImage) cb(null, true); else cb(new Error('Invalid file type.'));
     }
 });
 
 // --- AUTH & USER API ---
 app.post('/api/register', (req, res) => {
-    const { contact, username, password } = req.body; 
-    let users = getUsers();
+    const { contact, username, password } = req.body; let users = getUsers();
     if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) return res.status(400).send('Username taken.');
     if (users.find(u => u.contact.toLowerCase() === contact.toLowerCase())) return res.status(400).send('Email/Phone registered.');
-    const isEmail = contact.includes('@');
-    const newUser = { id: Date.now().toString(), contact, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact, username, password, tokens: 0, purchases: [], profilePic: '' };
+    const isEmail = contact.includes('@'); const email = isEmail ? contact : '-'; const phone = isEmail ? '-' : contact;
+    const newUser = { id: Date.now().toString(), contact, email, phone, username, password, tokens: 0, purchases: [], profilePic: '' };
     users.push(newUser); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, username: newUser.username });
 });
 
@@ -75,23 +67,12 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/users/:username', (req, res) => {
     const user = getUsers().find(u => u.username === req.params.username);
-    if(user) res.json({ username: user.username, tokens: user.tokens || 0, purchases: user.purchases || [], profilePic: user.profilePic || '', email: user.email || '-', phone: user.phone || '-' });
-    else res.status(404).send('User not found');
-});
-
-// NEW: Fetch all users for Admin Panel safely (no passwords)
-app.get('/api/admin/users', (req, res) => {
-    const safeUsers = getUsers().map(u => ({ username: u.username, email: u.email || '-', phone: u.phone || '-', tokens: u.tokens || 0 }));
-    res.json(safeUsers);
+    if(user) { res.json({ username: user.username, tokens: user.tokens || 0, purchases: user.purchases || [], profilePic: user.profilePic || '', email: user.email || '-', phone: user.phone || '-' }); } else res.status(404).send('User not found');
 });
 
 app.post('/api/users/:username/profile-pic', (req, res) => {
     const { imageBase64 } = req.body; let users = getUsers(); let user = users.find(u => u.username === req.params.username);
-    if(user) {
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, ""); const filename = 'profile-' + Date.now() + '.png';
-        fs.writeFileSync(path.join(__dirname, 'uploads', filename), base64Data, 'base64');
-        user.profilePic = '/uploads/' + filename; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ profilePic: user.profilePic });
-    } else res.status(404).send('User not found');
+    if(user) { const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, ""); const filename = 'profile-' + Date.now() + '.png'; fs.writeFileSync(path.join(__dirname, 'uploads', filename), base64Data, 'base64'); user.profilePic = '/uploads/' + filename; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ profilePic: user.profilePic }); } else res.status(404).send('User not found');
 });
 
 app.put('/api/users/:username/change-username', (req, res) => {
@@ -129,10 +110,7 @@ app.post('/api/users/:username/purchase', (req, res) => {
         user.tokens = user.tokens || 0; user.purchases = user.purchases || [];
         if(user.purchases.find(p => p.songId === songId)) return res.status(400).send('Already purchased');
         const price = song.price !== undefined ? song.price : 10;
-        if(user.tokens >= price) {
-            user.tokens -= price; user.purchases.push({ songId: song.id, songName: song.filename, filepath: song.filepath, tokensSpent: price });
-            fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
-        } else res.status(400).send('Insufficient tokens');
+        if(user.tokens >= price) { user.tokens -= price; user.purchases.push({ songId: song.id, songName: song.filename, filepath: song.filepath, tokensSpent: price }); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, tokens: user.tokens, purchases: user.purchases }); } else res.status(400).send('Insufficient tokens');
     } else res.status(404).send('User not found');
 });
 
@@ -140,12 +118,21 @@ app.post('/api/forgot-password', (req, res) => {
     const { contact } = req.body; let users = getUsers(); const user = users.find(u => u.contact === contact || u.email === contact || u.phone === contact);
     if (user) res.json({ success: true, resetToken: user.id }); else res.status(400).send('Account not found.');
 });
+
 app.post('/api/reset-password', (req, res) => {
     const { token, newPassword } = req.body; let users = getUsers(); const userIndex = users.findIndex(u => u.id === token);
     if (userIndex !== -1) { users[userIndex].password = newPassword; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Password reset successfully.'); } else res.status(400).send('Invalid reset token.');
 });
 
-// --- ADMIN / LIBRARY API ---
+// --- NEW MANAGER USER API ---
+app.get('/api/admin/users', (req, res) => {
+    let users = getUsers();
+    // Safely strip passwords before sending to manager panel
+    let safeUsers = users.map(u => ({ id: u.id, username: u.username, email: u.email || '-', phone: u.phone || '-', tokens: u.tokens || 0 }));
+    res.json(safeUsers);
+});
+// ----------------------------
+
 app.get('/api/settings', (req, res) => res.json(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'))));
 app.put('/api/settings', (req, res) => { let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.headerTitle = req.body.headerTitle; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.send('Settings updated'); });
 app.post('/api/upload-banner', upload.single('bannerFile'), (req, res) => { if (!req.file) return res.status(400).send('No file uploaded.'); let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.bannerUrl = '/uploads/' + req.file.filename; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.json(settings); });
