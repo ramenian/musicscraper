@@ -9,7 +9,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 // SAFETY CHECK
 if (!process.env.MONGO_URI || !process.env.CLOUDINARY_CLOUD_NAME) {
-    console.error("❌ FATAL ERROR: Missing Environment Variables! Check your Render Dashboard.");
+    console.error("❌ FATAL ERROR: Missing Environment Variables in Render Dashboard.");
 }
 
 const app = express();
@@ -56,7 +56,6 @@ const SettingsSchema = new mongoose.Schema({
 const Settings = mongoose.model('Settings', SettingsSchema);
 
 // --- 3. ROUTES ---
-// Health check route for Render
 app.get('/health', (req, res) => res.status(200).send('OK'));
 app.get('/', (req, res) => res.redirect('/register.html'));
 
@@ -136,7 +135,8 @@ app.get('/api/settings', async (req, res) => res.json(await Settings.findOne()))
 app.put('/api/settings', async (req, res) => { await Settings.findOneAndUpdate({}, { headerTitle: req.body.headerTitle }); res.send('Updated'); });
 app.post('/api/upload-banner', upload.single('bannerFile'), async (req, res) => {
     if (!req.file) return res.status(400).send('No file.');
-    await Settings.findOneAndUpdate({}, { bannerUrl: req.file.path }); res.json(await Settings.findOne());
+    const result = await cloudinary.uploader.upload(req.file.path, { folder: 'dj_music' });
+    await Settings.findOneAndUpdate({}, { bannerUrl: result.secure_url }); res.json(await Settings.findOne());
 });
 
 app.get('/api/songs', async (req, res) => { const songs = await Song.find().sort('sequence'); res.json(songs); });
@@ -181,22 +181,19 @@ app.delete('/api/songs/:id', async (req, res) => {
 
 // --- THE BULLETPROOF BOOT SEQUENCE ---
 const startApp = async () => {
-    // 1. Start the server FIRST so Render knows we are alive
+    // 1. Open the public door immediately so Render doesn't kill the app
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
     });
 
-    // 2. Try to connect to Database SECOND
+    // 2. Connect to the permanent database
     if (process.env.MONGO_URI) {
         try {
             await mongoose.connect(process.env.MONGO_URI);
             console.log('✅ MongoDB Connected successfully');
-            
-            // Initialize settings only after DB connects
             Settings.findOne().then(s => { if(!s) new Settings().save(); });
         } catch (err) {
-            console.error('❌ MongoDB Connection Error! Your app is still running, but database features will fail.');
-            console.error('⚠️ Look closely at this error:', err.message);
+            console.error('❌ MongoDB Connection Error!', err.message);
         }
     }
 };
