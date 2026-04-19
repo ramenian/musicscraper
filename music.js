@@ -7,10 +7,9 @@ const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// SAFETY CHECK: Ensure Cloud Variables exist before starting
+// SAFETY CHECK
 if (!process.env.MONGO_URI || !process.env.CLOUDINARY_CLOUD_NAME) {
     console.error("❌ FATAL ERROR: Missing Environment Variables! Check your Render Dashboard.");
-    process.exit(1); 
 }
 
 const app = express();
@@ -21,13 +20,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
 // --- 1. CLOUD CONNECTIONS ---
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ MongoDB Connected successfully'))
-    .catch(err => {
-        console.error('❌ MongoDB Connection Error. Check your Atlas IP Whitelist (0.0.0.0/0) and Password.', err);
-        process.exit(1);
-    });
-
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -63,9 +55,9 @@ const SettingsSchema = new mongoose.Schema({
 });
 const Settings = mongoose.model('Settings', SettingsSchema);
 
-Settings.findOne().then(s => { if(!s) new Settings().save(); });
-
 // --- 3. ROUTES ---
+// Health check route for Render
+app.get('/health', (req, res) => res.status(200).send('OK'));
 app.get('/', (req, res) => res.redirect('/register.html'));
 
 // --- 4. AUTH & USER API ---
@@ -187,7 +179,26 @@ app.delete('/api/songs/:id', async (req, res) => {
     res.send('Deleted');
 });
 
-// CRITICAL FIX: Bind exactly to 0.0.0.0 so Render can detect the health check
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
-});
+// --- THE BULLETPROOF BOOT SEQUENCE ---
+const startApp = async () => {
+    // 1. Start the server FIRST so Render knows we are alive
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
+    });
+
+    // 2. Try to connect to Database SECOND
+    if (process.env.MONGO_URI) {
+        try {
+            await mongoose.connect(process.env.MONGO_URI);
+            console.log('✅ MongoDB Connected successfully');
+            
+            // Initialize settings only after DB connects
+            Settings.findOne().then(s => { if(!s) new Settings().save(); });
+        } catch (err) {
+            console.error('❌ MongoDB Connection Error! Your app is still running, but database features will fail.');
+            console.error('⚠️ Look closely at this error:', err.message);
+        }
+    }
+};
+
+startApp();
