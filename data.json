@@ -1,19 +1,18 @@
-[
-  {
-    "id": "1775674137866",
-    "filename": "Flying Bird (Ins.).mp3",
-    "filepath": "/uploads/1775674137849-Flying Bird (Ins.).mp3",
-    "size": 4753197,
-    "uploadTime": "2026-04-08T18:48:57.866Z",
-    "sequence": 1
+{
+  "name": "dj-music",
+  "version": "1.0.0",
+  "description": "DJ Music Cloud App",
+  "main": "music.js",
+  "scripts": {
+    "start": "node music.js"
   },
-  {
-    "id": "1775552751155",
-    "filename": "Flying Bird.mp3",
-    "filepath": "/uploads/1775552751140-Flying Bird.mp3",
-    "size": 4753197,
-    "uploadTime": "2026-04-07T09:05:51.155Z",
-    "sequence": 2,
-    "price": 90
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "mongoose": "^7.5.0",
+    "cloudinary": "^1.40.0",
+    "multer-storage-cloudinary": "^4.0.0",
+    "dotenv": "^16.3.1"
   }
-]
+}
