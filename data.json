@@ -1,18 +1,9 @@
-{
-  "name": "musicscraper",
-  "version": "1.0.0",
-  "description": "DJ Music Library",
-  "main": "music.js",
-  "scripts": {
-    "start": "node music.js"
-  },
-  "dependencies": {
-    "cloudinary": "^1.41.0",
+"dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.0",
-    "express": "^4.19.0",
-    "mongoose": "^8.3.0",
+    "express": "^4.18.2",
     "multer": "^1.4.5-lts.1",
+    "dotenv": "^16.0.3",
+    "mongoose": "^7.0.3",
+    "cloudinary": "^1.35.0",
     "multer-storage-cloudinary": "^4.0.0"
   }
-}
