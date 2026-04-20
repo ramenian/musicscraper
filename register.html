@@ -25,10 +25,10 @@
         .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); animation: shake 0.4s; }
         @keyframes shake { 0%, 100% { transform: translateX(-50%) translateY(0); } 25% { transform: translateX(-55%) translateY(0); } 75% { transform: translateX(-45%) translateY(0); } }
         
-        /* Full Screen Success Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.3s;}
-        .success-box { background: rgba(40, 40, 40, 0.95); padding: 40px 30px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;}
-        @keyframes popIn { to { transform: scale(1); } }
+        /* NEW SUCCESS SPLASH */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box;}
+        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 320px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; padding: 40px 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         @media (max-width: 400px) {
             .auth-container { padding: 30px 20px; }
@@ -37,13 +37,13 @@
     </style>
 </head>
 <body>
+
 <div id="toast" class="toast"></div>
 
 <div class="modal-overlay" id="successModal">
-    <div class="success-box">
-        <svg viewBox="0 0 24 24" style="width:70px; height:70px; fill:var(--accent); margin-bottom: 20px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        <h2 style="margin:0; font-size: 22px;">SUCCESSFULLY REGISTERED !</h2>
-        <p style="margin: 10px 0 0 0;">Redirecting to your library...</p>
+    <div class="modal-box">
+        <svg viewBox="0 0 24 24" style="width: 70px; height: 70px; fill: var(--accent); margin-bottom: 15px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <h3 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">SUCCESSFULLY REGISTERED !</h3>
     </div>
 </div>
 
@@ -54,6 +54,7 @@
         <div class="input-group"><input type="password" id="loginPass" placeholder="Password"></div>
         <button class="btn-primary" onclick="login()">Continue</button>
         <div><span class="toggle-link" onclick="switchView('forgotView')">Forgot password?</span><br><span style="color: var(--text-muted); font-size: 14px;">Don't have an account? </span><span class="toggle-link" onclick="switchView('registerView')">Sign up</span></div>
+        <div style="margin-top: 20px;"><a href="music.html" style="color: var(--text-muted); font-size: 13px; text-decoration: none;">Continue as Guest -></a></div>
     </div>
 
     <div id="registerView" class="view-section">
@@ -100,22 +101,13 @@
     async function register() {
         const contact = document.getElementById('regContact').value, username = document.getElementById('regUsername').value, pass = document.getElementById('regPass').value, confirm = document.getElementById('regConfirm').value;
         if(!contact || !username || !pass) return showToast("Fill all fields", true); if(pass !== confirm) return showToast("Passwords mismatch", true);
-        
         const res = await fetch(`${API_URL}/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact, username, password: pass }) });
-        
         if(res.ok) { 
             localStorage.setItem('djUsername', (await res.json()).username); 
-            // Show new Success UI
             document.getElementById('successModal').style.display = 'flex';
-            setTimeout(() => window.location.href = '/music.html', 2000); 
+            setTimeout(() => window.location.href = '/music.html', 1500); 
         } else { 
-            const errorText = await res.text();
-            // Show explicit Username Taken UI
-            if (errorText.toLowerCase().includes('taken') || errorText.toLowerCase().includes('registered')) {
-                showToast("USER HAS BEEN REGISTERED", true);
-            } else {
-                showToast(errorText, true);
-            }
+            showToast(await res.text(), true); 
         }
     }
     
