@@ -6,7 +6,7 @@
     <title>DJ Music - Portal</title>
     <style>
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; color-scheme: dark; padding: 20px; box-sizing: border-box;}
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; color-scheme: dark; padding: 20px; box-sizing: border-box;}
         .auth-container { background: var(--card-bg); backdrop-filter: blur(40px); border-radius: 24px; padding: 40px; width: 100%; max-width: 360px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color); text-align: center; position: relative; overflow: hidden; box-sizing: border-box;}
         h2 { margin: 0 0 10px 0; font-weight: 700; font-size: 24px; }
         p { color: var(--text-muted); font-size: 14px; margin: 0 0 30px 0; }
@@ -25,25 +25,21 @@
         .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); animation: shake 0.4s; }
         @keyframes shake { 0%, 100% { transform: translateX(-50%) translateY(0); } 25% { transform: translateX(-55%) translateY(0); } 75% { transform: translateX(-45%) translateY(0); } }
         
-        /* NEW SUCCESS SPLASH */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box;}
-        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 320px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; padding: 40px 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* Success Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; }
+        .modal-box { background: rgba(40, 40, 40, 0.95); border-radius: 20px; text-align: center; border: 1px solid var(--border-color); padding: 40px 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        @media (max-width: 400px) {
-            .auth-container { padding: 30px 20px; }
-            h2 { font-size: 22px; }
-        }
+        @media (max-width: 400px) { .auth-container { padding: 30px 20px; } h2 { font-size: 22px; } }
     </style>
 </head>
 <body>
-
 <div id="toast" class="toast"></div>
 
 <div class="modal-overlay" id="successModal">
     <div class="modal-box">
-        <svg viewBox="0 0 24 24" style="width: 70px; height: 70px; fill: var(--accent); margin-bottom: 15px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        <h3 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">SUCCESSFULLY REGISTERED !</h3>
+        <svg viewBox="0 0 24 24" style="width:70px; height:70px; fill:var(--accent); margin-bottom: 15px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <h2 style="margin:0; font-size: 20px; letter-spacing: 0.5px;">SUCCESSFULLY REGISTERED!</h2>
     </div>
 </div>
 
@@ -90,7 +86,6 @@
         t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); 
     }
     function switchView(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); document.getElementById(viewId).classList.add('active'); }
-    
     async function login() {
         const contact = document.getElementById('loginContact').value, password = document.getElementById('loginPass').value;
         if(!contact || !password) return showToast("Fill all fields", true);
@@ -104,13 +99,15 @@
         const res = await fetch(`${API_URL}/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact, username, password: pass }) });
         if(res.ok) { 
             localStorage.setItem('djUsername', (await res.json()).username); 
+            // SHOW SUCCESS MODAL
             document.getElementById('successModal').style.display = 'flex';
-            setTimeout(() => window.location.href = '/music.html', 1500); 
+            setTimeout(() => window.location.href = '/music.html', 2000); 
         } else { 
+            // Handles "USER HAS BEEN REGISTERED" from backend
             showToast(await res.text(), true); 
         }
     }
-    
+
     async function requestReset() {
         const contact = document.getElementById('forgotContact').value; if(!contact) return showToast("Enter your Email/Phone", true);
         const res = await fetch(`${API_URL}/forgot-password`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact }) });
