@@ -3,199 +3,192 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const mongoose = require('mongoose');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-// SAFETY CHECK
-if (!process.env.MONGO_URI || !process.env.CLOUDINARY_CLOUD_NAME) {
-    console.error("❌ FATAL ERROR: Missing Environment Variables in Render Dashboard.");
-}
 
 const app = express();
 const PORT = process.env.PORT || 80;
+const DATA_FILE = path.join(__dirname, 'data.json');
+const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+const USERS_FILE = path.join(__dirname, 'users.json');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
-// --- 1. CLOUD CONNECTIONS ---
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+// Ensure local folders and files exist
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ headerTitle: "DJ Music Library", bannerUrl: "" }));
+if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify([]));
+
+function getSongs() {
+    let songs = [];
+    try {
+        const rawData = fs.readFileSync(DATA_FILE, 'utf8');
+        songs = JSON.parse(rawData);
+        if (!Array.isArray(songs)) songs = [];
+    } catch (e) { songs = []; }
+    return songs.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+}
+
+function getUsers() {
+    try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); } 
+    catch (e) { return []; }
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, 'uploads/'),
+    filename: (req, file, cb) => {
+        const safeName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+        cb(null, Date.now() + '-' + safeName);
+    }
 });
 
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: { folder: 'dj_music', resource_type: 'auto' }
+const upload = multer({ 
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        const isAudio = file.mimetype.includes('audio') || file.originalname.endsWith('.mp3') || file.originalname.endsWith('.m4a');
+        const isImage = file.mimetype.includes('image');
+        if (isAudio || isImage) cb(null, true);
+        else cb(new Error('Invalid file type.'));
+    }
 });
-const upload = multer({ storage: storage });
 
-// --- 2. DATABASE SCHEMAS ---
-const UserSchema = new mongoose.Schema({
-    username: { type: String, unique: true },
-    password: { type: String },
-    contact: { type: String, unique: true },
-    email: { type: String, default: '-' },
-    phone: { type: String, default: '-' },
-    tokens: { type: Number, default: 0 },
-    profilePic: { type: String, default: '' },
-    purchases: { type: Array, default: [] }
-});
-const User = mongoose.model('User', UserSchema);
-
-const SongSchema = new mongoose.Schema({
-    filename: String, filepath: String, size: Number, uploadTime: String, sequence: Number, price: { type: Number, default: 10 }
-});
-const Song = mongoose.model('Song', SongSchema);
-
-const SettingsSchema = new mongoose.Schema({
-    headerTitle: { type: String, default: 'DJ Music Library' }, bannerUrl: { type: String, default: '' }
-});
-const Settings = mongoose.model('Settings', SettingsSchema);
-
-// --- 3. ROUTES ---
-app.get('/health', (req, res) => res.status(200).send('OK'));
 app.get('/', (req, res) => res.redirect('/register.html'));
 
-// --- 4. AUTH & USER API ---
-app.post('/api/register', async (req, res) => {
-    try {
-        const { contact, username, password } = req.body;
-        const exists = await User.findOne({ $or: [{ username }, { contact }] });
-        if (exists) return res.status(400).send('Username or Contact already taken.');
-        const isEmail = contact.includes('@');
-        const newUser = new User({ contact, username, password, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact });
-        await newUser.save(); res.json({ success: true, username: newUser.username });
-    } catch (e) { res.status(500).send('Server error'); }
+// --- AUTH & USER API (Local JSON) ---
+app.post('/api/register', (req, res) => {
+    const { contact, username, password } = req.body; 
+    let users = getUsers();
+    if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) return res.status(400).send('Username taken.');
+    if (users.find(u => u.contact.toLowerCase() === contact.toLowerCase())) return res.status(400).send('Email/Phone registered.');
+    
+    const isEmail = contact.includes('@');
+    const newUser = { id: Date.now().toString(), contact, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact, username, password, tokens: 0, purchases: [], profilePic: '' };
+    users.push(newUser); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, username: newUser.username });
 });
 
-app.post('/api/login', async (req, res) => {
-    const { contact, password } = req.body;
-    const user = await User.findOne({ $or: [{contact}, {username: contact}], password });
+app.post('/api/login', (req, res) => {
+    const { contact, password } = req.body; let users = getUsers();
+    const user = users.find(u => (u.contact === contact || u.username === contact) && u.password === password);
     if (user) res.json({ success: true, username: user.username }); else res.status(400).send('Invalid credentials.');
 });
 
-app.get('/api/users/:username', async (req, res) => {
-    const user = await User.findOne({ username: req.params.username });
-    if(user) res.json(user); else res.status(404).send('Not found');
+app.get('/api/users/:username', (req, res) => {
+    const user = getUsers().find(u => u.username === req.params.username);
+    if(user) res.json({ username: user.username, tokens: user.tokens || 0, purchases: user.purchases || [], profilePic: user.profilePic || '', email: user.email || '-', phone: user.phone || '-' });
+    else res.status(404).send('User not found');
 });
 
-app.get('/api/all-users', async (req, res) => {
-    const users = await User.find({}, 'username email phone tokens'); res.json(users);
+app.get('/api/all-users', (req, res) => {
+    const users = getUsers().map(u => ({ username: u.username, email: u.email && u.email !== '-' ? u.email : '-', phone: u.phone && u.phone !== '-' ? u.phone : '-', tokens: u.tokens || 0 }));
+    res.json(users);
 });
 
-app.post('/api/users/:username/profile-pic', async (req, res) => {
-    try {
-        const user = await User.findOne({ username: req.params.username });
-        if(!user) return res.status(404).send('Not found');
-        const result = await cloudinary.uploader.upload(req.body.imageBase64, { folder: 'dj_profiles' });
-        user.profilePic = result.secure_url; await user.save(); res.json({ profilePic: user.profilePic });
-    } catch (e) { res.status(500).send('Upload failed'); }
+app.post('/api/users/:username/profile-pic', (req, res) => {
+    const { imageBase64 } = req.body; let users = getUsers(); let user = users.find(u => u.username === req.params.username);
+    if(user) {
+        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, ""); const filename = 'profile-' + Date.now() + '.png';
+        fs.writeFileSync(path.join(__dirname, 'uploads', filename), base64Data, 'base64');
+        user.profilePic = '/uploads/' + filename; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ profilePic: user.profilePic });
+    } else res.status(404).send('User not found');
 });
 
-app.put('/api/users/:username/change-username', async (req, res) => {
-    const exists = await User.findOne({ username: req.body.newUsername });
-    if (exists) return res.status(400).send('Username taken.');
-    await User.findOneAndUpdate({ username: req.params.username }, { username: req.body.newUsername });
-    res.json({ success: true, username: req.body.newUsername });
+app.put('/api/users/:username/change-username', (req, res) => {
+    const { newUsername } = req.body; let users = getUsers();
+    if (users.find(u => u.username.toLowerCase() === newUsername.toLowerCase())) return res.status(400).send('Username taken.');
+    let user = users.find(u => u.username === req.params.username);
+    if(user) { user.username = newUsername; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, username: newUsername }); } else res.status(404).send('Not found');
 });
-app.put('/api/users/:username/change-email', async (req, res) => { await User.findOneAndUpdate({ username: req.params.username }, { email: req.body.newEmail }); res.send('Updated'); });
-app.put('/api/users/:username/change-phone', async (req, res) => { await User.findOneAndUpdate({ username: req.params.username }, { phone: req.body.newPhone }); res.send('Updated'); });
-app.delete('/api/users/:username', async (req, res) => { await User.findOneAndDelete({ username: req.params.username }); res.send('Deleted'); });
-
-app.post('/api/users/:username/topup', async (req, res) => {
-    const user = await User.findOne({ username: req.params.username });
-    if(!user) return res.status(404).send('Not found');
-    user.tokens += req.body.amount; await user.save(); res.json({ tokens: user.tokens });
+app.put('/api/users/:username/change-email', (req, res) => {
+    const { newEmail } = req.body; let users = getUsers(); let user = users.find(u => u.username === req.params.username);
+    if(user) { user.email = newEmail; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Updated'); } else res.status(404).send('Not found');
 });
-
-app.post('/api/users/:username/purchase', async (req, res) => {
-    const song = await Song.findById(req.body.songId); if (!song) return res.status(404).send('Song not found');
-    const user = await User.findOne({ username: req.params.username });
-    if(user.purchases.find(p => p.songId === song.id)) return res.status(400).send('Already purchased');
-    if(user.tokens >= song.price) {
-        user.tokens -= song.price; user.purchases.push({ songId: song.id, songName: song.filename, filepath: song.filepath, tokensSpent: song.price });
-        await user.save(); res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
-    } else res.status(400).send('Insufficient tokens');
+app.put('/api/users/:username/change-phone', (req, res) => {
+    const { newPhone } = req.body; let users = getUsers(); let user = users.find(u => u.username === req.params.username);
+    if(user) { user.phone = newPhone; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Updated'); } else res.status(404).send('Not found');
+});
+app.delete('/api/users/:username', (req, res) => {
+    let users = getUsers(); const userIndex = users.findIndex(u => u.username === req.params.username);
+    if(userIndex !== -1) { users.splice(userIndex, 1); fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Deleted'); } else res.status(404).send('Not found');
 });
 
-app.post('/api/forgot-password', async (req, res) => {
-    const { contact } = req.body; const user = await User.findOne({ $or: [{contact}, {email: contact}, {phone: contact}] });
+// --- ECONOMY ---
+app.post('/api/users/:username/topup', (req, res) => {
+    let users = getUsers(); let user = users.find(u => u.username === req.params.username);
+    if(user) { user.tokens = (user.tokens || 0) + req.body.amount; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ tokens: user.tokens }); } else res.status(404).send('Not found');
+});
+app.post('/api/users/:username/purchase', (req, res) => {
+    const { songId } = req.body; let songs = getSongs(); const song = songs.find(s => s.id === songId);
+    if (!song) return res.status(404).send('Song not found');
+    let users = getUsers(); let user = users.find(u => u.username === req.params.username);
+    if(user) {
+        user.tokens = user.tokens || 0; user.purchases = user.purchases || [];
+        if(user.purchases.find(p => p.songId === songId)) return res.status(400).send('Already purchased');
+        const price = song.price !== undefined ? song.price : 10;
+        if(user.tokens >= price) {
+            user.tokens -= price; user.purchases.push({ songId: song.id, songName: song.filename, filepath: song.filepath, tokensSpent: price });
+            fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
+        } else res.status(400).send('Insufficient tokens');
+    } else res.status(404).send('Not found');
+});
+
+// --- PASSWORD RESET ---
+app.post('/api/forgot-password', (req, res) => {
+    const { contact } = req.body; let users = getUsers(); const user = users.find(u => u.contact === contact || u.email === contact || u.phone === contact);
     if (user) res.json({ success: true, resetToken: user.id }); else res.status(400).send('Not found.');
 });
-app.post('/api/reset-password', async (req, res) => {
-    const user = await User.findById(req.body.token);
-    if (user) { user.password = req.body.newPassword; await user.save(); res.send('Password reset.'); } else res.status(400).send('Invalid token.');
+app.post('/api/reset-password', (req, res) => {
+    const { token, newPassword } = req.body; let users = getUsers(); const userIndex = users.findIndex(u => u.id === token);
+    if (userIndex !== -1) { users[userIndex].password = newPassword; fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); res.send('Password reset.'); } else res.status(400).send('Invalid token.');
 });
 
-// --- 5. ADMIN / LIBRARY API ---
-app.get('/api/settings', async (req, res) => res.json(await Settings.findOne()));
-app.put('/api/settings', async (req, res) => { await Settings.findOneAndUpdate({}, { headerTitle: req.body.headerTitle }); res.send('Updated'); });
-app.post('/api/upload-banner', upload.single('bannerFile'), async (req, res) => {
-    if (!req.file) return res.status(400).send('No file.');
-    const result = await cloudinary.uploader.upload(req.file.path, { folder: 'dj_music' });
-    await Settings.findOneAndUpdate({}, { bannerUrl: result.secure_url }); res.json(await Settings.findOne());
+// --- ADMIN / LIBRARY API (Local Files) ---
+app.get('/api/settings', (req, res) => res.json(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'))));
+app.put('/api/settings', (req, res) => { let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); settings.headerTitle = req.body.headerTitle; fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.send('Updated'); });
+app.post('/api/upload-banner', upload.single('bannerFile'), (req, res) => { 
+    if (!req.file) return res.status(400).send('No file.'); 
+    let settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); 
+    settings.bannerUrl = '/uploads/' + req.file.filename; 
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); res.json(settings); 
 });
 
-app.get('/api/songs', async (req, res) => { const songs = await Song.find().sort('sequence'); res.json(songs); });
+app.get('/api/songs', (req, res) => res.json(getSongs()));
 
-app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
-    if (!req.file) return res.status(400).send('No file.');
-    const count = await Song.countDocuments();
-    const newSong = new Song({ filename: Buffer.from(req.file.originalname, 'latin1').toString('utf8'), filepath: req.file.path, size: req.file.size, uploadTime: new Date().toISOString(), sequence: count + 1, price: 10 });
-    await newSong.save(); res.json(newSong);
+app.post('/api/upload', (req, res) => {
+    upload.single('mp3file')(req, res, function (err) {
+        if (err) return res.status(400).send(err.message); if (!req.file) return res.status(400).send('No file.');
+        let songs = getSongs(); const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+        const newSong = { id: Date.now().toString(), filename: originalName, filepath: '/uploads/' + req.file.filename, size: req.file.size, uploadTime: new Date().toISOString(), sequence: songs.length + 1, price: 10 };
+        songs.push(newSong); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.json(newSong);
+    });
 });
 
 app.post('/api/transload', async (req, res) => {
     const { url } = req.body; if (!url || url.toLowerCase().includes('.html') || !url.toLowerCase().split('?')[0].endsWith('.m4a')) return res.status(400).send('Only .m4a URLs allowed.');
     try {
-        const result = await cloudinary.uploader.upload(url, { resource_type: "auto", folder: "dj_music" });
-        const count = await Song.countDocuments();
-        const newSong = new Song({ filename: 'New Transloaded Track.m4a', filepath: result.secure_url, size: result.bytes, uploadTime: new Date().toISOString(), sequence: count + 1, price: 10 });
-        await newSong.save(); res.json(newSong);
-    } catch (error) { res.status(400).send('Transload failed.'); }
+        const response = await fetch(url); if (!response.ok) throw new Error(`HTTP Error`);
+        const filename = 'transload-' + Date.now() + '.m4a'; const filepath = path.join(__dirname, 'uploads', filename);
+        const buffer = await response.arrayBuffer(); fs.writeFileSync(filepath, Buffer.from(buffer));
+        let songs = getSongs(); const newSong = { id: Date.now().toString(), filename: 'New Transloaded Track.m4a', filepath: '/uploads/' + filename, size: buffer.byteLength, uploadTime: new Date().toISOString(), sequence: songs.length + 1, price: 10 };
+        songs.push(newSong); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.json(newSong);
+    } catch (error) { res.status(400).send('Failed to download.'); }
 });
 
-app.put('/api/songs/:id/settings', async (req, res) => {
-    const song = await Song.findById(req.params.id);
+app.put('/api/songs/:id/settings', (req, res) => {
+    let songs = getSongs(); const song = songs.find(s => s.id === req.params.id);
     if (song) { 
         if (req.body.newName) { let n = req.body.newName; const ext = song.filename.includes('.m4a') ? '.m4a' : '.mp3'; if (!n.toLowerCase().endsWith(ext)) n += ext; song.filename = n; }
         if (req.body.newPrice !== undefined) song.price = parseInt(req.body.newPrice) || 0;
-        await song.save(); res.send('Updated'); 
+        fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Updated'); 
     } else res.status(404).send('Not found');
 });
 
-app.put('/api/songs/reorder', async (req, res) => {
-    const promises = req.body.orderedIds.map((id, index) => Song.findByIdAndUpdate(id, { sequence: index + 1 }));
-    await Promise.all(promises); res.send('Reordered');
+app.put('/api/songs/reorder', (req, res) => { let songs = getSongs(); req.body.orderedIds.forEach((id, index) => { const song = songs.find(s => s.id === id); if (song) song.sequence = index + 1; }); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Reordered'); });
+app.delete('/api/songs/:id', (req, res) => { let songs = getSongs(); const songIndex = songs.findIndex(s => s.id === req.params.id); if(songIndex !== -1) { const fullPath = path.join(__dirname, songs[songIndex].filepath); if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath); songs.splice(songIndex, 1); songs.forEach((s, i) => s.sequence = i + 1); fs.writeFileSync(DATA_FILE, JSON.stringify(songs, null, 2)); res.send('Deleted'); } else res.status(404).send('Not found'); });
+
+// CRITICAL FIX: Bound to 0.0.0.0 for Render
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
 });
-
-app.delete('/api/songs/:id', async (req, res) => {
-    await Song.findByIdAndDelete(req.params.id); 
-    const songs = await Song.find().sort('sequence');
-    await Promise.all(songs.map((s, i) => { s.sequence = i + 1; return s.save(); }));
-    res.send('Deleted');
-});
-
-// --- THE BULLETPROOF BOOT SEQUENCE ---
-const startApp = async () => {
-    // 1. Open the public door immediately so Render doesn't kill the app
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
-    });
-
-    // 2. Connect to the permanent database
-    if (process.env.MONGO_URI) {
-        try {
-            await mongoose.connect(process.env.MONGO_URI);
-            console.log('✅ MongoDB Connected successfully');
-            Settings.findOne().then(s => { if(!s) new Settings().save(); });
-        } catch (err) {
-            console.error('❌ MongoDB Connection Error!', err.message);
-        }
-    }
-};
-
-startApp();
