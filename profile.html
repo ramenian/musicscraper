@@ -8,14 +8,14 @@
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffd60a;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
         
-        .header-bar { width: 100%; max-width: 900px; box-sizing: border-box; padding: 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; background: var(--bg-color);}
+        .header-bar { width: 100%; max-width: 900px; box-sizing: border-box; padding: 20px 0; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; background: var(--bg-color);}
         .back-btn { display: flex; align-items: center; color: var(--accent); text-decoration: none; font-size: 16px; font-weight: 500; }
         .back-btn svg { width: 24px; height: 24px; fill: currentColor; margin-right: 5px; }
         
         .token-pill { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.1); padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-color); font-size: 16px; font-weight: 600;}
         .token-pill svg { width: 18px; height: 18px; fill: var(--gold); }
 
-        .container { width: 100%; max-width: 900px; display: flex; gap: 30px; padding: 20px; box-sizing: border-box; }
+        .container { width: 100%; max-width: 900px; display: flex; gap: 30px; padding: 20px 0; box-sizing: border-box; }
         
         .sidebar { width: 240px; display: flex; flex-direction: column; gap: 10px; }
         .sidebar-btn { text-align: left; padding: 12px 20px; background: transparent; border: none; color: var(--text-muted); font-size: 16px; font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
@@ -127,6 +127,7 @@
                     <span class="info-value"><span id="valPhone">-</span> <button class="edit-btn" onclick="openInputModal('phone')" data-i18n="edit">Edit</button></span>
                 </div>
             </div>
+
             <button class="delete-btn-full" onclick="openDeleteModal()" data-i18n="deleteAccount">Delete Account</button>
         </div>
 
@@ -145,22 +146,41 @@
 
 <div class="modal-overlay" id="inputModal">
     <div class="modal-box">
-        <div class="modal-content"><h3 style="margin: 0;" id="inputModalTitle">Change...</h3><input type="text" id="genericInput" class="modal-input"></div>
-        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()" data-i18n="cancel">Cancel</button><button class="modal-btn" onclick="saveInput()" data-i18n="save">Save</button></div>
+        <div class="modal-content">
+            <h3 style="margin: 0;" id="inputModalTitle">Change...</h3>
+            <input type="text" id="genericInput" class="modal-input">
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeModals()" data-i18n="cancel">Cancel</button>
+            <button class="modal-btn" onclick="saveInput()" data-i18n="save">Save</button>
+        </div>
     </div>
 </div>
 
 <div class="modal-overlay" id="confirmModal">
     <div class="modal-box">
-        <div class="modal-content"><h3 style="margin: 0 0 10px 0;" id="confirmTitle">Are you sure?</h3><p style="color: var(--text-muted); font-size: 14px; margin: 0;" id="confirmDesc">...</p></div>
-        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()" data-i18n="cancel">Cancel</button><button class="modal-btn" id="confirmActionBtn" style="font-weight: 600;"></button></div>
+        <div class="modal-content">
+            <h3 style="margin: 0 0 10px 0;" id="confirmTitle">Are you sure?</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin: 0;" id="confirmDesc">...</p>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeModals()" data-i18n="cancel">Cancel</button>
+            <button class="modal-btn" id="confirmActionBtn" style="font-weight: 600;"></button>
+        </div>
     </div>
 </div>
 
 <div class="modal-overlay" id="cropModal">
     <div class="crop-box">
-        <div class="crop-header"><button onclick="closeModals()" data-i18n="cancel">Cancel</button><div style="font-weight: 600;">Move & Scale</div><button class="done" onclick="saveCrop()" data-i18n="done">Done</button></div>
-        <div class="canvas-container"><canvas id="cropCanvas" width="340" height="340"></canvas><div class="crop-mask"></div></div>
+        <div class="crop-header">
+            <button onclick="closeModals()" data-i18n="back">Back</button>
+            <div style="font-weight: 600;">Move & Scale</div>
+            <button class="done" onclick="saveCrop()" data-i18n="done">Done</button>
+        </div>
+        <div class="canvas-container">
+            <canvas id="cropCanvas" width="340" height="340"></canvas>
+            <div class="crop-mask"></div>
+        </div>
         <div class="crop-footer">
             <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--text-muted);"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/></svg>
             <input type="range" class="zoom-slider" id="zoomSlider" min="0.1" max="3" step="0.01" value="1">
@@ -172,7 +192,7 @@
 <script>
     const API_URL = '/api';
     let username = localStorage.getItem('djUsername');
-    if(!username) window.location.href = '/register.html';
+    if(!username) window.location.href = '/register.html'; // Protect profile page from guests
 
     const dict = {
         en: { account: "Account", language: "Language", username: "Username", email: "Email", phone: "Phone Number", edit: "Edit", changePhoto: "Change Photo", deleteAccount: "Delete Account", back: "Back", cancel: "Cancel", save: "Save", done: "Done" },
@@ -191,14 +211,20 @@
     function triggerLangChange(lang) {
         if(lang === currentLang) return;
         document.getElementById('confirmTitle').innerText = lang === 'zh' ? "更改语言" : "Change Language";
-        document.getElementById('confirmDesc').innerText = lang === 'zh' ? "确定要将语言更改为中文吗？" : "Switch to English?";
+        document.getElementById('confirmDesc').innerText = lang === 'zh' ? "确定要将语言更改为中文吗？" : "Are you sure you want to switch to English?";
         const btn = document.getElementById('confirmActionBtn');
-        btn.innerText = lang === 'zh' ? "确定" : "Confirm"; btn.style.color = "var(--accent)";
+        btn.innerText = lang === 'zh' ? "确定" : "Confirm";
+        btn.style.color = "var(--accent)";
         btn.onclick = () => { localStorage.setItem('djLang', lang); window.location.reload(); };
         document.getElementById('confirmModal').style.display = 'flex';
     }
 
-    function showToast(msg, isError = false) { const t = document.getElementById('toast'); t.className = 'toast'; if(isError) t.classList.add('error'); t.innerHTML = `<span style="color:${isError ? 'white' : 'var(--accent)'}; font-weight:bold;">${isError ? '!' : '✓'}</span> ${msg}`; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+    function showToast(msg, isError = false) { 
+        const t = document.getElementById('toast'); 
+        t.className = 'toast'; if(isError) t.classList.add('error');
+        t.innerHTML = `<span style="color:${isError ? 'white' : 'var(--accent)'}; font-weight:bold;">${isError ? '!' : '✓'}</span> ${msg}`; 
+        t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); 
+    }
 
     function switchView(view) {
         document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
@@ -211,8 +237,10 @@
         const res = await fetch(`${API_URL}/users/${username}`);
         if(res.ok) {
             const data = await res.json();
-            document.getElementById('valUsername').innerText = data.username; document.getElementById('valTokensHeader').innerText = data.tokens;
-            document.getElementById('valEmail').innerText = data.email; document.getElementById('valPhone').innerText = data.phone;
+            document.getElementById('valUsername').innerText = data.username;
+            document.getElementById('valTokensHeader').innerText = data.tokens;
+            document.getElementById('valEmail').innerText = data.email;
+            document.getElementById('valPhone').innerText = data.phone;
             if(data.profilePic) document.getElementById('profDisplay').src = data.profilePic;
         }
     }
@@ -234,12 +262,13 @@
 
     async function saveInput() {
         const val = document.getElementById('genericInput').value;
-        if(!val && currentEditType === 'username') return closeModals();
+        if(!val) return closeModals();
         
         const endpoint = `/users/${username}/change-${currentEditType}`;
         const bodyKey = `new${currentEditType.charAt(0).toUpperCase() + currentEditType.slice(1)}`;
         
-        const res = await fetch(API_URL + endpoint, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({[bodyKey]: val || '-'}) });
+        const res = await fetch(API_URL + endpoint, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({[bodyKey]: val}) });
+        
         if(res.ok) {
             if(currentEditType === 'username') { username = val; localStorage.setItem('djUsername', username); }
             showToast(currentLang==='zh'?"已更新!":"Updated!"); loadProfile(); closeModals();
@@ -250,7 +279,8 @@
         document.getElementById('confirmTitle').innerText = currentLang==='zh' ? "删除账户" : "Delete Account";
         document.getElementById('confirmDesc').innerText = currentLang==='zh' ? "此操作无法撤销。" : "This action cannot be undone.";
         const btn = document.getElementById('confirmActionBtn');
-        btn.innerText = currentLang==='zh' ? "删除" : "Delete"; btn.style.color = "var(--danger)";
+        btn.innerText = currentLang==='zh' ? "删除" : "Delete";
+        btn.style.color = "var(--danger)";
         btn.onclick = async () => {
             const res = await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' });
             if(res.ok) { localStorage.removeItem('djUsername'); window.location.href = '/register.html'; }
@@ -262,7 +292,8 @@
     let img = new Image(); let imgX = 0, imgY = 0, scale = 1, minScale = 0.1; let isDragging = false, startX, startY;
 
     document.getElementById('photoInput').addEventListener('change', function(e) {
-        if(!e.target.files[0]) return; const reader = new FileReader();
+        if(!e.target.files[0]) return;
+        const reader = new FileReader();
         reader.onload = (event) => {
             img.onload = () => {
                 const scaleX = 340 / img.width; const scaleY = 340 / img.height; minScale = Math.max(scaleX, scaleY);
@@ -276,16 +307,22 @@
     });
 
     function draw() { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, imgX, imgY, img.width * scale, img.height * scale); }
-    slider.addEventListener('input', () => { const oldScale = scale; scale = parseFloat(slider.value); imgX = 170 - (170 - imgX) * (scale / oldScale); imgY = 170 - (170 - imgY) * (scale / oldScale); draw(); });
+
+    slider.addEventListener('input', () => {
+        const oldScale = scale; scale = parseFloat(slider.value);
+        imgX = 170 - (170 - imgX) * (scale / oldScale); imgY = 170 - (170 - imgY) * (scale / oldScale); draw();
+    });
 
     function startDrag(e) { isDragging = true; const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; startX = clientX - imgX; startY = clientY - imgY; }
     function drag(e) { if(!isDragging) return; e.preventDefault(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; imgX = clientX - startX; imgY = clientY - startY; draw(); }
     function endDrag() { isDragging = false; }
+
     canvas.addEventListener('mousedown', startDrag); canvas.addEventListener('mousemove', drag); window.addEventListener('mouseup', endDrag);
     canvas.addEventListener('touchstart', startDrag); canvas.addEventListener('touchmove', drag, {passive: false}); window.addEventListener('touchend', endDrag);
 
     async function saveCrop() {
         showToast(currentLang==='zh'?"保存中...":"Saving..."); closeModals();
+        
         const offCanvas = document.createElement('canvas'); offCanvas.width = 340; offCanvas.height = 340; const offCtx = offCanvas.getContext('2d');
         offCtx.fillStyle = '#000'; offCtx.fillRect(0,0,340,340); offCtx.drawImage(img, imgX, imgY, img.width * scale, img.height * scale);
         const imageBase64 = offCanvas.toDataURL('image/png');
