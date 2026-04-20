@@ -6,51 +6,134 @@
     <title>DJ Music - Portal</title>
     <style>
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; color-scheme: dark; padding: 20px; box-sizing: border-box;}
-        .auth-container { background: var(--card-bg); backdrop-filter: blur(40px); border-radius: 24px; padding: 40px; width: 100%; max-width: 360px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color); text-align: center;}
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; color-scheme: dark; padding: 20px; box-sizing: border-box;}
+        .auth-container { background: var(--card-bg); backdrop-filter: blur(40px); border-radius: 24px; padding: 40px; width: 100%; max-width: 360px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color); text-align: center; position: relative; overflow: hidden; box-sizing: border-box;}
         h2 { margin: 0 0 10px 0; font-weight: 700; font-size: 24px; }
         p { color: var(--text-muted); font-size: 14px; margin: 0 0 30px 0; }
         .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group input { width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 15px; outline: none;}
-        .btn-primary { width: 100%; background-color: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;}
+        .input-group input { width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 15px; outline: none; transition: 0.2s; }
+        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.3); }
+        .btn-primary { width: 100%; background-color: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 10px;}
+        .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
         .toggle-link { color: var(--accent); font-size: 14px; cursor: pointer; margin-top: 20px; display: inline-block; font-weight: 500; }
         .view-section { display: none; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white;}
+        
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: max-content; max-width: 90vw;}
         .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); animation: shake 0.4s; }
+        @keyframes shake { 0%, 100% { transform: translateX(-50%) translateY(0); } 25% { transform: translateX(-55%) translateY(0); } 75% { transform: translateX(-45%) translateY(0); } }
+        
+        /* Success Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; }
+        .modal-box { background: rgba(40, 40, 40, 0.95); width: 100%; max-width: 340px; border-radius: 24px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); padding: 40px 20px; box-sizing: border-box;}
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        @media (max-width: 400px) {
+            .auth-container { padding: 30px 20px; }
+            h2 { font-size: 22px; }
+        }
     </style>
 </head>
 <body>
 <div id="toast" class="toast"></div>
+
+<div class="modal-overlay" id="successModal">
+    <div class="modal-box">
+        <div style="width: 70px; height: 70px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 4px 20px rgba(10, 132, 255, 0.5);">
+            <svg viewBox="0 0 24 24" style="width: 40px; fill: white;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+        <h2 style="margin: 0; font-size: 22px;">SUCCESSFULLY REGISTERED!</h2>
+        <p style="margin-top: 10px; color: var(--text-muted);">Redirecting to library...</p>
+    </div>
+</div>
+
 <div class="auth-container">
     <div id="loginView" class="view-section active">
         <h2>Sign In</h2><p>Access your DJ Music Portal</p>
-        <div class="input-group"><input type="text" id="loginContact" placeholder="Email or Phone Number"></div><div class="input-group"><input type="password" id="loginPass" placeholder="Password"></div>
+        <div class="input-group"><input type="text" id="loginContact" placeholder="Email or Phone Number"></div>
+        <div class="input-group"><input type="password" id="loginPass" placeholder="Password"></div>
         <button class="btn-primary" onclick="login()">Continue</button>
         <div><span class="toggle-link" onclick="switchView('forgotView')">Forgot password?</span><br><span style="color: var(--text-muted); font-size: 14px;">Don't have an account? </span><span class="toggle-link" onclick="switchView('registerView')">Sign up</span></div>
     </div>
+
     <div id="registerView" class="view-section">
-        <h2>Create Account</h2>
-        <div class="input-group"><input type="text" id="regContact" placeholder="Email or Phone Number"></div><div class="input-group"><input type="text" id="regUsername" placeholder="Choose a Username"></div><div class="input-group"><input type="password" id="regPass" placeholder="Password"></div><div class="input-group"><input type="password" id="regConfirm" placeholder="Confirm Password"></div>
+        <h2>Create Account</h2><p>Setup your DJ profile</p>
+        <div class="input-group"><input type="text" id="regContact" placeholder="Email or Phone Number"></div>
+        <div class="input-group"><input type="text" id="regUsername" placeholder="Choose a Username"></div>
+        <div class="input-group"><input type="password" id="regPass" placeholder="Password"></div>
+        <div class="input-group"><input type="password" id="regConfirm" placeholder="Confirm Password"></div>
         <button class="btn-primary" onclick="register()">Register</button>
-        <div style="margin-top: 15px;"><span class="toggle-link" onclick="switchView('loginView')">Back to Sign in</span></div>
+        <div style="margin-top: 15px;"><span style="color: var(--text-muted); font-size: 14px;">Already have an account? </span><span class="toggle-link" onclick="switchView('loginView')">Sign in</span></div>
     </div>
+
     <div id="forgotView" class="view-section">
-        <h2>Reset Password</h2><div class="input-group"><input type="text" id="forgotContact" placeholder="Email or Phone Number"></div><button class="btn-primary" onclick="requestReset()">Send Link</button><br><span class="toggle-link" onclick="switchView('loginView')">Back to Sign in</span>
+        <h2>Reset Password</h2><p>We'll send a secure link to your contact.</p>
+        <div class="input-group"><input type="text" id="forgotContact" placeholder="Email or Phone Number"></div>
+        <button class="btn-primary" onclick="requestReset()">Send Link</button><br>
+        <span class="toggle-link" onclick="switchView('loginView')">Back to Sign in</span>
     </div>
+
     <div id="resetView" class="view-section">
-        <h2>New Password</h2><div class="input-group"><input type="password" id="newPass" placeholder="New Password"></div><div class="input-group"><input type="password" id="confirmNewPass" placeholder="Confirm New Password"></div><button class="btn-primary" onclick="executeReset()">Reset & Login</button>
+        <h2>New Password</h2><p>Enter your new credentials</p>
+        <div class="input-group"><input type="password" id="newPass" placeholder="New Password"></div>
+        <div class="input-group"><input type="password" id="confirmNewPass" placeholder="Confirm New Password"></div>
+        <button class="btn-primary" onclick="executeReset()">Reset & Login</button>
     </div>
 </div>
+
 <script>
     const API_URL = '/api'; let currentResetToken = null;
-    function showToast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<b>✓</b> ${msg}`; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+    
+    function showToast(msg, isError = false) { 
+        const t = document.getElementById('toast'); t.className = 'toast'; if(isError) t.classList.add('error');
+        t.innerHTML = `<span style="color:${isError ? 'white' : 'var(--accent)'}; font-weight:bold;">${isError ? '!' : '✓'}</span> ${msg}`; 
+        t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); 
+    }
+    
     function switchView(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); document.getElementById(viewId).classList.add('active'); }
-    async function login() { const contact = document.getElementById('loginContact').value, password = document.getElementById('loginPass').value; const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact, password }) }); if(res.ok) { localStorage.setItem('djUsername', (await res.json()).username); window.location.href = '/music.html'; } }
-    async function register() { const contact = document.getElementById('regContact').value, username = document.getElementById('regUsername').value, pass = document.getElementById('regPass').value, confirm = document.getElementById('regConfirm').value; if(pass !== confirm) return showToast("Passwords mismatch"); const res = await fetch(`${API_URL}/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact, username, password: pass }) }); if(res.ok) { localStorage.setItem('djUsername', (await res.json()).username); window.location.href = '/music.html'; } }
-    async function requestReset() { const contact = document.getElementById('forgotContact').value; const res = await fetch(`${API_URL}/forgot-password`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact }) }); if(res.ok) { currentResetToken = (await res.json()).resetToken; showToast("Link sent!"); setTimeout(() => switchView('resetView'), 1500); } }
-    async function executeReset() { const newPass = document.getElementById('newPass').value, confirm = document.getElementById('confirmNewPass').value; if(newPass !== confirm) return showToast("Passwords mismatch"); const res = await fetch(`${API_URL}/reset-password`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ token: currentResetToken, newPassword: newPass }) }); if(res.ok) { showToast("Password updated!"); setTimeout(() => switchView('loginView'), 1500); } }
+    
+    async function login() {
+        const contact = document.getElementById('loginContact').value, password = document.getElementById('loginPass').value;
+        if(!contact || !password) return showToast("Fill all fields", true);
+        const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact, password }) });
+        if(res.ok) { localStorage.setItem('djUsername', (await res.json()).username); window.location.href = '/music.html'; } else showToast(await res.text(), true);
+    }
+    
+    async function register() {
+        const contact = document.getElementById('regContact').value, username = document.getElementById('regUsername').value, pass = document.getElementById('regPass').value, confirm = document.getElementById('regConfirm').value;
+        if(!contact || !username || !pass) return showToast("Fill all fields", true); if(pass !== confirm) return showToast("Passwords mismatch", true);
+        
+        const res = await fetch(`${API_URL}/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact, username, password: pass }) });
+        
+        if(res.ok) { 
+            localStorage.setItem('djUsername', (await res.json()).username); 
+            document.getElementById('successModal').style.display = 'flex';
+            setTimeout(() => window.location.href = '/music.html', 2000); 
+        } else { 
+            const errText = await res.text();
+            // Specific UI logic for already registered users
+            if(errText.includes('taken') || errText.includes('registered')) {
+                showToast("USER HAS BEEN REGISTERED", true);
+            } else {
+                showToast(errText, true);
+            }
+        }
+    }
+    
+    async function requestReset() {
+        const contact = document.getElementById('forgotContact').value; if(!contact) return showToast("Enter your Email/Phone", true);
+        const res = await fetch(`${API_URL}/forgot-password`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact }) });
+        if(res.ok) { currentResetToken = (await res.json()).resetToken; showToast("Link sent! (Simulated)"); setTimeout(() => switchView('resetView'), 1500); } else showToast(await res.text(), true);
+    }
+    
+    async function executeReset() {
+        const newPass = document.getElementById('newPass').value, confirm = document.getElementById('confirmNewPass').value;
+        if(newPass !== confirm) return showToast("Passwords mismatch", true); if(!newPass) return showToast("Enter new password", true);
+        const res = await fetch(`${API_URL}/reset-password`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ token: currentResetToken, newPassword: newPass }) });
+        if(res.ok) { showToast("Password updated!"); setTimeout(() => switchView('loginView'), 1500); } else showToast(await res.text(), true);
+    }
 </script>
 </body>
 </html>
