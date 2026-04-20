@@ -11,7 +11,6 @@
         .header-top { width: 100%; max-width: 1000px; margin-bottom: 20px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; display: flex; justify-content: space-between; align-items: center;}
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
         
-        /* Sidebar */
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
         .sidebar-btn { text-align: left; padding: 12px 20px; background: transparent; border: none; color: var(--text-muted); font-size: 16px; font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
         .sidebar-btn.active { background: rgba(255,255,255,0.1); color: var(--text-main); }
@@ -39,7 +38,6 @@
         .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
         .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 250px; }
 
-        /* Tables */
         .table-container { overflow-x: auto; }
         .table-inner { min-width: 750px; }
 
@@ -61,7 +59,9 @@
         .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
         svg { width: 18px; height: 18px; fill: currentColor; }
 
-        /* Modals & Toasts */
+        .spinner { animation: spin 1s linear infinite; stroke: var(--accent); width: 20px; height: 20px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
         .toast.show { transform: translateX(-50%) translateY(0); }
 
@@ -85,6 +85,11 @@
             .container { flex-direction: column; gap: 20px; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px;}
             .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
+            
+            /* Fixed Header/Upload Bar Stacking */
+            .settings-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+            .settings-bar .btn-primary { width: 100%; margin-top: 5px; }
+            
             .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
             .upload-bar > div { flex-direction: column; align-items: stretch; }
             .toolbar { flex-direction: column; align-items: flex-start; }
@@ -123,7 +128,7 @@
                 <div class="settings-bar">
                     <div style="font-weight: 600; white-space: nowrap;">Main Header:</div>
                     <input type="text" id="headerInput" class="input-text">
-                    <button class="btn-primary" onclick="saveSettings()">Save</button>
+                    <button class="btn-primary" onclick="saveSettings()">Save Header</button>
                 </div>
             </div>
 
@@ -214,6 +219,21 @@
     async function loadData() { allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); }
     function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.filename.toLowerCase().includes(query)); selectedIds = []; document.getElementById('selectAll').checked = false; renderList(filtered); }
 
+    function addLoadingRow(text) {
+        const listDiv = document.getElementById('songList');
+        const row = document.createElement('div');
+        row.className = 'song-row song-grid';
+        row.id = 'tempLoadingRow';
+        row.innerHTML = `
+            <div style="display:flex; justify-content:center;"><svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2 a10 10 0 0 1 10 10"/></svg></div>
+            <div class="seq-num">-</div>
+            <div style="font-weight: 500; color: var(--accent);">${text}</div>
+            <div>-</div><div>-</div><div>-</div><div>-</div>
+        `;
+        listDiv.insertBefore(row, listDiv.firstChild);
+    }
+    function removeLoadingRow() { const r = document.getElementById('tempLoadingRow'); if(r) r.remove(); }
+
     function renderList(songsToRender) {
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
         songsToRender.forEach(song => {
@@ -297,8 +317,11 @@
     async function executeDelete() { if(confirm(`Permanently delete ${selectedIds.length} songs?`)) { await fetch(`${API_URL}/songs/bulk-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedIds }) }); loadData(); showToast("Deleted successfully."); } }
 
     document.getElementById('fileInput').addEventListener('change', async (e) => {
-        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); showToast("Uploading Audio...");
-        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } 
+        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); 
+        addLoadingRow("Uploading Audio...");
+        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
+        removeLoadingRow();
+        if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } else { showToast("Upload failed.", true); }
     });
 
     document.getElementById('bannerInput').addEventListener('change', async (e) => {
@@ -309,8 +332,10 @@
 
     function openTransloadModal() { document.getElementById('transloadInput').value = ''; document.getElementById('transloadModal').style.display = 'flex'; }
     document.getElementById('confirmTransloadBtn').addEventListener('click', async () => {
-        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); showToast("Fetching...");
+        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); 
+        addLoadingRow("Transloading...");
         const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+        removeLoadingRow();
         if (res.ok) { const newSong = await res.json(); await loadData(); openSettingsModal(newSong.id, newSong.filename, newSong.price); showToast("Fetch successful!"); } else { showToast(await res.text(), true); }
     });
 
