@@ -25,10 +25,10 @@
         .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); animation: shake 0.4s; }
         @keyframes shake { 0%, 100% { transform: translateX(-50%) translateY(0); } 25% { transform: translateX(-55%) translateY(0); } 75% { transform: translateX(-45%) translateY(0); } }
         
-        /* Success Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; }
-        .modal-box { background: rgba(40, 40, 40, 0.95); width: 100%; max-width: 340px; border-radius: 24px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); padding: 40px 20px; box-sizing: border-box;}
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* Full Screen Success Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.3s;}
+        .success-box { background: rgba(40, 40, 40, 0.95); padding: 40px 30px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;}
+        @keyframes popIn { to { transform: scale(1); } }
 
         @media (max-width: 400px) {
             .auth-container { padding: 30px 20px; }
@@ -40,12 +40,10 @@
 <div id="toast" class="toast"></div>
 
 <div class="modal-overlay" id="successModal">
-    <div class="modal-box">
-        <div style="width: 70px; height: 70px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 4px 20px rgba(10, 132, 255, 0.5);">
-            <svg viewBox="0 0 24 24" style="width: 40px; fill: white;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-        </div>
-        <h2 style="margin: 0; font-size: 22px;">SUCCESSFULLY REGISTERED!</h2>
-        <p style="margin-top: 10px; color: var(--text-muted);">Redirecting to library...</p>
+    <div class="success-box">
+        <svg viewBox="0 0 24 24" style="width:70px; height:70px; fill:var(--accent); margin-bottom: 20px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <h2 style="margin:0; font-size: 22px;">SUCCESSFULLY REGISTERED !</h2>
+        <p style="margin: 10px 0 0 0;">Redirecting to your library...</p>
     </div>
 </div>
 
@@ -85,13 +83,11 @@
 
 <script>
     const API_URL = '/api'; let currentResetToken = null;
-    
     function showToast(msg, isError = false) { 
         const t = document.getElementById('toast'); t.className = 'toast'; if(isError) t.classList.add('error');
         t.innerHTML = `<span style="color:${isError ? 'white' : 'var(--accent)'}; font-weight:bold;">${isError ? '!' : '✓'}</span> ${msg}`; 
         t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); 
     }
-    
     function switchView(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); document.getElementById(viewId).classList.add('active'); }
     
     async function login() {
@@ -109,15 +105,16 @@
         
         if(res.ok) { 
             localStorage.setItem('djUsername', (await res.json()).username); 
+            // Show new Success UI
             document.getElementById('successModal').style.display = 'flex';
             setTimeout(() => window.location.href = '/music.html', 2000); 
         } else { 
-            const errText = await res.text();
-            // Specific UI logic for already registered users
-            if(errText.includes('taken') || errText.includes('registered')) {
+            const errorText = await res.text();
+            // Show explicit Username Taken UI
+            if (errorText.toLowerCase().includes('taken') || errorText.toLowerCase().includes('registered')) {
                 showToast("USER HAS BEEN REGISTERED", true);
             } else {
-                showToast(errText, true);
+                showToast(errorText, true);
             }
         }
     }
@@ -127,7 +124,6 @@
         const res = await fetch(`${API_URL}/forgot-password`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact }) });
         if(res.ok) { currentResetToken = (await res.json()).resetToken; showToast("Link sent! (Simulated)"); setTimeout(() => switchView('resetView'), 1500); } else showToast(await res.text(), true);
     }
-    
     async function executeReset() {
         const newPass = document.getElementById('newPass').value, confirm = document.getElementById('confirmNewPass').value;
         if(newPass !== confirm) return showToast("Passwords mismatch", true); if(!newPass) return showToast("Enter new password", true);
