@@ -1,4 +1,10 @@
-require('dotenv').config();
+// SAFETY SHIELD: Use dotenv locally, but ignore it on Render
+try {
+    require('dotenv').config();
+} catch (e) {
+    console.log("Running in cloud mode (dotenv not required).");
+}
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -38,7 +44,7 @@ if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY) {
     }
 }
 
-// --- FILE STORAGE (Memory Buffer for Cloudinary/Firebase) ---
+// --- FILE STORAGE (Memory Buffer for Google Cloud) ---
 const upload = multer({ 
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
@@ -60,14 +66,9 @@ async function uploadToFirebase(buffer, originalName, mimetype, folder) {
     };
 }
 
-// --- 2. ROUTES (RENDER HEALTH CHECK FIX) ---
-// Explicit health check for Render
+// --- 2. ROUTES ---
 app.get('/health', (req, res) => res.status(200).send('OK'));
-
-// Return 200 OK file directly instead of a 302 Redirect
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'music.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'music.html')));
 
 // --- 3. AUTH & USER API (FIRESTORE) ---
 app.post('/api/register', async (req, res) => {
@@ -334,7 +335,7 @@ app.delete('/api/songs/:id', async (req, res) => {
     if (!doc.exists) return res.status(404).send('Not found');
 
     if (doc.data().storagePath) {
-        try { await bucket.file(doc.data().storagePath).delete(); } catch(e) { console.log('File already missing in bucket'); }
+        try { await bucket.file(doc.data().storagePath).delete(); } catch(e) { console.log('File already missing'); }
     }
 
     await songRef.delete();
@@ -346,7 +347,6 @@ app.delete('/api/songs/:id', async (req, res) => {
     res.send('Deleted');
 });
 
-// START SERVER
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
 });
