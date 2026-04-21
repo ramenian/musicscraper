@@ -1,192 +1,279 @@
-require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 const cors = require('cors');
-const mongoose = require('mongoose');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const admin = require('firebase-admin');
 
-// SAFETY CHECK
-if (!process.env.MONGO_URI || !process.env.CLOUDINARY_CLOUD_NAME) {
-    console.error("❌ FATAL ERROR: Missing Environment Variables!");
+// --- 1. FIREBASE INITIALIZATION ---
+if (!process.env.FIREBASE_PROJECT_ID) {
+    console.error("❌ FATAL ERROR: Missing Firebase Environment Variables.");
 }
+
+admin.initializeApp({
+    credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // Render environment variables escape newlines, so we must un-escape them
+        privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+    }),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+});
+
+const db = admin.firestore();
+const bucket = admin.storage().bucket();
 
 const app = express();
 const PORT = process.env.PORT || 80;
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Use Memory Storage so files go straight to Google, avoiding Render's local disk
+const upload = multer({ storage: multer.memoryStorage() });
 
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: { folder: 'dj_music', resource_type: 'auto' }
-});
-const upload = multer({ storage: storage });
+// Helper to upload a buffer to Firebase Storage and get a public URL
+async function uploadToFirebase(buffer, originalName, folder, mimetype) {
+    const fileName = `${folder}/${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.\-_]/g, '')}`;
+    const fileUpload = bucket.file(fileName);
+    await fileUpload.save(buffer, { contentType: mimetype });
+    
+    // Construct the public Firebase Storage URL
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(fileName)}?alt=media`;
+}
 
-const UserSchema = new mongoose.Schema({
-    username: { type: String, unique: true },
-    password: { type: String },
-    contact: { type: String, unique: true },
-    email: { type: String, default: '-' },
-    phone: { type: String, default: '-' },
-    tokens: { type: Number, default: 0 },
-    profilePic: { type: String, default: '' },
-    purchases: { type: Array, default: [] }
-});
-const User = mongoose.model('User', UserSchema);
-
-const SongSchema = new mongoose.Schema({
-    filename: String, filepath: String, size: Number, uploadTime: String, sequence: Number, price: { type: Number, default: 10 }
-});
-const Song = mongoose.model('Song', SongSchema);
-
-const SettingsSchema = new mongoose.Schema({
-    headerTitle: { type: String, default: 'DJ Music Library' }, bannerUrl: { type: String, default: '' }
-});
-const Settings = mongoose.model('Settings', SettingsSchema);
-
+// --- 2. ROUTES ---
 app.get('/health', (req, res) => res.status(200).send('OK'));
-app.get('/', (req, res) => res.redirect('/music.html')); // Changed default to music.html for guests
+app.get('/', (req, res) => res.redirect('/music.html'));
 
-// --- AUTH & USER API ---
+// --- 3. AUTH & USER API ---
 app.post('/api/register', async (req, res) => {
     try {
         const { contact, username, password } = req.body;
-        // CUSTOM ERROR EXACTLY AS REQUESTED
-        const exists = await User.findOne({ $or: [{ username }, { contact }] });
-        if (exists) return res.status(400).send('USER HAS BEEN REGISTERED');
+        
+        // Check if username exists (using it as the Document ID)
+        const userRef = db.collection('users').doc(username.toLowerCase());
+        const doc = await userRef.get();
+        if (doc.exists) return res.status(400).send('USER HAS BEEN REGISTERED');
+
+        // Check if contact exists
+        const contactQuery = await db.collection('users').where('contact', '==', contact).get();
+        if (!contactQuery.empty) return res.status(400).send('Contact already registered.');
         
         const isEmail = contact.includes('@');
-        const newUser = new User({ contact, username, password, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact });
-        await newUser.save(); res.json({ success: true, username: newUser.username });
+        const userData = {
+            username, password, contact, 
+            email: isEmail ? contact : '-', 
+            phone: isEmail ? '-' : contact,
+            tokens: 0, purchases: [], profilePic: '', createdAt: new Date().toISOString()
+        };
+        
+        await userRef.set(userData);
+        res.json({ success: true, username });
     } catch (e) { res.status(500).send('Server error'); }
 });
 
 app.post('/api/login', async (req, res) => {
     const { contact, password } = req.body;
-    const user = await User.findOne({ $or: [{contact}, {username: contact}], password });
-    if (user) res.json({ success: true, username: user.username }); else res.status(400).send('Invalid credentials.');
+    try {
+        let userDoc;
+        // Try username first
+        const userRef = db.collection('users').doc(contact.toLowerCase());
+        const doc = await userRef.get();
+        
+        if (doc.exists && doc.data().password === password) {
+            userDoc = doc.data();
+        } else {
+            // Try contact (email/phone)
+            const query = await db.collection('users').where('contact', '==', contact).where('password', '==', password).get();
+            if (!query.empty) userDoc = query.docs[0].data();
+        }
+
+        if (userDoc) res.json({ success: true, username: userDoc.username });
+        else res.status(400).send('Invalid credentials.');
+    } catch (e) { res.status(500).send('Server error'); }
 });
 
 app.get('/api/users/:username', async (req, res) => {
-    const user = await User.findOne({ username: req.params.username });
-    if(user) res.json(user); else res.status(404).send('Not found');
+    const doc = await db.collection('users').doc(req.params.username.toLowerCase()).get();
+    if(doc.exists) {
+        const data = doc.data();
+        res.json({ username: data.username, tokens: data.tokens || 0, purchases: data.purchases || [], profilePic: data.profilePic || '', email: data.email || '-', phone: data.phone || '-' });
+    } else res.status(404).send('Not found');
 });
 
 app.get('/api/all-users', async (req, res) => {
-    const users = await User.find({}, 'username email phone tokens'); res.json(users);
+    const snapshot = await db.collection('users').get();
+    const users = [];
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        users.push({ username: data.username, email: data.email, phone: data.phone, tokens: data.tokens });
+    });
+    res.json(users);
 });
 
 app.post('/api/users/:username/profile-pic', async (req, res) => {
     try {
-        const user = await User.findOne({ username: req.params.username });
-        if(!user) return res.status(404).send('Not found');
-        const result = await cloudinary.uploader.upload(req.body.imageBase64, { folder: 'dj_profiles' });
-        user.profilePic = result.secure_url; await user.save(); res.json({ profilePic: user.profilePic });
+        const userRef = db.collection('users').doc(req.params.username.toLowerCase());
+        const doc = await userRef.get();
+        if(!doc.exists) return res.status(404).send('Not found');
+        
+        const base64Data = req.body.imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, 'base64');
+        const url = await uploadToFirebase(buffer, 'profile.png', 'dj_profiles', 'image/png');
+        
+        await userRef.update({ profilePic: url });
+        res.json({ profilePic: url });
     } catch (e) { res.status(500).send('Upload failed'); }
 });
 
 app.put('/api/users/:username/change-username', async (req, res) => {
-    const exists = await User.findOne({ username: req.body.newUsername });
-    if (exists) return res.status(400).send('Username taken.');
-    await User.findOneAndUpdate({ username: req.params.username }, { username: req.body.newUsername });
+    // Changing document ID in Firestore requires creating a new doc and deleting the old one
+    const oldRef = db.collection('users').doc(req.params.username.toLowerCase());
+    const newRef = db.collection('users').doc(req.body.newUsername.toLowerCase());
+    
+    const newDoc = await newRef.get();
+    if(newDoc.exists) return res.status(400).send('Username taken.');
+    
+    const oldDoc = await oldRef.get();
+    if(!oldDoc.exists) return res.status(404).send('User not found.');
+    
+    const data = oldDoc.data();
+    data.username = req.body.newUsername;
+    await newRef.set(data);
+    await oldRef.delete();
+    
     res.json({ success: true, username: req.body.newUsername });
 });
-app.put('/api/users/:username/change-email', async (req, res) => { await User.findOneAndUpdate({ username: req.params.username }, { email: req.body.newEmail }); res.send('Updated'); });
-app.put('/api/users/:username/change-phone', async (req, res) => { await User.findOneAndUpdate({ username: req.params.username }, { phone: req.body.newPhone }); res.send('Updated'); });
-app.delete('/api/users/:username', async (req, res) => { await User.findOneAndDelete({ username: req.params.username }); res.send('Deleted'); });
 
+app.put('/api/users/:username/change-email', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ email: req.body.newEmail }); res.send('Updated'); });
+app.put('/api/users/:username/change-phone', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ phone: req.body.newPhone }); res.send('Updated'); });
+app.delete('/api/users/:username', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).delete(); res.send('Deleted'); });
+
+// --- 4. ECONOMY ---
 app.post('/api/users/:username/topup', async (req, res) => {
-    const user = await User.findOne({ username: req.params.username });
-    if(!user) return res.status(404).send('Not found');
-    user.tokens += req.body.amount; await user.save(); res.json({ tokens: user.tokens });
+    const userRef = db.collection('users').doc(req.params.username.toLowerCase());
+    const doc = await userRef.get();
+    if(!doc.exists) return res.status(404).send('Not found');
+    
+    const newTokens = (doc.data().tokens || 0) + req.body.amount;
+    await userRef.update({ tokens: newTokens });
+    res.json({ tokens: newTokens });
 });
 
 app.post('/api/users/:username/purchase', async (req, res) => {
-    const song = await Song.findById(req.body.songId); if (!song) return res.status(404).send('Song not found');
-    const user = await User.findOne({ username: req.params.username });
-    if(user.purchases.find(p => p.songId === song.id)) return res.status(400).send('Already purchased');
-    if(user.tokens >= song.price) {
-        user.tokens -= song.price; user.purchases.push({ songId: song.id, songName: song.filename, filepath: song.filepath, tokensSpent: song.price });
-        await user.save(); res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
-    } else res.status(400).send('Insufficient tokens');
-});
+    const songDoc = await db.collection('songs').doc(req.body.songId).get();
+    if (!songDoc.exists) return res.status(404).send('Song not found');
+    const song = songDoc.data();
 
-app.post('/api/forgot-password', async (req, res) => {
-    const { contact } = req.body; const user = await User.findOne({ $or: [{contact}, {email: contact}, {phone: contact}] });
-    if (user) res.json({ success: true, resetToken: user.id }); else res.status(400).send('Not found.');
-});
-app.post('/api/reset-password', async (req, res) => {
-    const user = await User.findById(req.body.token);
-    if (user) { user.password = req.body.newPassword; await user.save(); res.send('Password reset.'); } else res.status(400).send('Invalid token.');
+    const userRef = db.collection('users').doc(req.params.username.toLowerCase());
+    const userDoc = await userRef.get();
+    if(!userDoc.exists) return res.status(404).send('User not found');
+    
+    const userData = userDoc.data();
+    userData.tokens = userData.tokens || 0;
+    userData.purchases = userData.purchases || [];
+    
+    if(userData.purchases.find(p => p.songId === req.body.songId)) return res.status(400).send('Already purchased');
+    
+    const price = song.price !== undefined ? song.price : 10;
+    if(userData.tokens >= price) {
+        userData.tokens -= price;
+        userData.purchases.push({ songId: req.body.songId, songName: song.filename, filepath: song.filepath, tokensSpent: price });
+        await userRef.update({ tokens: userData.tokens, purchases: userData.purchases });
+        res.json({ success: true, tokens: userData.tokens, purchases: userData.purchases });
+    } else {
+        res.status(400).send('Insufficient tokens');
+    }
 });
 
 // --- 5. ADMIN / LIBRARY API ---
-app.get('/api/settings', async (req, res) => res.json(await Settings.findOne()));
-app.put('/api/settings', async (req, res) => { await Settings.findOneAndUpdate({}, { headerTitle: req.body.headerTitle }); res.send('Updated'); });
+app.get('/api/settings', async (req, res) => {
+    const doc = await db.collection('settings').doc('main').get();
+    if(doc.exists) res.json(doc.data()); else res.json({ headerTitle: 'DJ Music Library', bannerUrl: '' });
+});
+app.put('/api/settings', async (req, res) => {
+    await db.collection('settings').doc('main').set({ headerTitle: req.body.headerTitle }, { merge: true }); res.send('Updated');
+});
 app.post('/api/upload-banner', upload.single('bannerFile'), async (req, res) => {
     if (!req.file) return res.status(400).send('No file.');
-    await Settings.findOneAndUpdate({}, { bannerUrl: req.file.path }); res.json(await Settings.findOne());
+    const url = await uploadToFirebase(req.file.buffer, req.file.originalname, 'dj_banners', req.file.mimetype);
+    await db.collection('settings').doc('main').set({ bannerUrl: url }, { merge: true });
+    res.json({ bannerUrl: url });
 });
 
-app.get('/api/songs', async (req, res) => { const songs = await Song.find().sort('sequence'); res.json(songs); });
+app.get('/api/songs', async (req, res) => {
+    const snapshot = await db.collection('songs').orderBy('sequence').get();
+    const songs = [];
+    snapshot.forEach(doc => { songs.push({ id: doc.id, ...doc.data() }); });
+    res.json(songs);
+});
 
 app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
     if (!req.file) return res.status(400).send('No file.');
-    const count = await Song.countDocuments();
-    const newSong = new Song({ filename: Buffer.from(req.file.originalname, 'latin1').toString('utf8'), filepath: req.file.path, size: req.file.size, uploadTime: new Date().toISOString(), sequence: count + 1, price: 10 });
-    await newSong.save(); res.json(newSong);
+    try {
+        const url = await uploadToFirebase(req.file.buffer, req.file.originalname, 'dj_music', req.file.mimetype);
+        const snapshot = await db.collection('songs').get();
+        
+        const newSong = {
+            filename: Buffer.from(req.file.originalname, 'latin1').toString('utf8'),
+            filepath: url, size: req.file.size, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: 10
+        };
+        const docRef = await db.collection('songs').add(newSong);
+        res.json({ id: docRef.id, ...newSong });
+    } catch(e) { res.status(500).send('Upload Failed'); }
 });
 
 app.post('/api/transload', async (req, res) => {
-    const { url } = req.body; if (!url || url.toLowerCase().includes('.html') || !url.toLowerCase().split('?')[0].endsWith('.m4a')) return res.status(400).send('Only .m4a URLs allowed.');
+    const { url } = req.body; 
+    if (!url || url.toLowerCase().includes('.html') || !url.toLowerCase().split('?')[0].endsWith('.m4a')) return res.status(400).send('Only .m4a URLs allowed.');
     try {
-        const result = await cloudinary.uploader.upload(url, { resource_type: "auto", folder: "dj_music" });
-        const count = await Song.countDocuments();
-        const newSong = new Song({ filename: 'New Transloaded Track.m4a', filepath: result.secure_url, size: result.bytes, uploadTime: new Date().toISOString(), sequence: count + 1, price: 10 });
-        await newSong.save(); res.json(newSong);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('HTTP Error');
+        const buffer = await response.arrayBuffer();
+        
+        const fileUrl = await uploadToFirebase(Buffer.from(buffer), 'transloaded.m4a', 'dj_music', 'audio/mp4');
+        const snapshot = await db.collection('songs').get();
+        
+        const newSong = { filename: 'New Transloaded Track.m4a', filepath: fileUrl, size: buffer.byteLength, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: 10 };
+        const docRef = await db.collection('songs').add(newSong);
+        res.json({ id: docRef.id, ...newSong });
     } catch (error) { res.status(400).send('Transload failed.'); }
 });
 
 app.put('/api/songs/:id/settings', async (req, res) => {
-    const song = await Song.findById(req.params.id);
-    if (song) { 
-        if (req.body.newName) { let n = req.body.newName; const ext = song.filename.includes('.m4a') ? '.m4a' : '.mp3'; if (!n.toLowerCase().endsWith(ext)) n += ext; song.filename = n; }
-        if (req.body.newPrice !== undefined) song.price = parseInt(req.body.newPrice) || 0;
-        await song.save(); res.send('Updated'); 
-    } else res.status(404).send('Not found');
+    const updates = {};
+    if (req.body.newName) { let n = req.body.newName; const ext = n.includes('.m4a') ? '.m4a' : '.mp3'; if (!n.toLowerCase().endsWith(ext)) n += ext; updates.filename = n; }
+    if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
+    
+    await db.collection('songs').doc(req.params.id).update(updates);
+    res.send('Updated');
 });
 
 app.put('/api/songs/reorder', async (req, res) => {
-    const promises = req.body.orderedIds.map((id, index) => Song.findByIdAndUpdate(id, { sequence: index + 1 }));
-    await Promise.all(promises); res.send('Reordered');
+    const batch = db.batch();
+    req.body.orderedIds.forEach((id, index) => {
+        const ref = db.collection('songs').doc(id);
+        batch.update(ref, { sequence: index + 1 });
+    });
+    await batch.commit();
+    res.send('Reordered');
 });
 
 app.delete('/api/songs/:id', async (req, res) => {
-    await Song.findByIdAndDelete(req.params.id); 
-    const songs = await Song.find().sort('sequence');
-    await Promise.all(songs.map((s, i) => { s.sequence = i + 1; return s.save(); }));
+    await db.collection('songs').doc(req.params.id).delete(); 
+    // Re-sequence
+    const snapshot = await db.collection('songs').orderBy('sequence').get();
+    const batch = db.batch();
+    let seq = 1;
+    snapshot.forEach(doc => { batch.update(doc.ref, { sequence: seq++ }); });
+    await batch.commit();
     res.send('Deleted');
 });
 
 const startApp = async () => {
-    app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server bound to 0.0.0.0 on Port ${PORT}`));
-    if (process.env.MONGO_URI) {
-        try {
-            await mongoose.connect(process.env.MONGO_URI);
-            console.log('✅ MongoDB Connected successfully');
-            Settings.findOne().then(s => { if(!s) new Settings().save(); });
-        } catch (err) { console.error('❌ MongoDB Connection Error', err.message); }
-    }
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Firebase Server bound to 0.0.0.0 on Port ${PORT}`);
+    });
 };
 
 startApp();
