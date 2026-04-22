@@ -41,10 +41,9 @@ if (!process.env.CLOUDINARY_CLOUD_NAME) {
     console.log('✅ Cloudinary (Storage) Connected!');
 }
 
-// Setup Multer to push files directly to Cloudinary
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: { folder: 'dj_music', resource_type: 'auto' } // Auto handles MP3, M4A, PNG, etc.
+    params: { folder: 'dj_music', resource_type: 'auto' }
 });
 const upload = multer({ storage: storage });
 
@@ -110,13 +109,12 @@ app.get('/api/all-users', async (req, res) => {
         const snapshot = await db.collection('users').get();
         const users = snapshot.docs.map(doc => {
             const data = doc.data();
-            return { username: data.username, email: data.email, phone: data.phone, tokens: data.tokens || 0 };
+            return { username: data.username, email: data.email, phone: data.phone, tokens: data.tokens || 0, purchases: data.purchases || [] };
         });
         res.json(users);
     } catch (e) { res.status(500).json([]); }
 });
 
-// User Base64 Profile Picture -> Cloudinary -> Firestore
 app.post('/api/users/:username/profile-pic', async (req, res) => {
     try {
         if(!db) return res.status(500).send('Database not connected');
@@ -124,9 +122,7 @@ app.post('/api/users/:username/profile-pic', async (req, res) => {
         const doc = await userRef.get();
         if (!doc.exists) return res.status(404).send('Not found');
 
-        // Cloudinary handles base64 strings directly!
         const result = await cloudinary.uploader.upload(req.body.imageBase64, { folder: 'dj_profiles' });
-        
         await userRef.update({ profilePic: result.secure_url });
         res.json({ profilePic: result.secure_url });
     } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
@@ -162,6 +158,10 @@ app.put('/api/users/:username/change-phone', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     await db.collection('users').doc(req.params.username.toLowerCase()).update({ phone: req.body.newPhone }); res.send('Updated');
 });
+app.put('/api/users/:username/tokens', async (req, res) => {
+    if(!db) return res.status(500).send('Database not connected');
+    await db.collection('users').doc(req.params.username.toLowerCase()).update({ tokens: parseInt(req.body.tokens) || 0 }); res.send('Updated');
+});
 app.delete('/api/users/:username', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     await db.collection('users').doc(req.params.username.toLowerCase()).delete(); res.send('Deleted');
@@ -196,7 +196,18 @@ app.post('/api/users/:username/purchase', async (req, res) => {
         const price = song.price !== undefined ? song.price : 10;
         if (user.tokens >= price) {
             user.tokens -= price;
-            user.purchases.push({ songId: songId, songName: song.filename, filepath: song.filepath, tokensSpent: price });
+            
+            // Generate 10-char Alphanumeric Receipt ID
+            const purchaseId = Math.random().toString(36).substring(2, 12).toUpperCase();
+            
+            user.purchases.push({ 
+                songId: songId, 
+                songName: song.filename, 
+                filepath: song.filepath, 
+                tokensSpent: price,
+                purchaseId: purchaseId,
+                purchaseTime: new Date().toISOString()
+            });
             await userRef.update({ tokens: user.tokens, purchases: user.purchases });
             res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
         } else res.status(400).send('Insufficient tokens');
@@ -233,12 +244,10 @@ app.put('/api/settings', async (req, res) => {
     await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle }, { merge: true }); res.send('Updated');
 });
 
-// Upload Banner File -> Cloudinary -> Firestore
 app.post('/api/upload-banner', upload.single('bannerFile'), async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     if (!req.file) return res.status(400).send('No file.');
     try {
-        // req.file.path is automatically populated by CloudinaryStorage with the secure URL
         await db.collection('settings').doc('global').set({ bannerUrl: req.file.path }, { merge: true });
         const doc = await db.collection('settings').doc('global').get();
         res.json(doc.data());
@@ -254,45 +263,26 @@ app.get('/api/songs', async (req, res) => {
     } catch(e) { res.status(500).json([]); }
 });
 
-// Upload MP3 File -> Cloudinary -> Firestore
 app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     if (!req.file) return res.status(400).send('No file.');
     try {
         const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
         const snapshot = await db.collection('songs').get();
-        
-        const newSong = {
-            filename: originalName, 
-            filepath: req.file.path, // Cloudinary secure URL
-            size: req.file.size, 
-            uploadTime: new Date().toISOString(), 
-            sequence: snapshot.size + 1, 
-            price: 10
-        };
+        const newSong = { filename: originalName, filepath: req.file.path, size: req.file.size, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: 10 };
         const docRef = await db.collection('songs').add(newSong);
         res.json({ id: docRef.id, ...newSong });
     } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
 });
 
-// Transload URL -> Cloudinary -> Firestore
 app.post('/api/transload', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     const { url } = req.body; 
     if (!url || url.toLowerCase().includes('.html') || !url.toLowerCase().split('?')[0].endsWith('.m4a')) return res.status(400).send('Only .m4a URLs allowed.');
     try {
-        // Cloudinary fetches the URL automatically, no server downloading required!
         const result = await cloudinary.uploader.upload(url, { resource_type: "auto", folder: "dj_music" });
-        
         const snapshot = await db.collection('songs').get();
-        const newSong = {
-            filename: 'New Transloaded Track.m4a', 
-            filepath: result.secure_url, 
-            size: result.bytes, 
-            uploadTime: new Date().toISOString(), 
-            sequence: snapshot.size + 1, 
-            price: 10
-        };
+        const newSong = { filename: 'New Transloaded Track.m4a', filepath: result.secure_url, size: result.bytes, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: 10 };
         const docRef = await db.collection('songs').add(newSong);
         res.json({ id: docRef.id, ...newSong });
     } catch (error) { res.status(400).send('Transload Error: ' + error.message); }
@@ -303,14 +293,9 @@ app.put('/api/songs/:id/settings', async (req, res) => {
     const songRef = db.collection('songs').doc(req.params.id);
     const doc = await songRef.get();
     if (!doc.exists) return res.status(404).send('Not found');
-    
     let updates = {};
-    if (req.body.newName) { 
-        let n = req.body.newName; const ext = doc.data().filename.includes('.m4a') ? '.m4a' : '.mp3'; 
-        if (!n.toLowerCase().endsWith(ext)) n += ext; updates.filename = n; 
-    }
+    if (req.body.newName) { let n = req.body.newName; const ext = doc.data().filename.includes('.m4a') ? '.m4a' : '.mp3'; if (!n.toLowerCase().endsWith(ext)) n += ext; updates.filename = n; }
     if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
-    
     await songRef.update(updates);
     res.send('Updated');
 });
@@ -318,12 +303,8 @@ app.put('/api/songs/:id/settings', async (req, res) => {
 app.put('/api/songs/reorder', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     const batch = db.batch();
-    req.body.orderedIds.forEach((id, index) => {
-        const ref = db.collection('songs').doc(id);
-        batch.update(ref, { sequence: index + 1 });
-    });
-    await batch.commit();
-    res.send('Reordered');
+    req.body.orderedIds.forEach((id, index) => { const ref = db.collection('songs').doc(id); batch.update(ref, { sequence: index + 1 }); });
+    await batch.commit(); res.send('Reordered');
 });
 
 app.delete('/api/songs/:id', async (req, res) => {
@@ -331,16 +312,12 @@ app.delete('/api/songs/:id', async (req, res) => {
     const songRef = db.collection('songs').doc(req.params.id);
     const doc = await songRef.get();
     if (!doc.exists) return res.status(404).send('Not found');
-
     await songRef.delete();
     const snapshot = await db.collection('songs').orderBy('sequence').get();
     const batch = db.batch();
     snapshot.docs.forEach((d, i) => batch.update(d.ref, { sequence: i + 1 }));
     await batch.commit();
-
     res.send('Deleted');
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => { console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`); });
