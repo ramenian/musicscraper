@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DJ Manager</title>
     <style>
-        :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffd60a;}
+        :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffffff;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
         
-        .header-top { width: 100%; max-width: 1000px; margin-bottom: 20px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; display: flex; justify-content: space-between; align-items: center;}
+        .header-top { width: 100%; max-width: 1000px; margin-bottom: 20px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; display: flex; justify-content: center; position: relative;}
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
         
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
@@ -45,7 +45,7 @@
         .header-row { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         
         .song-grid { grid-template-columns: 40px 50px 2fr 80px 100px 80px 80px; }
-        .user-grid { grid-template-columns: 1.5fr 2fr 1.5fr 100px; }
+        .user-grid { grid-template-columns: 1.5fr 2fr 1.5fr 80px 140px; cursor: pointer;}
 
         .song-row { cursor: grab; background: transparent; transition: background 0.2s;}
         .song-row.drag-over { border-top: 2px solid var(--accent); }
@@ -55,8 +55,9 @@
         .seq-input { width: 30px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--accent); border-radius: 4px; text-align: center; outline: none; font-weight: bold;}
         
         input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-        .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px; transition: 0.2s;}
+        .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center;}
         .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+        .icon-btn.red:hover { color: var(--danger); background: rgba(255,69,58,0.1); }
         svg { width: 18px; height: 18px; fill: currentColor; }
 
         .spinner { animation: spin 1s linear infinite; stroke: var(--accent); width: 20px; height: 20px; }
@@ -80,16 +81,19 @@
         .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
         .btn-danger-full:hover { background: var(--danger); color: white; }
 
+        /* User Expansion Area */
+        .user-expand-area { display: none; padding: 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-color); }
+        .user-expand-area.show { display: block; }
+        .purchase-grid { display: grid; grid-template-columns: 2fr 100px 100px 150px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;}
+        .purchase-header { font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px;}
+
         @media (max-width: 768px) {
             body { padding: 20px 10px; }
             .container { flex-direction: column; gap: 20px; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px;}
             .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
-            
-            /* Fixed Header/Upload Bar Stacking */
             .settings-bar { flex-direction: column; align-items: stretch; gap: 10px; }
             .settings-bar .btn-primary { width: 100%; margin-top: 5px; }
-            
             .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
             .upload-bar > div { flex-direction: column; align-items: stretch; }
             .toolbar { flex-direction: column; align-items: flex-start; }
@@ -103,27 +107,21 @@
 <div class="header-top">Admin Dashboard</div>
 
 <div class="container">
-    
     <div class="sidebar">
         <button class="sidebar-btn active" onclick="switchView('general')" id="btn-general">General</button>
         <button class="sidebar-btn" onclick="switchView('users')" id="btn-users">Users</button>
     </div>
 
     <div class="content-area">
-        
         <div id="view-general" class="view-section active">
             <img id="bannerImage" class="global-banner" src="" alt="Global Banner">
-
             <div class="glass-panel">
                 <div class="upload-bar">
                     <div style="display:flex; align-items:center; gap: 10px; width: 100%;">
                         <label class="btn-primary" style="flex: 1; text-align:center;">Upload Audio<input type="file" id="fileInput" accept="audio/*"></label>
                         <button class="btn-primary" style="flex: 1;" onclick="openTransloadModal()">Transload (.m4a)</button>
                     </div>
-                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">
-                        Change Banner
-                        <input type="file" id="bannerInput" accept="image/*">
-                    </label>
+                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">Change Banner<input type="file" id="bannerInput" accept="image/*"></label>
                 </div>
                 <div class="settings-bar">
                     <div style="font-weight: 600; white-space: nowrap;">Main Header:</div>
@@ -159,14 +157,13 @@
                 <div class="table-container">
                     <div class="table-inner">
                         <div class="header-row user-grid">
-                            <div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div>
+                            <div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div><div>Actions</div>
                         </div>
                         <div id="userList"></div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -182,17 +179,25 @@
             <label class="input-label">Token Cost (0 = Free)</label><input type="number" id="settingPrice" class="modal-input" min="0">
             <button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button>
         </div>
-        <div class="modal-actions">
-            <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
-            <button class="modal-btn" onclick="saveSongSettings()">Save Changes</button>
+        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveSongSettings()">Save</button></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editUserModal">
+    <div class="modal-box">
+        <div class="modal-content">
+            <h3 style="margin: 0 0 5px 0; text-align:center;" id="editUserTitle">Edit User</h3>
+            <label class="input-label" id="editLabel">Value</label>
+            <input type="text" id="editUserInput" class="modal-input">
         </div>
+        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveUserEdit()">Save</button></div>
     </div>
 </div>
 
 <script>
     const API_URL = '/api'; 
     let allSongs = []; let selectedIds = []; let draggedId = null; let currentEditId = null;
-    let allUsers = [];
+    let allUsers = []; let activeEditUser = null; let activeEditField = null;
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
     
@@ -218,21 +223,6 @@
     // --- SONG DATA ---
     async function loadData() { allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); }
     function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.filename.toLowerCase().includes(query)); selectedIds = []; document.getElementById('selectAll').checked = false; renderList(filtered); }
-
-    function addLoadingRow(text) {
-        const listDiv = document.getElementById('songList');
-        const row = document.createElement('div');
-        row.className = 'song-row song-grid';
-        row.id = 'tempLoadingRow';
-        row.innerHTML = `
-            <div style="display:flex; justify-content:center;"><svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2 a10 10 0 0 1 10 10"/></svg></div>
-            <div class="seq-num">-</div>
-            <div style="font-weight: 500; color: var(--accent);">${text}</div>
-            <div>-</div><div>-</div><div>-</div><div>-</div>
-        `;
-        listDiv.insertBefore(row, listDiv.firstChild);
-    }
-    function removeLoadingRow() { const r = document.getElementById('tempLoadingRow'); if(r) r.remove(); }
 
     function renderList(songsToRender) {
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
@@ -269,16 +259,87 @@
         const query = document.getElementById('userSearchInput').value.toLowerCase();
         const filtered = allUsers.filter(u => u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query) || u.phone.includes(query));
         const listDiv = document.getElementById('userList'); listDiv.innerHTML = '';
+        
         filtered.forEach(u => {
-            const row = document.createElement('div'); row.className = 'user-row user-grid';
+            const wrapper = document.createElement('div');
+            
+            const row = document.createElement('div'); 
+            row.className = 'user-row user-grid';
+            row.onclick = () => toggleUserExpand(u.username);
+            
             row.innerHTML = `
                 <div style="font-weight: 500;">${u.username}</div>
                 <div style="color: var(--text-muted); font-size: 14px; overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
                 <div style="color: var(--text-muted); font-size: 14px;">${u.phone}</div>
                 <div style="color: var(--gold); font-weight: bold;">${u.tokens}</div>
+                <div style="display:flex; gap:5px;" onclick="event.stopPropagation()">
+                    <button class="icon-btn" title="Edit Email" onclick="openUserEdit('${u.username}', 'email', '${u.email}')"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></button>
+                    <button class="icon-btn" title="Edit Phone" onclick="openUserEdit('${u.username}', 'phone', '${u.phone}')"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></button>
+                    <button class="icon-btn" title="Edit Tokens" onclick="openUserEdit('${u.username}', 'tokens', '${u.tokens}')"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></button>
+                    <button class="icon-btn red" title="Delete Profile" onclick="deleteUser('${u.username}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                </div>
             `;
-            listDiv.appendChild(row);
+            
+            // The expanding purchase area
+            const expandArea = document.createElement('div');
+            expandArea.className = 'user-expand-area';
+            expandArea.id = `expand-user-${u.username}`;
+            
+            if (u.purchases && u.purchases.length > 0) {
+                let html = `<div class="purchase-grid purchase-header"><div>Song</div><div>Cost</div><div>Date</div><div>Receipt ID</div></div>`;
+                u.purchases.forEach(p => {
+                    const dateObj = p.purchaseTime ? new Date(p.purchaseTime).toLocaleDateString() : 'N/A';
+                    html += `<div class="purchase-grid">
+                        <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.songName}">${p.songName}</div>
+                        <div style="color:var(--gold);">${p.tokensSpent}</div>
+                        <div>${dateObj}</div>
+                        <div style="font-family:monospace;">${p.purchaseId || '-'}</div>
+                    </div>`;
+                });
+                expandArea.innerHTML = html;
+            } else {
+                expandArea.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-style:italic;">No purchases yet.</div>`;
+            }
+
+            wrapper.appendChild(row);
+            wrapper.appendChild(expandArea);
+            listDiv.appendChild(wrapper);
         });
+    }
+
+    function toggleUserExpand(username) {
+        const area = document.getElementById(`expand-user-${username}`);
+        if(area) area.classList.toggle('show');
+    }
+
+    function openUserEdit(username, field, currentValue) {
+        activeEditUser = username; activeEditField = field;
+        document.getElementById('editUserTitle').innerText = `Edit ${field.charAt(0).toUpperCase() + field.slice(1)}`;
+        document.getElementById('editLabel').innerText = `New ${field}`;
+        const input = document.getElementById('editUserInput');
+        input.value = currentValue;
+        input.type = field === 'tokens' ? 'number' : 'text';
+        document.getElementById('editUserModal').style.display = 'flex';
+    }
+
+    async function saveUserEdit() {
+        if(!activeEditUser || !activeEditField) return;
+        const newVal = document.getElementById('editUserInput').value;
+        const endpoint = `/api/users/${activeEditUser}/${activeEditField === 'tokens' ? 'tokens' : 'change-' + activeEditField}`;
+        const payload = {}; 
+        if(activeEditField === 'tokens') payload.tokens = newVal;
+        if(activeEditField === 'email') payload.newEmail = newVal;
+        if(activeEditField === 'phone') payload.newPhone = newVal;
+
+        await fetch(endpoint, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        closeModals(); loadUsers(); showToast("User Updated!");
+    }
+
+    async function deleteUser(username) {
+        if(confirm(`Permanently delete profile for ${username}?`)) {
+            await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' });
+            loadUsers(); showToast("User deleted.");
+        }
     }
 
     function editSequence(div, id, currentSeq) {
@@ -299,7 +360,7 @@
     function toggleAll() { const master = document.getElementById('selectAll'); selectedIds = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedIds.push(cb.value); }); updateBulkBtn(); }
     function updateBulkBtn() { const btn = document.getElementById('bulkDeleteBtn'); if (selectedIds.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedIds.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Permanently'; } }
     
-    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); currentEditId = null; }
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); currentEditId = null; activeEditUser = null; activeEditField = null; }
     
     function openSettingsModal(id, name, price) {
         currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price;
@@ -315,6 +376,13 @@
 
     async function executeDeleteFromModal() { if(!currentEditId) return; if(confirm("Permanently delete this song?")) { await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); loadData(); showToast("Deleted successfully."); } }
     async function executeDelete() { if(confirm(`Permanently delete ${selectedIds.length} songs?`)) { await fetch(`${API_URL}/songs/bulk-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedIds }) }); loadData(); showToast("Deleted successfully."); } }
+
+    function addLoadingRow(text) {
+        const listDiv = document.getElementById('songList'); const row = document.createElement('div'); row.className = 'song-row song-grid'; row.id = 'tempLoadingRow';
+        row.innerHTML = `<div style="display:flex; justify-content:center;"><svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2 a10 10 0 0 1 10 10"/></svg></div><div class="seq-num">-</div><div style="font-weight: 500; color: var(--accent);">${text}</div><div>-</div><div>-</div><div>-</div><div>-</div>`;
+        listDiv.insertBefore(row, listDiv.firstChild);
+    }
+    function removeLoadingRow() { const r = document.getElementById('tempLoadingRow'); if(r) r.remove(); }
 
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); 
