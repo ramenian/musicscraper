@@ -14,33 +14,37 @@ app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(__dirname));
 
-// --- 1. FIREBASE INITIALIZATION (Database Only) ---
+// --- 1. FIREBASE DATABASE INITIALIZATION ---
 let db;
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     console.error("❌ FATAL ERROR: Missing FIREBASE_SERVICE_ACCOUNT_JSON!");
 } else {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+        console.log('✅ Google Firebase (Database) Connected!');
         db = admin.firestore();
-        console.log('✅ Google Firebase Database Connected!');
     } catch (error) {
         console.error('❌ Firebase Connection Error:', error.message);
     }
 }
 
-// --- 2. CLOUDINARY INITIALIZATION (File Storage Only) ---
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// --- 2. CLOUDINARY FILE STORAGE INITIALIZATION ---
+if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    console.error("❌ FATAL ERROR: Missing Cloudinary Variables!");
+} else {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+    console.log('✅ Cloudinary (Storage) Connected!');
+}
 
+// Setup Multer to push files directly to Cloudinary
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: { folder: 'dj_music', resource_type: 'auto' }
+    params: { folder: 'dj_music', resource_type: 'auto' } // Auto handles MP3, M4A, PNG, etc.
 });
 const upload = multer({ storage: storage });
 
@@ -51,7 +55,7 @@ app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'music.html')); }
 // --- 4. AUTH & USER API (FIRESTORE) ---
 app.post('/api/register', async (req, res) => {
     try {
-        if(!db) return res.status(500).send('Database not connected');
+        if(!db) return res.status(500).send('Database not connected.');
         const { contact, username, password } = req.body;
         
         const userRef = db.collection('users').doc(username.toLowerCase());
@@ -74,22 +78,24 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
-    if(!db) return res.status(500).send('Database not connected');
-    const { contact, password } = req.body;
-    let userDoc;
-    
-    const byUsername = await db.collection('users').doc(contact.toLowerCase()).get();
-    if (byUsername.exists) userDoc = byUsername;
-    else {
-        const byContact = await db.collection('users').where('contact', '==', contact).get();
-        if (!byContact.empty) userDoc = byContact.docs[0];
-    }
+    try {
+        if(!db) return res.status(500).send('Database not connected');
+        const { contact, password } = req.body;
+        let userDoc;
+        
+        const byUsername = await db.collection('users').doc(contact.toLowerCase()).get();
+        if (byUsername.exists) userDoc = byUsername;
+        else {
+            const byContact = await db.collection('users').where('contact', '==', contact).get();
+            if (!byContact.empty) userDoc = byContact.docs[0];
+        }
 
-    if (userDoc && userDoc.data().password === password) {
-        res.json({ success: true, username: userDoc.data().username });
-    } else {
-        res.status(400).send('Invalid credentials.');
-    }
+        if (userDoc && userDoc.data().password === password) {
+            res.json({ success: true, username: userDoc.data().username });
+        } else {
+            res.status(400).send('Invalid credentials.');
+        }
+    } catch (e) { res.status(500).send('DB Error: ' + e.message); }
 });
 
 app.get('/api/users/:username', async (req, res) => {
@@ -100,15 +106,17 @@ app.get('/api/users/:username', async (req, res) => {
 
 app.get('/api/all-users', async (req, res) => {
     if(!db) return res.json([]);
-    const snapshot = await db.collection('users').get();
-    const users = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return { username: data.username, email: data.email, phone: data.phone, tokens: data.tokens || 0 };
-    });
-    res.json(users);
+    try {
+        const snapshot = await db.collection('users').get();
+        const users = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return { username: data.username, email: data.email, phone: data.phone, tokens: data.tokens || 0 };
+        });
+        res.json(users);
+    } catch (e) { res.status(500).json([]); }
 });
 
-// Profile Pic (Directly to Cloudinary, save URL in Firebase)
+// User Base64 Profile Picture -> Cloudinary -> Firestore
 app.post('/api/users/:username/profile-pic', async (req, res) => {
     try {
         if(!db) return res.status(500).send('Database not connected');
@@ -116,29 +124,34 @@ app.post('/api/users/:username/profile-pic', async (req, res) => {
         const doc = await userRef.get();
         if (!doc.exists) return res.status(404).send('Not found');
 
+        // Cloudinary handles base64 strings directly!
         const result = await cloudinary.uploader.upload(req.body.imageBase64, { folder: 'dj_profiles' });
+        
         await userRef.update({ profilePic: result.secure_url });
         res.json({ profilePic: result.secure_url });
     } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
 });
 
 app.put('/api/users/:username/change-username', async (req, res) => {
-    if(!db) return res.status(500).send('Database not connected');
-    const oldId = req.params.username.toLowerCase();
-    const newId = req.body.newUsername.toLowerCase();
-    
-    const checkNew = await db.collection('users').doc(newId).get();
-    if (checkNew.exists) return res.status(400).send('Username taken.');
+    try {
+        if(!db) return res.status(500).send('Database not connected');
+        const oldId = req.params.username.toLowerCase();
+        const newId = req.body.newUsername.toLowerCase();
+        
+        const checkNew = await db.collection('users').doc(newId).get();
+        if (checkNew.exists) return res.status(400).send('Username taken.');
 
-    const oldRef = db.collection('users').doc(oldId);
-    const doc = await oldRef.get();
-    if (!doc.exists) return res.status(404).send('Not found');
+        const oldRef = db.collection('users').doc(oldId);
+        const doc = await oldRef.get();
+        if (!doc.exists) return res.status(404).send('Not found');
 
-    const data = doc.data();
-    data.username = req.body.newUsername; 
-    await db.collection('users').doc(newId).set(data);
-    await oldRef.delete();
-    res.json({ success: true, username: req.body.newUsername });
+        const data = doc.data();
+        data.username = req.body.newUsername; 
+        await db.collection('users').doc(newId).set(data);
+        await oldRef.delete();
+
+        res.json({ success: true, username: req.body.newUsername });
+    } catch (e) { res.status(500).send('DB Error: ' + e.message); }
 });
 
 app.put('/api/users/:username/change-email', async (req, res) => {
@@ -165,27 +178,29 @@ app.post('/api/users/:username/topup', async (req, res) => {
 });
 
 app.post('/api/users/:username/purchase', async (req, res) => {
-    if(!db) return res.status(500).send('Database not connected');
-    const { songId } = req.body;
-    const songDoc = await db.collection('songs').doc(songId).get();
-    if (!songDoc.exists) return res.status(404).send('Song not found');
-    const song = songDoc.data();
+    try {
+        if(!db) return res.status(500).send('Database not connected');
+        const { songId } = req.body;
+        const songDoc = await db.collection('songs').doc(songId).get();
+        if (!songDoc.exists) return res.status(404).send('Song not found');
+        const song = songDoc.data();
 
-    const userRef = db.collection('users').doc(req.params.username.toLowerCase());
-    const userDoc = await userRef.get();
-    if (!userDoc.exists) return res.status(404).send('User not found');
-    const user = userDoc.data();
+        const userRef = db.collection('users').doc(req.params.username.toLowerCase());
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) return res.status(404).send('User not found');
+        const user = userDoc.data();
 
-    user.purchases = user.purchases || [];
-    if (user.purchases.find(p => p.songId === songId)) return res.status(400).send('Already purchased');
+        user.purchases = user.purchases || [];
+        if (user.purchases.find(p => p.songId === songId)) return res.status(400).send('Already purchased');
 
-    const price = song.price !== undefined ? song.price : 10;
-    if (user.tokens >= price) {
-        user.tokens -= price;
-        user.purchases.push({ songId: songId, songName: song.filename, filepath: song.filepath, tokensSpent: price });
-        await userRef.update({ tokens: user.tokens, purchases: user.purchases });
-        res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
-    } else res.status(400).send('Insufficient tokens');
+        const price = song.price !== undefined ? song.price : 10;
+        if (user.tokens >= price) {
+            user.tokens -= price;
+            user.purchases.push({ songId: songId, songName: song.filename, filepath: song.filepath, tokensSpent: price });
+            await userRef.update({ tokens: user.tokens, purchases: user.purchases });
+            res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
+        } else res.status(400).send('Insufficient tokens');
+    } catch (e) { res.status(500).send('DB Error: ' + e.message); }
 });
 
 app.post('/api/forgot-password', async (req, res) => {
@@ -194,10 +209,10 @@ app.post('/api/forgot-password', async (req, res) => {
     let userQuery = await db.collection('users').where('contact', '==', contact).get();
     if(userQuery.empty) userQuery = await db.collection('users').where('email', '==', contact).get();
     if(userQuery.empty) userQuery = await db.collection('users').where('phone', '==', contact).get();
+    
     if (!userQuery.empty) res.json({ success: true, resetToken: userQuery.docs[0].id }); 
     else res.status(400).send('Not found.');
 });
-
 app.post('/api/reset-password', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     const userRef = db.collection('users').doc(req.body.token);
@@ -206,7 +221,7 @@ app.post('/api/reset-password', async (req, res) => {
     else res.status(400).send('Invalid token.');
 });
 
-// --- 5. ADMIN / LIBRARY API (FIRESTORE + CLOUDINARY) ---
+// --- 5. ADMIN / LIBRARY API ---
 app.get('/api/settings', async (req, res) => {
     if(!db) return res.json({ headerTitle: 'DJ Music Library', bannerUrl: '' });
     const doc = await db.collection('settings').doc('global').get();
@@ -218,52 +233,65 @@ app.put('/api/settings', async (req, res) => {
     await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle }, { merge: true }); res.send('Updated');
 });
 
+// Upload Banner File -> Cloudinary -> Firestore
 app.post('/api/upload-banner', upload.single('bannerFile'), async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     if (!req.file) return res.status(400).send('No file.');
-    // req.file.path contains the Cloudinary URL automatically because of CloudinaryStorage setup
-    await db.collection('settings').doc('global').set({ bannerUrl: req.file.path }, { merge: true });
-    const doc = await db.collection('settings').doc('global').get();
-    res.json(doc.data());
+    try {
+        // req.file.path is automatically populated by CloudinaryStorage with the secure URL
+        await db.collection('settings').doc('global').set({ bannerUrl: req.file.path }, { merge: true });
+        const doc = await db.collection('settings').doc('global').get();
+        res.json(doc.data());
+    } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
 });
 
 app.get('/api/songs', async (req, res) => {
     if(!db) return res.json([]);
-    const snapshot = await db.collection('songs').orderBy('sequence').get();
-    const songs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(songs);
+    try {
+        const snapshot = await db.collection('songs').orderBy('sequence').get();
+        const songs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(songs);
+    } catch(e) { res.status(500).json([]); }
 });
 
+// Upload MP3 File -> Cloudinary -> Firestore
 app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     if (!req.file) return res.status(400).send('No file.');
     try {
         const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
         const snapshot = await db.collection('songs').get();
+        
         const newSong = {
             filename: originalName, 
-            filepath: req.file.path, // Cloudinary URL
-            storagePath: req.file.filename, // Cloudinary Public ID (to delete later)
-            size: req.file.size, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: 10
+            filepath: req.file.path, // Cloudinary secure URL
+            size: req.file.size, 
+            uploadTime: new Date().toISOString(), 
+            sequence: snapshot.size + 1, 
+            price: 10
         };
         const docRef = await db.collection('songs').add(newSong);
         res.json({ id: docRef.id, ...newSong });
     } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
 });
 
+// Transload URL -> Cloudinary -> Firestore
 app.post('/api/transload', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     const { url } = req.body; 
     if (!url || url.toLowerCase().includes('.html') || !url.toLowerCase().split('?')[0].endsWith('.m4a')) return res.status(400).send('Only .m4a URLs allowed.');
     try {
-        // Tell Cloudinary to fetch the URL directly (super fast)
+        // Cloudinary fetches the URL automatically, no server downloading required!
         const result = await cloudinary.uploader.upload(url, { resource_type: "auto", folder: "dj_music" });
+        
         const snapshot = await db.collection('songs').get();
         const newSong = {
             filename: 'New Transloaded Track.m4a', 
             filepath: result.secure_url, 
-            storagePath: result.public_id, // Save Public ID for deletion later
-            size: result.bytes, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: 10
+            size: result.bytes, 
+            uploadTime: new Date().toISOString(), 
+            sequence: snapshot.size + 1, 
+            price: 10
         };
         const docRef = await db.collection('songs').add(newSong);
         res.json({ id: docRef.id, ...newSong });
@@ -304,21 +332,15 @@ app.delete('/api/songs/:id', async (req, res) => {
     const doc = await songRef.get();
     if (!doc.exists) return res.status(404).send('Not found');
 
-    // Delete the file from Cloudinary to keep it clean
-    if (doc.data().storagePath) {
-        try { await cloudinary.uploader.destroy(doc.data().storagePath, { resource_type: 'video' }); } // Audio is considered 'video' in Cloudinary
-        catch(e) { console.log('File missing in Cloudinary'); }
-    }
-
     await songRef.delete();
     const snapshot = await db.collection('songs').orderBy('sequence').get();
     const batch = db.batch();
     snapshot.docs.forEach((d, i) => batch.update(d.ref, { sequence: i + 1 }));
     await batch.commit();
+
     res.send('Deleted');
 });
 
-// START SERVER
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
 });
