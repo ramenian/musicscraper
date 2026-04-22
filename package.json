@@ -1,7 +1,7 @@
 {
   "name": "musicscraper",
   "version": "1.0.0",
-  "description": "DJ Music Hybrid App",
+  "description": "DJ Music Firebase + Cloudinary App",
   "main": "music.js",
   "scripts": {
     "start": "node music.js"
