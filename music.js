@@ -1,10 +1,4 @@
-// SAFETY SHIELD: Use dotenv locally, but ignore it on Render
-try {
-    require('dotenv').config();
-} catch (e) {
-    console.log("Running in cloud mode (dotenv not required).");
-}
-
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -26,12 +20,17 @@ if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY) {
     console.error("❌ FATAL ERROR: Missing Firebase Environment Variables!");
 } else {
     try {
+        // THE FIX: The "Washing Machine" for your Private Key
+        // Removes accidental quotes and fixes broken newlines from cloud dashboards
+        let formattedPrivateKey = process.env.FIREBASE_PRIVATE_KEY
+            .replace(/^"|"$/g, '') // Removes surrounding quotes
+            .replace(/\\n/g, '\n'); // Rebuilds the PEM line breaks
+
         admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Automatically fixes Render's newline formatting issues
-                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                privateKey: formattedPrivateKey,
             }),
             storageBucket: process.env.FIREBASE_STORAGE_BUCKET
         });
@@ -44,7 +43,7 @@ if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY) {
     }
 }
 
-// --- FILE STORAGE (Memory Buffer for Google Cloud) ---
+// --- FILE STORAGE (Google Cloud Memory Buffer) ---
 const upload = multer({ 
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
@@ -66,7 +65,7 @@ async function uploadToFirebase(buffer, originalName, mimetype, folder) {
     };
 }
 
-// --- 2. ROUTES ---
+// --- 2. ROUTES (RENDER HEALTH CHECK FIX) ---
 app.get('/health', (req, res) => res.status(200).send('OK'));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'music.html')));
 
@@ -335,7 +334,7 @@ app.delete('/api/songs/:id', async (req, res) => {
     if (!doc.exists) return res.status(404).send('Not found');
 
     if (doc.data().storagePath) {
-        try { await bucket.file(doc.data().storagePath).delete(); } catch(e) { console.log('File already missing'); }
+        try { await bucket.file(doc.data().storagePath).delete(); } catch(e) { console.log('File already missing in bucket'); }
     }
 
     await songRef.delete();
@@ -347,6 +346,7 @@ app.delete('/api/songs/:id', async (req, res) => {
     res.send('Deleted');
 });
 
+// START SERVER
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server successfully bound to 0.0.0.0 on Port ${PORT}`);
 });
