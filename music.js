@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(__dirname));
 
-// --- 1. THE "PRO FIX" FIREBASE INITIALIZATION ---
+// --- 1. THE JSON MASTER KEY FIREBASE INITIALIZATION ---
 let db;
 let bucket;
 
@@ -20,7 +20,7 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON || !process.env.FIREBASE_STORAGE_
     console.error("❌ FATAL ERROR: Missing FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_STORAGE_BUCKET!");
 } else {
     try {
-        // We parse the entire JSON file as a single object. This makes it bulletproof.
+        // Parse the entire JSON string directly from Render
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
 
         admin.initializeApp({
@@ -32,11 +32,11 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON || !process.env.FIREBASE_STORAGE_
         db = admin.firestore();
         bucket = admin.storage().bucket();
     } catch (error) {
-        console.error('❌ Firebase Connection Error:', error.message);
+        console.error('❌ Firebase Connection Error (Check JSON format):', error.message);
     }
 }
 
-// --- FILE STORAGE (Memory Buffer for Cloudinary/Firebase) ---
+// --- FILE STORAGE (Memory Buffer for Firebase) ---
 const upload = multer({ 
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
@@ -58,9 +58,11 @@ async function uploadToFirebase(buffer, originalName, mimetype, folder) {
     };
 }
 
-// --- 2. ROUTES ---
+// --- 2. ROUTES (RENDER HEALTH CHECK FIX) ---
 app.get('/health', (req, res) => res.status(200).send('OK'));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'music.html')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'music.html'));
+});
 
 // --- 3. AUTH & USER API (FIRESTORE) ---
 app.post('/api/register', async (req, res) => {
@@ -84,33 +86,25 @@ app.post('/api/register', async (req, res) => {
 
         await userRef.set(userData);
         res.json({ success: true, username: username });
-    } catch (e) { 
-        console.error("Register Error:", e);
-        res.status(500).send('Server error'); 
-    }
+    } catch (e) { res.status(500).send('Server error'); }
 });
 
 app.post('/api/login', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
-    try {
-        const { contact, password } = req.body;
-        let userDoc;
-        
-        const byUsername = await db.collection('users').doc(contact.toLowerCase()).get();
-        if (byUsername.exists) userDoc = byUsername;
-        else {
-            const byContact = await db.collection('users').where('contact', '==', contact).get();
-            if (!byContact.empty) userDoc = byContact.docs[0];
-        }
+    const { contact, password } = req.body;
+    let userDoc;
+    
+    const byUsername = await db.collection('users').doc(contact.toLowerCase()).get();
+    if (byUsername.exists) userDoc = byUsername;
+    else {
+        const byContact = await db.collection('users').where('contact', '==', contact).get();
+        if (!byContact.empty) userDoc = byContact.docs[0];
+    }
 
-        if (userDoc && userDoc.data().password === password) {
-            res.json({ success: true, username: userDoc.data().username });
-        } else {
-            res.status(400).send('Invalid credentials.');
-        }
-    } catch (e) {
-        console.error("Login Error:", e);
-        res.status(500).send('Server error');
+    if (userDoc && userDoc.data().password === password) {
+        res.json({ success: true, username: userDoc.data().username });
+    } else {
+        res.status(400).send('Invalid credentials.');
     }
 });
 
