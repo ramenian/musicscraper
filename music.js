@@ -12,20 +12,26 @@ app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(__dirname));
 
-// --- 1. THE ULTIMATE FIREBASE INITIALIZATION ---
+// --- 1. BULLETPROOF FIREBASE INITIALIZATION ---
 let db;
 let bucket;
 
-if (!process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 || !process.env.FIREBASE_STORAGE_BUCKET) {
-    console.error("❌ FATAL ERROR: Missing FIREBASE_SERVICE_ACCOUNT_BASE64 or FIREBASE_STORAGE_BUCKET!");
+if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY) {
+    console.error("❌ FATAL ERROR: Missing Firebase Environment Variables!");
 } else {
     try {
-        // Decode the Base64 string back into a perfect JSON object
-        const serviceAccountBuffer = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64');
-        const serviceAccount = JSON.parse(serviceAccountBuffer.toString('utf-8'));
+        // THE FIX: The "Washing Machine" for your Private Key
+        // Removes accidental quotes and fixes broken newlines from cloud dashboards
+        let formattedPrivateKey = process.env.FIREBASE_PRIVATE_KEY
+            .replace(/^"|"$/g, '') // Removes surrounding quotes
+            .replace(/\\n/g, '\n'); // Rebuilds the PEM line breaks
 
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: formattedPrivateKey,
+            }),
             storageBucket: process.env.FIREBASE_STORAGE_BUCKET
         });
         console.log('✅ Google Firebase Connected successfully!');
