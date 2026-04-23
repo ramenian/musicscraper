@@ -8,11 +8,11 @@
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffffff;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
         
-        /* APPLE SPHERE LOADER */
-        .loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 99999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-        .apple-sphere { width: 50px; height: 50px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); animation: spin 1s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
+        /* Loading Sphere Overlay */
+        #globalLoader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 99999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+        .creative-sphere { width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,1), rgba(255,255,255,0.1)); box-shadow: 0 0 30px rgba(255,255,255,0.3); animation: pulseSphere 1.5s infinite ease-in-out; }
+        @keyframes pulseSphere { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
+        
         .header-top { width: 100%; max-width: 900px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 50;}
         .profile-trigger { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.05); padding: 6px 14px 6px 6px; border-radius: 30px; cursor: pointer; border: 1px solid var(--border-color); transition: 0.2s;}
         .profile-trigger:hover { background: rgba(255, 255, 255, 0.1); }
@@ -21,11 +21,11 @@
         
         .profile-dropdown { position: absolute; top: 55px; left: 0; background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 14px; width: 200px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; overflow: hidden;}
         .profile-dropdown.show { display: flex; animation: popIn 0.2s; }
-        .dropdown-item { padding: 14px 20px; color: var(--text-main); text-decoration: none; font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--border-color); transition: 0.2s;}
+        .dropdown-item { padding: 14px 20px; color: var(--text-main); text-decoration: none; font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--border-color); transition: 0.2s; cursor: pointer;}
         .dropdown-item:last-child { border-bottom: none; }
         .dropdown-item:hover { background: rgba(255,255,255,0.1); }
 
-        .token-pill { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.1); padding: 8px 16px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border-color); font-size: 16px; font-weight: 600; transition: 0.2s;}
+        .token-pill { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.1); padding: 8px 16px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border-color); font-size: 16px; font-weight: 600; transition: 0.2s; color: var(--gold);}
         .token-pill:hover { background: rgba(255, 255, 255, 0.15); transform: scale(1.02); }
         .token-pill svg { width: 20px; height: 20px; fill: var(--gold); }
         
@@ -46,14 +46,14 @@
         .table-container { min-width: 700px; } 
 
         .header-row { display: grid; grid-template-columns: 50px 2.5fr 60px 100px 140px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-        .header-row.mysongs { grid-template-columns: 2.5fr 100px 60px 130px; }
+        .header-row.mysongs { grid-template-columns: 2.5fr 80px 60px 120px; }
         
         .song-wrapper { position: relative; border-bottom: 1px solid var(--border-color); }
         .song-row { display: grid; grid-template-columns: 50px 2.5fr 60px 100px 140px; padding: 16px 20px; align-items: center; }
-        .song-row.mysongs { grid-template-columns: 2.5fr 100px 60px 130px; }
+        .song-row.mysongs { grid-template-columns: 2.5fr 80px 60px 120px; }
         .song-row:hover { background-color: rgba(255, 255, 255, 0.05); }
         
-        .col-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px; }
+        .col-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px; display: flex; align-items: center; gap: 8px;}
         .col-size { font-size: 14px; color: var(--text-muted); }
         
         .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-main); padding: 8px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; text-decoration: none; justify-content: center;}
@@ -77,27 +77,30 @@
 
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
         .toast.show { transform: translateX(-50%) translateY(0); }
-        .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); animation: shake 0.4s; }
+        .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); }
 
-        /* MODALS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px;}
-        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 320px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden;}
+        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 320px; border-radius: 18px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-content { padding: 30px 20px; }
+        .modal-content { padding: 30px 20px; position: relative; }
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
-        .modal-btn { flex: 1; padding: 14px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 600; transition: 0.2s;}
-        .modal-btn:hover { background: rgba(255,255,255,0.05); }
+        .modal-btn { flex: 1; padding: 14px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 500;}
         .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-main); font-weight: 400;}
+
+        /* Apple Loading Spinner */
+        .spinner-ring { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; display: none;}
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
         .topup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .topup-card { background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.2s; font-size: 18px; font-weight: 600; color: var(--gold);}
         .topup-card:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--gold); transform: scale(1.05);}
+        
+        .info-text { font-size: 13px; color: var(--text-muted); text-align: left; margin: 8px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
+        .info-text strong { color: white; font-weight: 500;}
 
-        .info-list { text-align: left; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin-top: 15px; font-size: 14px;}
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .info-row:last-child { margin-bottom: 0; }
-        .info-label { color: var(--text-muted); }
-        .info-val { font-weight: 600; color: white; }
+        .profile-edit-pic { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; background: #1c1c1e; margin: 0 auto 15px auto; display: block; border: 2px solid var(--border-color); cursor: pointer; transition: 0.2s;}
+        .profile-edit-pic:hover { opacity: 0.7; }
+        .profile-input { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 15px; outline: none; margin-bottom: 15px; text-align: center;}
 
         @media (max-width: 768px) {
             body { padding: 20px 10px; }
@@ -110,17 +113,16 @@
 </head>
 <body onclick="closeDropdowns(event)">
 
-<div id="pageLoader" class="loader-overlay"><div class="apple-sphere"></div></div>
+<div id="globalLoader"><div class="creative-sphere"></div></div>
 
 <div id="toast" class="toast"></div>
 
 <div class="header-top">
     <div class="profile-trigger" id="profileBtn" onclick="toggleDropdown(event)"></div>
     <div class="profile-dropdown" id="profileDropdown">
-        <a href="profile.html" class="dropdown-item">Profile</a>
-        <a href="#" class="dropdown-item" style="color: var(--danger);" onclick="logout()">Logout</a>
+        <div class="dropdown-item" onclick="openProfileModal()">Edit Profile</div>
+        <div class="dropdown-item" style="color: var(--danger);" onclick="logout()">Logout</div>
     </div>
-
     <div class="token-pill" onclick="openBalanceModal()" id="tokenUI">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.64-2.14 1.64-1.4 0-2.1-.68-2.14-1.7H8.08c.04 1.56 1.27 2.65 2.82 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/></svg>
         <span id="tokenDisplay">0</span>
@@ -132,8 +134,8 @@
     
     <div class="glass-panel">
         <div class="tab-bar">
-            <button class="tab-btn active" id="tab-library" onclick="switchTab('library')">Discover</button>
-            <button class="tab-btn" id="tab-mysongs" onclick="switchTab('mysongs')">Library</button>
+            <button class="tab-btn active" id="tab-library" onclick="switchTab('library')">Store</button>
+            <button class="tab-btn" id="tab-mysongs" onclick="switchTab('mysongs')">My Library</button>
         </div>
         <div class="toolbar"><input type="text" id="searchInput" class="search-input" placeholder="Search..." oninput="handleSearch()"></div>
 
@@ -151,42 +153,54 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="balanceModal">
-    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 5px 0;">Token Balance</h3><p style="color: var(--text-muted); font-size: 14px; margin: 0;">Downloads require tokens.</p><div style="font-size: 36px; font-weight: 700; margin: 20px 0; color: var(--gold);" id="modalTokenCount">0</div></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Close</button><button class="modal-btn" onclick="openTopUpModal()">Top Up</button></div></div>
-</div>
-<div class="modal-overlay" id="topUpModal">
-    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 5px 0;">Select Amount</h3><div class="topup-grid"><div class="topup-card" onclick="processTopUp(10)">+ 10</div><div class="topup-card" onclick="processTopUp(50)">+ 50</div><div class="topup-card" onclick="processTopUp(100)">+ 100</div><div class="topup-card" onclick="processTopUp(200)">+ 200</div><div class="topup-card" onclick="processTopUp(500)">+ 500</div><div class="topup-card" onclick="processTopUp(1000)">+ 1000</div></div></div><div class="modal-actions"><button class="modal-btn cancel" onclick="openBalanceModal()" style="border:none;">Cancel</button></div></div>
+<div class="modal-overlay" id="profileModal">
+    <div class="modal-box">
+        <div class="modal-content">
+            <h3 style="margin: 0 0 15px 0;">Edit Profile</h3>
+            <input type="file" id="pfpInput" accept="image/*" style="display:none;" onchange="uploadPFP(event)">
+            <img id="modalPFP" class="profile-edit-pic" src="" onclick="document.getElementById('pfpInput').click()" title="Click to change picture">
+            <input type="text" id="modalUsername" class="profile-input" placeholder="Username">
+            <div id="profileLoader" class="spinner-ring" style="margin-top: 10px;"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
+            <button class="modal-btn" onclick="saveProfile()">Save</button>
+        </div>
+    </div>
 </div>
 
-<div class="modal-overlay" id="purchaseModal">
+<div class="modal-overlay" id="purchaseConfirmModal">
     <div class="modal-box">
         <div class="modal-content">
             <h3 style="margin: 0 0 10px 0;">Confirm Purchase</h3>
-            <p id="buySongName" style="color: white; font-weight: 500; font-size: 18px; margin: 0 0 5px 0; word-wrap: break-word;"></p>
-            <div style="font-size: 24px; font-weight: 700; margin: 15px 0; color: var(--gold);"><span id="buySongPrice"></span> Tokens</div>
+            <p style="color: var(--text-muted); font-size: 14px;" id="purchaseText"></p>
+            <div id="purchaseLoader" class="spinner-ring" style="margin-top: 15px;"></div>
         </div>
-        <div class="modal-actions" id="buyActions">
+        <div class="modal-actions" id="purchaseActions">
             <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
-            <button class="modal-btn" id="buyConfirmBtn">Buy</button>
-        </div>
-        <div id="buyLoader" style="display: none; padding: 15px; justify-content: center; align-items: center;">
-            <div class="apple-sphere" style="width: 30px; height: 30px; border-width: 2px;"></div>
+            <button class="modal-btn" style="font-weight:bold;" onclick="executePurchase()">Confirm</button>
         </div>
     </div>
 </div>
 
-<div class="modal-overlay" id="songInfoModal">
+<div class="modal-overlay" id="infoModal">
     <div class="modal-box">
-        <div class="modal-content">
-            <h3 style="margin: 0 0 5px 0;">Purchase Details</h3>
-            <div class="info-list">
-                <div class="info-row"><span class="info-label">Transaction ID</span><span class="info-val" id="infoId"></span></div>
-                <div class="info-row"><span class="info-label">Date</span><span class="info-val" id="infoTime"></span></div>
-                <div class="info-row"><span class="info-label">Cost</span><span class="info-val" id="infoTokens" style="color:var(--gold);"></span></div>
-            </div>
+        <div class="modal-content" style="text-align: left;">
+            <h3 style="margin: 0 0 15px 0; text-align: center;">Receipt</h3>
+            <div class="info-text">ID: <strong id="infoId"></strong></div>
+            <div class="info-text">Date: <strong id="infoDate"></strong></div>
+            <div class="info-text">Cost: <strong id="infoCost"></strong></div>
         </div>
         <div class="modal-actions"><button class="modal-btn cancel" style="border:none;" onclick="closeModals()">Close</button></div>
     </div>
+</div>
+
+<div class="modal-overlay" id="balanceModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 5px 0;">Token Balance</h3><div style="font-size: 36px; font-weight: 700; margin: 20px 0; color: var(--gold);" id="modalTokenCount">0</div></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Close</button><button class="modal-btn" onclick="openTopUpModal()">Top Up</button></div></div>
+</div>
+
+<div class="modal-overlay" id="topUpModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 5px 0;">Select Amount</h3><div class="topup-grid"><div class="topup-card" onclick="processTopUp(10)">+ 10</div><div class="topup-card" onclick="processTopUp(50)">+ 50</div><div class="topup-card" onclick="processTopUp(100)">+ 100</div><div class="topup-card" onclick="processTopUp(200)">+ 200</div><div class="topup-card" onclick="processTopUp(500)">+ 500</div><div class="topup-card" onclick="processTopUp(1000)">+ 1000</div></div></div><div class="modal-actions"><button class="modal-btn cancel" onclick="openBalanceModal()" style="border:none;">Cancel</button></div></div>
 </div>
 
 <script>
@@ -194,12 +208,15 @@
     let allSongs = []; let userPurchases = []; let filteredItems = []; 
     let currentTab = 'library'; let currentPage = 1; const itemsPerPage = 50;
     let currentlyPlayingAudio = null; let currentlyPlayingBtn = null; let userTokens = 0;
+    let pendingPurchaseData = null;
 
     const playIcon = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
     const pauseIcon = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+    const defaultPfp = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
     const username = localStorage.getItem('djUsername');
     
+    // GUEST MODE
     const profileBtn = document.getElementById('profileBtn');
     if(!username) { 
         profileBtn.innerHTML = `<span style="padding: 2px 10px; font-weight: bold;">Login</span>`;
@@ -207,74 +224,112 @@
         document.getElementById('tokenUI').style.display = 'none';
         document.getElementById('tab-mysongs').style.display = 'none';
     } else {
-        profileBtn.innerHTML = `<img id="headerProfilePic" class="profile-pic" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><span class="profile-name">${username}</span><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>`;
+        profileBtn.innerHTML = `<img id="headerProfilePic" class="profile-pic" src="${defaultPfp}"><span class="profile-name" id="mainHeader">${username}</span><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>`;
     }
 
     function logout() { localStorage.removeItem('djUsername'); window.location.href = '/register.html'; }
     function toggleDropdown(e) { if(username) { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('show'); } }
     function closeDropdowns(e) { const d = document.getElementById('profileDropdown'); if(d && d.classList.contains('show') && !e.target.closest('#profileBtn')) d.classList.remove('show'); }
-    
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
     function showToast(msg, isError = false) { const t = document.getElementById('toast'); t.className = 'toast'; if(isError) t.classList.add('error'); t.innerHTML = `<span style="color:${isError ? 'white' : 'var(--accent)'}; font-weight:bold;">${isError ? '!' : '✓'}</span> ${msg}`; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
     function formatBytes(bytes) { if (bytes === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
     function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m = Math.floor(sec / 60), s = Math.floor(sec % 60); return `${m}:${s < 10 ? '0'+s : s}`; }
 
     async function loadData() {
-        const setRes = await fetch(`${API_URL}/settings`);
-        if(setRes.ok) { const settings = await setRes.json(); if(settings.bannerUrl) { const banner = document.getElementById('bannerImage'); banner.src = settings.bannerUrl; banner.style.display = 'block'; } }
-        
-        if(username) {
-            const uRes = await fetch(`${API_URL}/users/${username}`);
-            if(uRes.ok) { 
-                const data = await uRes.json(); userTokens = data.tokens; userPurchases = data.purchases; updateTokenUI(); 
-                if(data.profilePic) document.getElementById('headerProfilePic').src = data.profilePic;
+        try {
+            const setRes = await fetch(`${API_URL}/settings`);
+            if(setRes.ok) {
+                const settings = await setRes.json();
+                if(settings.bannerUrl) { const banner = document.getElementById('bannerImage'); banner.src = settings.bannerUrl; banner.style.display = 'block'; }
             }
-        }
-        allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch();
+            if(username) {
+                const uRes = await fetch(`${API_URL}/users/${username}`);
+                if(uRes.ok) { 
+                    const data = await uRes.json(); userTokens = data.tokens || 0; userPurchases = data.purchases || []; updateTokenUI(); 
+                    if(data.profilePic) document.getElementById('headerProfilePic').src = data.profilePic;
+                }
+            }
+            allSongs = await (await fetch(`${API_URL}/songs`)).json(); 
+            handleSearch();
+        } catch(e) { console.error(e); }
+        // Hide initial loader
+        setTimeout(() => { document.getElementById('globalLoader').style.opacity = '0'; setTimeout(() => document.getElementById('globalLoader').style.display = 'none', 500); }, 500);
+    }
+
+    // PROFILE MODAL LOGIC
+    function openProfileModal() {
+        closeDropdowns({target: document.body});
+        document.getElementById('modalUsername').value = username;
+        document.getElementById('modalPFP').src = document.getElementById('headerProfilePic').src;
+        document.getElementById('profileLoader').style.display = 'none';
+        document.getElementById('profileModal').style.display = 'flex';
+    }
+    
+    function uploadPFP(event) {
+        const file = event.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        document.getElementById('profileLoader').style.display = 'block';
+        reader.onload = async (e) => {
+            const base64 = e.target.result;
+            const res = await fetch(`${API_URL}/users/${username}/profile-pic`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ imageBase64: base64 }) });
+            document.getElementById('profileLoader').style.display = 'none';
+            if(res.ok) { const data = await res.json(); document.getElementById('modalPFP').src = data.profilePic; document.getElementById('headerProfilePic').src = data.profilePic; showToast("Picture Updated"); }
+            else showToast("Upload failed", true);
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    async function saveProfile() {
+        const newName = document.getElementById('modalUsername').value.trim();
+        if(!newName || newName === username) return closeModals();
+        document.getElementById('profileLoader').style.display = 'block';
+        const res = await fetch(`${API_URL}/users/${username}/change-username`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ newUsername: newName }) });
+        document.getElementById('profileLoader').style.display = 'none';
+        if(res.ok) { localStorage.setItem('djUsername', newName); showToast("Username updated! Refreshing..."); setTimeout(()=>location.reload(), 1500); }
+        else showToast(await res.text(), true);
+    }
+
+    // PURCHASE MODAL LOGIC
+    function initiatePurchase(songId, songName, price) {
+        if(!username) return window.location.href = '/register.html';
+        if(userTokens < price) return showToast("Insufficient tokens!", true);
+        pendingPurchaseData = { songId, price };
+        document.getElementById('purchaseText').innerText = `Purchase "${songName}" for ${price} Tokens?`;
+        document.getElementById('purchaseActions').style.display = 'flex';
+        document.getElementById('purchaseLoader').style.display = 'none';
+        document.getElementById('purchaseConfirmModal').style.display = 'flex';
+    }
+
+    async function executePurchase() {
+        if(!pendingPurchaseData) return;
+        document.getElementById('purchaseActions').style.display = 'none';
+        document.getElementById('purchaseLoader').style.display = 'block';
         
-        // FADE OUT SPHERE LOADER
-        document.getElementById('pageLoader').style.opacity = '0';
-        setTimeout(() => document.getElementById('pageLoader').style.display = 'none', 500);
+        const res = await fetch(`${API_URL}/users/${username}/purchase`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ songId: pendingPurchaseData.songId }) });
+        
+        if(res.ok) { 
+            const data = await res.json(); userTokens = data.tokens; userPurchases = data.purchases; updateTokenUI(); 
+            closeModals(); showToast("Purchase successful!"); renderPage(); 
+        } else { 
+            closeModals(); showToast(await res.text(), true); 
+        }
+    }
+
+    // INFO MODAL
+    function openInfoModal(pId, pTime, cost) {
+        document.getElementById('infoId').innerText = pId || "N/A";
+        document.getElementById('infoDate').innerText = pTime ? new Date(pTime).toLocaleString() : "N/A";
+        document.getElementById('infoCost').innerText = cost !== undefined ? `${cost} Tokens` : "10 Tokens";
+        document.getElementById('infoModal').style.display = 'flex';
     }
 
     function updateTokenUI() { document.getElementById('tokenDisplay').innerText = userTokens; document.getElementById('modalTokenCount').innerText = userTokens; }
-    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
     function openBalanceModal() { if(!username) return; closeModals(); document.getElementById('balanceModal').style.display = 'flex'; }
     function openTopUpModal() { closeModals(); document.getElementById('topUpModal').style.display = 'flex'; }
     
-    // INFO MODAL LAUNCHER
-    function showInfoModal(id, time, tokens) {
-        document.getElementById('infoId').innerText = id || 'N/A';
-        document.getElementById('infoTime').innerText = time ? new Date(time).toLocaleString() : 'N/A';
-        document.getElementById('infoTokens').innerText = tokens || '0';
-        document.getElementById('songInfoModal').style.display = 'flex';
-    }
-
     async function processTopUp(amount) {
         const res = await fetch(`${API_URL}/users/${username}/topup`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount }) });
         if(res.ok) { userTokens = (await res.json()).tokens; updateTokenUI(); closeModals(); showToast(`Added ${amount} Tokens!`); }
-    }
-
-    // NEW APPLE PURCHASE FLOW
-    function requestPurchase(songId, songName, filepath, price) {
-        if(!username) return window.location.href = '/register.html';
-        if(userTokens < price) return showToast("Insufficient tokens!", true);
-        document.getElementById('buySongName').innerText = songName;
-        document.getElementById('buySongPrice').innerText = price;
-        document.getElementById('buyConfirmBtn').onclick = () => executePurchase(songId, songName, filepath, price);
-        document.getElementById('purchaseModal').style.display = 'flex';
-    }
-
-    async function executePurchase(songId, songName, filepath, price) {
-        document.getElementById('buyActions').style.display = 'none';
-        document.getElementById('buyLoader').style.display = 'flex';
-        
-        const res = await fetch(`${API_URL}/users/${username}/purchase`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({songId}) });
-        
-        document.getElementById('buyActions').style.display = 'flex';
-        document.getElementById('buyLoader').style.display = 'none';
-        closeModals();
-
-        if(res.ok) { const data = await res.json(); userTokens = data.tokens; userPurchases = data.purchases; updateTokenUI(); showToast("Purchase successful!"); renderPage(); } else { showToast(await res.text(), true); }
     }
 
     function switchTab(tab) {
@@ -312,6 +367,7 @@
 
         pageItems.forEach((item) => {
             const wrapper = document.createElement('div'); wrapper.className = 'song-wrapper';
+            
             if(currentTab === 'library') {
                 const isPurchased = username ? userPurchases.some(p => p.songId === item.id) : false; 
                 const price = item.price !== undefined ? item.price : 10;
@@ -321,22 +377,21 @@
                         <div class="col-name" title="${item.filename}">${item.filename}</div>
                         <div><button class="icon-btn play-btn" id="playBtn-${item.id}" onclick="togglePlay('${item.id}')">${playIcon}</button></div>
                         <div class="col-size">${formatBytes(item.size)}</div>
-                        <div style="display:flex; gap: 5px;">
+                        <div style="display:flex; gap: 5px; align-items:center;">
                             <button class="icon-btn" onclick="toggleExpand('${item.id}')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button>
-                            ${isPurchased ? `<a href="${item.filepath}" download="${item.filename}" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>` : `<button class="btn-buy" onclick="requestPurchase('${item.id}', '${item.filename.replace(/'/g, "\\'")}', '${item.filepath}', ${price})">BUY (${price})</button>`}
+                            ${isPurchased ? `<a href="${item.filepath}" download="${item.filename}" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>` : `<button class="btn-buy" onclick="initiatePurchase('${item.id}', '${item.filename.replace(/'/g, "\\'")}', ${price})">BUY (${price})</button>`}
                         </div>
                     </div>
                     ${buildExpandedPlayer(item.id, item.filepath, isPurchased)}
                 `;
             } else {
-                // MY LIBRARY VIEW WITH INFO ICON
                 wrapper.innerHTML = `
                     <div class="song-row mysongs">
                         <div class="col-name" title="${item.songName}">${item.songName}</div>
-                        <div style="color: var(--gold); font-weight: bold; font-size: 14px;">${item.tokensSpent}</div>
+                        <div style="color: var(--gold); font-weight: bold; font-size: 14px;">${item.tokensSpent !== undefined ? item.tokensSpent : 10}</div>
                         <div><button class="icon-btn play-btn" id="playBtn-${item.songId}" onclick="togglePlay('${item.songId}')">${playIcon}</button></div>
-                        <div style="display:flex; gap:5px;">
-                            <button class="icon-btn" onclick="showInfoModal('${item.purchaseId}', '${item.purchaseTime}', ${item.tokensSpent})"><svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></button>
+                        <div style="display:flex; gap: 5px; align-items:center;">
+                            <button class="icon-btn" style="color: var(--accent);" onclick="openInfoModal('${item.purchaseId}', '${item.purchaseTime}', ${item.tokensSpent})"><svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></button>
                             <button class="icon-btn" onclick="toggleExpand('${item.songId}')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button>
                             <a href="${item.filepath}" download="${item.songName}" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>
                         </div>
@@ -353,9 +408,11 @@
     }
 
     function changePage(dir) { currentPage += dir; renderPage(); }
+
     function setupAudioEvents(id, isPurchased) {
         const audio = document.getElementById(`audio-${id}`); const seeker = document.getElementById(`seek-${id}`); const inlineProg = document.getElementById(`inline-prog-${id}`); const curr = document.getElementById(`curr-${id}`), dur = document.getElementById(`dur-${id}`);
         const MAX_PREVIEW = 30;
+
         audio.addEventListener('loadedmetadata', () => { const displayDur = (!isPurchased && audio.duration > MAX_PREVIEW) ? MAX_PREVIEW : audio.duration; dur.innerText = formatTime(displayDur); seeker.max = displayDur; });
         audio.addEventListener('timeupdate', () => { 
             if (!isPurchased && audio.currentTime >= MAX_PREVIEW) { audio.pause(); audio.currentTime = MAX_PREVIEW; document.getElementById(`playBtn-${id}`).innerHTML = playIcon; }
