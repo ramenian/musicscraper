@@ -6,35 +6,35 @@
     <title>DJ Music - Portal</title>
     <style>
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.6); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; color-scheme: dark; padding: 20px; box-sizing: border-box;}
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; color-scheme: dark; padding: 20px; box-sizing: border-box; overflow: hidden;}
         
-        /* Background Aesthetic Effects */
-        .bg-effect { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; z-index: -1; background: #000; }
-        .blob { position: absolute; filter: blur(90px); opacity: 0.5; border-radius: 50%; animation: float 12s infinite ease-in-out alternate; }
-        .blob1 { width: 400px; height: 400px; background: #0a84ff; top: -100px; left: -100px; }
-        .blob2 { width: 300px; height: 300px; background: #bf5af2; bottom: -50px; right: -50px; animation-delay: -6s; }
-        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(40px, 40px) scale(1.1); } }
+        /* AESTHETIC BACKGROUND EFFECT */
+        .bg-orbs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; background: #000; overflow: hidden; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; animation: float 12s infinite alternate ease-in-out; }
+        .orb1 { width: 400px; height: 400px; background: rgba(10, 132, 255, 0.5); top: -100px; left: -100px; }
+        .orb2 { width: 350px; height: 350px; background: rgba(255, 69, 58, 0.4); bottom: -100px; right: -50px; animation-delay: -6s;}
+        @keyframes float { 0% { transform: translateY(0) translateX(0); } 100% { transform: translateY(60px) translateX(60px); } }
 
-        .auth-container { z-index: 10; position: relative; background: var(--card-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 24px; padding: 40px; width: 100%; max-width: 360px; box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6); border: 1px solid var(--border-color); text-align: center; overflow: hidden; box-sizing: border-box;}
-        h2 { margin: 0 0 10px 0; font-weight: 700; font-size: 24px; }
+        .auth-container { background: var(--card-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 24px; padding: 40px; width: 100%; max-width: 360px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8); border: 1px solid var(--border-color); text-align: center; position: relative; z-index: 10; box-sizing: border-box;}
+        h2 { margin: 0 0 10px 0; font-weight: 700; font-size: 24px; letter-spacing: -0.5px;}
         p { color: var(--text-muted); font-size: 14px; margin: 0 0 30px 0; }
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group input { width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.4); color: white; font-size: 15px; outline: none; transition: 0.2s; }
-        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.3); }
+        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.3); background: rgba(0,0,0,0.6);}
         .btn-primary { width: 100%; background-color: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 10px;}
         .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
         .toggle-link { color: var(--accent); font-size: 14px; cursor: pointer; margin-top: 20px; display: inline-block; font-weight: 500; }
-        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section { display: none; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: max-content; max-width: 90vw;}
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.error { background: rgba(40, 10, 10, 0.95); border-color: var(--danger); animation: shake 0.4s; }
         @keyframes shake { 0%, 100% { transform: translateX(-50%) translateY(0); } 25% { transform: translateX(-55%) translateY(0); } 75% { transform: translateX(-45%) translateY(0); } }
         
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; }
-        .modal-box { background: rgba(40, 40, 40, 0.95); border-radius: 20px; text-align: center; border: 1px solid var(--border-color); padding: 40px 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); display: none; align-items: center; justify-content: center; z-index: 10000; }
+        .modal-box { background: rgba(40, 40, 40, 0.85); border-radius: 24px; text-align: center; border: 1px solid var(--border-color); padding: 40px 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         @media (max-width: 400px) { .auth-container { padding: 30px 20px; } h2 { font-size: 22px; } }
@@ -42,13 +42,17 @@
 </head>
 <body>
 
-<div class="bg-effect"><div class="blob blob1"></div><div class="blob blob2"></div></div>
+<div class="bg-orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <div class="modal-overlay" id="successModal">
     <div class="modal-box">
         <svg viewBox="0 0 24 24" style="width:70px; height:70px; fill:var(--accent); margin-bottom: 15px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        <h2 style="margin:0; font-size: 20px; letter-spacing: 0.5px;">Successfully Registered</h2>
+        <h2 style="margin:0; font-size: 22px; letter-spacing: 0.5px;">Successfully Registered</h2>
     </div>
 </div>
 
@@ -59,7 +63,7 @@
         <div class="input-group"><input type="password" id="loginPass" placeholder="Password"></div>
         <button class="btn-primary" onclick="login()">Continue</button>
         <div><span class="toggle-link" onclick="switchView('forgotView')">Forgot password?</span><br><span style="color: var(--text-muted); font-size: 14px;">Don't have an account? </span><span class="toggle-link" onclick="switchView('registerView')">Sign up</span></div>
-        <div style="margin-top: 20px;"><a href="music.html" style="color: var(--text-muted); font-size: 13px; text-decoration: none;">Continue as Guest -></a></div>
+        <div style="margin-top: 20px;"><a href="music.html" style="color: var(--text-muted); font-size: 13px; text-decoration: none; font-weight: 500;">Continue as Guest ➔</a></div>
     </div>
 
     <div id="registerView" class="view-section">
@@ -100,7 +104,8 @@
         const contact = document.getElementById('loginContact').value, password = document.getElementById('loginPass').value;
         if(!contact || !password) return showToast("Fill all fields", true);
         const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contact, password }) });
-        if(res.ok) { localStorage.setItem('djUsername', (await res.json()).username); window.location.href = '/music.html'; } else showToast(await res.text(), true);
+        if(res.ok) { localStorage.setItem('djUsername', (await res.json()).username); window.location.href = '/music.html'; } 
+        else { const err = await res.text(); showToast(err.includes('Not found') ? "Sorry Something Went Wrong." : err, true); }
     }
     
     async function register() {
