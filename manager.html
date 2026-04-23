@@ -8,10 +8,10 @@
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffffff;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
         
-        /* HEADER CENTERED */
-        .header-top { width: 100%; max-width: 1000px; margin-bottom: 20px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; display: flex; justify-content: center; align-items: center;}
-        
+        /* Centered Header */
+        .header-top { width: 100%; max-width: 1000px; margin-bottom: 20px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center; }
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
+        
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
         .sidebar-btn { text-align: left; padding: 12px 20px; background: transparent; border: none; color: var(--text-muted); font-size: 16px; font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
         .sidebar-btn.active { background: rgba(255,255,255,0.1); color: var(--text-main); }
@@ -43,19 +43,31 @@
         .table-inner { min-width: 750px; }
 
         .header-row, .song-row { display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); }
-        .user-row { display: grid; padding: 16px 20px; align-items: center; transition: 0.2s;}
         .header-row { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         
         .song-grid { grid-template-columns: 40px 50px 2fr 80px 100px 80px 80px; }
-        .user-grid { grid-template-columns: 1.5fr 2fr 1.5fr 60px 80px; gap: 10px;}
 
         .song-row { cursor: grab; background: transparent; transition: background 0.2s;}
         .song-row.drag-over { border-top: 2px solid var(--accent); }
-        .song-row:hover, .user-row:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .song-row:hover { background-color: rgba(255, 255, 255, 0.05); }
 
         .seq-num { font-weight: bold; color: var(--accent); cursor: text; padding: 5px; border-radius: 5px; text-align: center; width: 30px;}
         .seq-input { width: 30px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--accent); border-radius: 4px; text-align: center; outline: none; font-weight: bold;}
         
+        /* EXPANDABLE USERS */
+        .user-wrapper { border-bottom: 1px solid var(--border-color); }
+        .user-main { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; cursor: pointer; transition: 0.2s;}
+        .user-main:hover { background: rgba(255,255,255,0.05); }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-pic { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #1c1c1e; }
+        .user-details-form { padding: 20px; background: rgba(0,0,0,0.3); display: none; }
+        .user-details-form.show { display: block; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        
+        .purchase-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+        .purchase-table th { text-align: left; color: var(--text-muted); padding: 8px; border-bottom: 1px solid var(--border-color); }
+        .purchase-table td { padding: 8px; border-bottom: 1px solid var(--border-color); color: var(--text-main);}
+
         input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
         .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px; transition: 0.2s;}
         .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
@@ -69,6 +81,7 @@
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
         .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden;}
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; text-align: left; }
         .input-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; display: block; margin-top: 15px;}
         .modal-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
@@ -77,6 +90,7 @@
         .modal-btn { flex: 1; padding: 14px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 500; transition: 0.2s;}
         .modal-btn:hover { background: rgba(255,255,255,0.05); }
         .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-main); font-weight: 400;}
+        
         .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
         .btn-danger-full:hover { background: var(--danger); color: white; }
 
@@ -89,8 +103,7 @@
             .settings-bar .btn-primary { width: 100%; margin-top: 5px; }
             .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
             .upload-bar > div { flex-direction: column; align-items: stretch; }
-            .toolbar { flex-direction: column; align-items: flex-start; }
-            .search-input { width: 100%; box-sizing: border-box; }
+            .form-row { flex-direction: column; gap: 5px; }
         }
     </style>
 </head>
@@ -108,18 +121,22 @@
     <div class="content-area">
         <div id="view-general" class="view-section active">
             <img id="bannerImage" class="global-banner" src="" alt="Global Banner">
+
             <div class="glass-panel">
                 <div class="upload-bar">
                     <div style="display:flex; align-items:center; gap: 10px; width: 100%;">
                         <label class="btn-primary" style="flex: 1; text-align:center;">Upload Audio<input type="file" id="fileInput" accept="audio/*"></label>
                         <button class="btn-primary" style="flex: 1;" onclick="openTransloadModal()">Transload (.m4a)</button>
                     </div>
-                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">Change Banner<input type="file" id="bannerInput" accept="image/*"></label>
+                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">
+                        Change Banner
+                        <input type="file" id="bannerInput" accept="image/*">
+                    </label>
                 </div>
                 <div class="settings-bar">
                     <div style="font-weight: 600; white-space: nowrap;">Main Header:</div>
                     <input type="text" id="headerInput" class="input-text">
-                    <button class="btn-primary" onclick="saveSettings()">Save</button>
+                    <button class="btn-primary" onclick="saveSettings()">Save Header</button>
                 </div>
             </div>
 
@@ -147,14 +164,7 @@
                     <span style="font-size: 15px; font-weight: 600;">Registered Users</span>
                     <input type="text" id="userSearchInput" class="search-input" placeholder="Search user..." oninput="handleUserSearch()">
                 </div>
-                <div class="table-container">
-                    <div class="table-inner">
-                        <div class="header-row user-grid">
-                            <div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div><div>Actions</div>
-                        </div>
-                        <div id="userList"></div>
-                    </div>
-                </div>
+                <div id="userList" style="max-height: 700px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
@@ -172,21 +182,9 @@
             <label class="input-label">Token Cost (0 = Free)</label><input type="number" id="settingPrice" class="modal-input" min="0">
             <button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button>
         </div>
-        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveSongSettings()">Save Changes</button></div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="userEditModal">
-    <div class="modal-box">
-        <div class="modal-content">
-            <h3 style="margin: 0 0 5px 0; text-align:center;" id="editUserTitle">Edit User</h3>
-            <label class="input-label">Email</label><input type="text" id="editUserEmail" class="modal-input">
-            <label class="input-label">Phone</label><input type="text" id="editUserPhone" class="modal-input">
-            <label class="input-label">Tokens</label><input type="number" id="editUserTokens" class="modal-input">
-        </div>
         <div class="modal-actions">
             <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
-            <button class="modal-btn" onclick="saveUserEdit()">Save User</button>
+            <button class="modal-btn" onclick="saveSongSettings()">Save Changes</button>
         </div>
     </div>
 </div>
@@ -194,7 +192,9 @@
 <script>
     const API_URL = '/api'; 
     let allSongs = []; let selectedIds = []; let draggedId = null; let currentEditId = null;
-    let allUsers = []; let editingUsername = null;
+    let allUsers = [];
+
+    const defaultPfp = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
     
@@ -209,7 +209,8 @@
     async function loadSettings() { 
         const res = await fetch(`${API_URL}/settings`);
         if(res.ok) {
-            const data = await res.json(); document.getElementById('headerInput').value = data.headerTitle || "DJ Music Library"; 
+            const data = await res.json();
+            document.getElementById('headerInput').value = data.headerTitle || "DJ Music Library"; 
             if(data.bannerUrl) { const banner = document.getElementById('bannerImage'); banner.src = data.bannerUrl; banner.style.display = 'block'; }
         }
     }
@@ -219,13 +220,6 @@
     // --- SONG DATA ---
     async function loadData() { allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); }
     function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.filename.toLowerCase().includes(query)); selectedIds = []; document.getElementById('selectAll').checked = false; renderList(filtered); }
-
-    function addLoadingRow(text) {
-        const listDiv = document.getElementById('songList'); const row = document.createElement('div'); row.className = 'song-row song-grid'; row.id = 'tempLoadingRow';
-        row.innerHTML = `<div style="display:flex; justify-content:center;"><svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2 a10 10 0 0 1 10 10"/></svg></div><div class="seq-num">-</div><div style="font-weight: 500; color: var(--accent);">${text}</div><div>-</div><div>-</div><div>-</div><div>-</div>`;
-        listDiv.insertBefore(row, listDiv.firstChild);
-    }
-    function removeLoadingRow() { const r = document.getElementById('tempLoadingRow'); if(r) r.remove(); }
 
     function renderList(songsToRender) {
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
@@ -239,6 +233,7 @@
             row.addEventListener('drop', (e) => { e.preventDefault(); row.classList.remove('drag-over'); if (draggedId && draggedId !== song.id) handleDropReorder(draggedId, song.id); });
 
             const price = song.price !== undefined ? song.price : 10;
+
             row.innerHTML = `
                 <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSelection(this)" ${isChecked}></div>
                 <div class="seq-num" ondblclick="editSequence(this, '${song.id}', ${song.sequence})">${song.sequence}</div>
@@ -246,13 +241,13 @@
                 <div style="color: var(--gold); font-weight: bold;">${price}</div>
                 <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
                 <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
-                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${price})"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${price})"><svg viewBox="0 0 24 24"><path d="M19.14,12.94...c0.04-0.3...12,15.6z"/></svg></button></div>
             `;
             listDiv.appendChild(row);
         });
     }
 
-    // --- USER DATA WITH PURCHASES ---
+    // --- USER DATA & ACCORDION ---
     async function loadUsers() { 
         const res = await fetch(`${API_URL}/all-users`);
         if(res.ok) { allUsers = await res.json(); handleUserSearch(); }
@@ -264,62 +259,67 @@
         const listDiv = document.getElementById('userList'); listDiv.innerHTML = '';
         
         filtered.forEach(u => {
-            const rowWrapper = document.createElement('div');
-            rowWrapper.style.borderBottom = "1px solid var(--border-color)";
+            const wrapper = document.createElement('div'); wrapper.className = 'user-wrapper';
             
-            let purchasesHtml = '<div style="padding: 10px; color: var(--text-muted); font-size: 13px;">No purchases yet.</div>';
+            let purchasesHtml = '';
             if(u.purchases && u.purchases.length > 0) {
-                purchasesHtml = u.purchases.map(p => `
-                    <div style="display:flex; justify-content:space-between; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;">
-                        <span style="color:white; font-weight: 500;">${p.songName} <span style="color: var(--text-muted)">(${p.tokensSpent} Tokens)</span></span>
-                        <span style="color:var(--text-muted); font-variant-numeric:tabular-nums;">${p.purchaseTime ? new Date(p.purchaseTime).toLocaleString() : 'Legacy'}</span>
-                    </div>
-                `).join('');
+                purchasesHtml = `<table class="purchase-table"><tr><th>Date</th><th>ID</th><th>Song Name</th><th>Tokens</th></tr>`;
+                u.purchases.forEach(p => {
+                    const d = p.purchaseTime ? new Date(p.purchaseTime).toLocaleString() : '-';
+                    purchasesHtml += `<tr><td>${d}</td><td>${p.purchaseId || '-'}</td><td>${p.songName}</td><td>${p.tokensSpent || 10}</td></tr>`;
+                });
+                purchasesHtml += `</table>`;
+            } else {
+                purchasesHtml = `<div style="padding: 10px 0; color: var(--text-muted); font-size: 13px;">No purchases yet.</div>`;
             }
 
-            rowWrapper.innerHTML = `
-                <div class="user-row user-grid" style="cursor:pointer;" onclick="document.getElementById('exp-${u.username}').style.display = document.getElementById('exp-${u.username}').style.display === 'none' ? 'block' : 'none'">
-                    <div style="font-weight: 500;">${u.username}</div>
-                    <div style="color: var(--text-muted); font-size: 14px; overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
-                    <div style="color: var(--text-muted); font-size: 14px;">${u.phone}</div>
-                    <div style="color: var(--gold); font-weight: bold;">${u.tokens}</div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="icon-btn" onclick="event.stopPropagation(); openUserEdit('${u.username}', '${u.email}', '${u.phone}', ${u.tokens})"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="icon-btn" style="color:var(--danger)" onclick="event.stopPropagation(); executeUserDelete('${u.username}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+            wrapper.innerHTML = `
+                <div class="user-main" onclick="toggleUserExpand('${u.username}')">
+                    <div class="user-info">
+                        <img src="${u.profilePic || defaultPfp}" class="user-pic">
+                        <div><div style="font-weight: bold;">${u.username}</div><div style="font-size:12px; color:var(--text-muted);">${u.email}</div></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap: 15px;">
+                        <span style="color:var(--gold); font-weight:bold;">${u.tokens} Tokens</span>
+                        <button class="icon-btn" onclick="deleteUser(event, '${u.username}')" style="color: var(--danger);"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                        <svg viewBox="0 0 24 24" style="fill:var(--text-muted);" id="arrow-${u.username}"><path d="M7 10l5 5 5-5z"/></svg>
                     </div>
                 </div>
-                <div id="exp-${u.username}" style="display:none; background: rgba(0,0,0,0.3);">
-                    <div style="padding: 10px 20px; font-weight:bold; font-size:11px; color:var(--accent); letter-spacing: 0.5px;">PURCHASE HISTORY</div>
+                <div class="user-details-form" id="details-${u.username}">
+                    <div class="form-row">
+                        <input type="number" id="t-${u.username}" class="input-text" placeholder="Tokens" value="${u.tokens}">
+                        <input type="text" id="e-${u.username}" class="input-text" placeholder="Email" value="${u.email}">
+                        <input type="text" id="p-${u.username}" class="input-text" placeholder="Phone" value="${u.phone}">
+                        <button class="btn-primary" onclick="saveUserEdit('${u.username}')">Save Profile</button>
+                    </div>
+                    <h4 style="margin: 15px 0 0 0;">Purchase History</h4>
                     ${purchasesHtml}
                 </div>
             `;
-            listDiv.appendChild(rowWrapper);
+            listDiv.appendChild(wrapper);
         });
     }
 
-    function openUserEdit(username, email, phone, tokens) {
-        editingUsername = username;
-        document.getElementById('editUserTitle').innerText = "Edit " + username;
-        document.getElementById('editUserEmail').value = email;
-        document.getElementById('editUserPhone').value = phone;
-        document.getElementById('editUserTokens').value = tokens;
-        document.getElementById('userEditModal').style.display = 'flex';
+    function toggleUserExpand(username) { 
+        const details = document.getElementById(`details-${username}`);
+        const arrow = document.getElementById(`arrow-${username}`);
+        if(details.classList.contains('show')) { details.classList.remove('show'); arrow.style.transform = 'rotate(0deg)'; }
+        else { details.classList.add('show'); arrow.style.transform = 'rotate(180deg)'; }
     }
 
-    async function saveUserEdit() {
-        if(!editingUsername) return;
-        const email = document.getElementById('editUserEmail').value;
-        const phone = document.getElementById('editUserPhone').value;
-        const tokens = document.getElementById('editUserTokens').value;
-
-        await fetch(`${API_URL}/admin/users/${editingUsername}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email, phone, tokens}) });
-        closeModals(); loadUsers(); showToast("User updated!");
+    async function saveUserEdit(username) {
+        const t = document.getElementById(`t-${username}`).value;
+        const e = document.getElementById(`e-${username}`).value;
+        const p = document.getElementById(`p-${username}`).value;
+        await fetch(`${API_URL}/admin/users/${username}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: t, email: e, phone: p}) });
+        showToast("User Updated!"); loadUsers();
     }
 
-    async function executeUserDelete(username) {
-        if(confirm(`Are you sure you want to permanently delete user ${username}?`)) {
+    async function deleteUser(e, username) {
+        e.stopPropagation();
+        if(confirm(`Completely delete user ${username}?`)) {
             await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' });
-            loadUsers(); showToast("User deleted.");
+            showToast("User Deleted!"); loadUsers();
         }
     }
 
@@ -341,7 +341,7 @@
     function toggleAll() { const master = document.getElementById('selectAll'); selectedIds = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedIds.push(cb.value); }); updateBulkBtn(); }
     function updateBulkBtn() { const btn = document.getElementById('bulkDeleteBtn'); if (selectedIds.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedIds.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Permanently'; } }
     
-    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); currentEditId = null; editingUsername = null; }
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); currentEditId = null; }
     
     function openSettingsModal(id, name, price) {
         currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price;
@@ -359,23 +359,22 @@
     async function executeDelete() { if(confirm(`Permanently delete ${selectedIds.length} songs?`)) { await fetch(`${API_URL}/songs/bulk-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedIds }) }); loadData(); showToast("Deleted successfully."); } }
 
     document.getElementById('fileInput').addEventListener('change', async (e) => {
-        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); addLoadingRow("Uploading Audio...");
-        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); removeLoadingRow();
+        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); 
+        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
         if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } else { showToast("Upload failed.", true); }
     });
 
     document.getElementById('bannerInput').addEventListener('change', async (e) => {
-        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showToast("Uploading Banner...");
+        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showToast("Uploading...");
         const res = await fetch(`${API_URL}/upload-banner`, { method: 'POST', body: fd });
         if (res.ok) { e.target.value = ''; showToast("Banner Updated!"); const settings = await res.json(); const banner = document.getElementById('bannerImage'); banner.src = settings.bannerUrl; banner.style.display = 'block'; } 
     });
 
     function openTransloadModal() { document.getElementById('transloadInput').value = ''; document.getElementById('transloadModal').style.display = 'flex'; }
     document.getElementById('confirmTransloadBtn').addEventListener('click', async () => {
-        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); addLoadingRow("Transloading...");
+        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); 
         const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
-        removeLoadingRow();
-        if (res.ok) { const newSong = await res.json(); await loadData(); openSettingsModal(newSong.id, newSong.filename, newSong.price); showToast("Fetch successful!"); } else { showToast("Transload failed.", true); }
+        if (res.ok) { const newSong = await res.json(); await loadData(); openSettingsModal(newSong.id, newSong.filename, newSong.price); showToast("Fetch successful!"); } else { showToast(await res.text(), true); }
     });
 
     loadSettings(); loadData();
