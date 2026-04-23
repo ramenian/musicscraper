@@ -8,8 +8,7 @@
         :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --token: #ffffff;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
         
-        .header-top { width: 100%; max-width: 1000px; margin-bottom: 30px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center; }
-        
+        .header-top { width: 100%; max-width: 1000px; margin-bottom: 30px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center;}
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
         
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
@@ -32,18 +31,19 @@
         .btn-primary { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: 0.2s;}
         .btn-primary:hover { transform: scale(1.02); }
         
-        .action-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; border-top: 1px solid var(--border-color); }
-        .btn-danger { background-color: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 14px; font-weight: 500; cursor: pointer; opacity: 0.5; pointer-events: none; }
+        .action-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);}
+        .btn-danger { background-color: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 14px; font-weight: 500; cursor: pointer; opacity: 0.5; pointer-events: none; transition: 0.2s;}
         .btn-danger.active { opacity: 1; pointer-events: auto; }
 
         .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
         .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 250px; }
 
-        .table-container { overflow-x: auto; }
+        .table-container { overflow-x: auto; max-height: 600px;}
         .table-inner { min-width: 750px; }
 
         .header-row, .song-row { display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); }
         .header-row { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+        
         .song-grid { grid-template-columns: 40px 50px 2fr 80px 100px 80px 80px; }
         .song-row { cursor: grab; background: transparent; transition: background 0.2s;}
         .song-row.drag-over { border-top: 2px solid var(--accent); }
@@ -55,8 +55,9 @@
         .user-expanded { display: none; padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); }
         .user-expanded.show { display: block; animation: fadeIn 0.2s; }
         .history-row { display: grid; grid-template-columns: 2fr 1fr 100px 100px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: var(--text-muted); align-items: center;}
-        .history-row:last-child { border-bottom: none; }
-        .history-header { font-weight: bold; text-transform: uppercase; color: var(--text-main); margin-bottom: 5px; }
+        
+        .log-row { display: grid; grid-template-columns: 40px 1fr 150px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; align-items: center;}
+        .log-row:hover { background-color: rgba(255, 255, 255, 0.05); }
 
         .seq-num { font-weight: bold; color: var(--accent); cursor: text; padding: 5px; border-radius: 5px; text-align: center; width: 30px;}
         .seq-input { width: 30px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--accent); border-radius: 4px; text-align: center; outline: none; font-weight: bold;}
@@ -66,27 +67,24 @@
         .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
         svg { width: 18px; height: 18px; fill: currentColor; }
 
-        .apple-spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
         .toast.show { transform: translateX(-50%) translateY(0); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
-        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden;}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
+        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; text-align: left; }
         .input-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; display: block; margin-top: 15px;}
         .modal-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
         
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
-        .modal-btn { flex: 1; padding: 14px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 500; transition: 0.2s;}
+        .modal-btn { flex: 1; padding: 16px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 500; transition: 0.2s;}
         .modal-btn:hover { background: rgba(255,255,255,0.05); }
         .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-main); font-weight: 400;}
+        .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
 
-        /* Logs specific styles */
-        .log-row { padding: 15px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
-        .log-time { color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
+        .apple-spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
         @media (max-width: 768px) {
             body { padding: 20px 10px; }
@@ -94,8 +92,6 @@
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px;}
             .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
             .upload-bar, .settings-bar { flex-direction: column; align-items: stretch; gap: 15px;}
-            .toolbar { flex-direction: column; align-items: flex-start; }
-            .search-input { width: 100%; box-sizing: border-box; }
         }
     </style>
 </head>
@@ -111,11 +107,11 @@
     <div class="sidebar">
         <button class="sidebar-btn active" onclick="switchView('general')" id="btn-general">General</button>
         <button class="sidebar-btn" onclick="switchView('users')" id="btn-users">Users</button>
-        <button class="sidebar-btn" onclick="switchView('logs')" id="btn-logs">Data Logs</button>
+        <button class="sidebar-btn" onclick="switchView('data')" id="btn-data">Data</button>
+        <button class="sidebar-btn" onclick="switchView('logs')" id="btn-logs">Logs</button>
     </div>
 
     <div class="content-area">
-        
         <div id="view-general" class="view-section active">
             <img id="bannerImage" class="global-banner" src="" alt="Global Banner">
 
@@ -125,15 +121,12 @@
                         <label class="btn-primary" style="flex: 1; text-align:center;">Upload Audio<input type="file" id="fileInput" accept="audio/*"></label>
                         <button class="btn-primary" style="flex: 1;" onclick="openTransloadModal()">Transload (.m4a)</button>
                     </div>
-                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">
-                        Change Banner
-                        <input type="file" id="bannerInput" accept="image/*">
-                    </label>
+                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">Change Banner<input type="file" id="bannerInput" accept="image/*"></label>
                 </div>
                 <div class="settings-bar">
                     <div style="font-weight: 600; white-space: nowrap;">Main Header:</div>
                     <input type="text" id="headerInput" class="input-text">
-                    <button class="btn-primary" onclick="saveSettings()">Save Header</button>
+                    <button class="btn-primary" onclick="saveSettings()">Save</button>
                 </div>
             </div>
 
@@ -145,13 +138,13 @@
                 <div class="table-container">
                     <div class="table-inner">
                         <div class="header-row song-grid">
-                            <div><input type="checkbox" id="selectAll" onchange="toggleAll()"></div>
+                            <div><input type="checkbox" id="selectAllSongs" onchange="toggleAllSongs()"></div>
                             <div>Seq</div><div>Song Name</div><div>Price</div><div>Size</div><div>Uploaded</div><div>Set</div>
                         </div>
                         <div id="songList"></div>
                     </div>
                 </div>
-                <div class="action-bar"><h3 style="margin: 0; font-size: 16px;">Bulk Actions</h3><button id="bulkDeleteBtn" class="btn-danger" onclick="executeDelete()">Delete Selected</button></div>
+                <div class="action-bar"><button class="btn-danger" style="margin-left:auto;" id="bulkDeleteSongsBtn" onclick="executeDelete()">Delete Selected</button></div>
             </div>
         </div>
 
@@ -172,41 +165,42 @@
             </div>
         </div>
 
-        <div id="view-logs" class="view-section">
+        <div id="view-data" class="view-section">
             <div class="glass-panel">
-                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">System Logs</span></div>
-                <div class="table-container" style="max-height: 600px; overflow-y: auto;">
-                    <div class="table-inner" style="min-width: 500px;" id="logsList"></div>
+                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Registration Data</span></div>
+                <div class="table-container">
+                    <div class="table-inner">
+                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;">
+                            <div><input type="checkbox" id="selectAllData" onchange="toggleAllLogs('data')"></div><div>Event</div><div>Date</div>
+                        </div>
+                        <div id="dataList"></div>
+                    </div>
+                </div>
+                <div class="action-bar">
+                    <button class="btn-primary" style="background:transparent; border:1px solid var(--border-color);" onclick="clearLogs('register', true)">Clear All</button>
+                    <button class="btn-danger" id="bulkDeleteDataBtn" onclick="clearLogs('register', false)">Clear Selected</button>
                 </div>
             </div>
         </div>
 
-    </div>
-</div>
+        <div id="view-logs" class="view-section">
+            <div class="glass-panel">
+                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">System Logs</span></div>
+                <div class="table-container">
+                    <div class="table-inner">
+                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;">
+                            <div><input type="checkbox" id="selectAllLogs" onchange="toggleAllLogs('logs')"></div><div>Action</div><div>Date</div>
+                        </div>
+                        <div id="logsList"></div>
+                    </div>
+                </div>
+                <div class="action-bar">
+                    <button class="btn-primary" style="background:transparent; border:1px solid var(--border-color);" onclick="clearLogs('admin', true)">Clear All</button>
+                    <button class="btn-danger" id="bulkDeleteLogsBtn" onclick="clearLogs('admin', false)">Clear Selected</button>
+                </div>
+            </div>
+        </div>
 
-<div class="modal-overlay" id="adminInputModal">
-    <div class="modal-box">
-        <div class="modal-content">
-            <h3 id="adminInputTitle" style="margin: 0 0 10px 0; text-align:center;"></h3>
-            <input type="text" id="adminInputValue" class="modal-input">
-        </div>
-        <div class="modal-actions">
-            <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
-            <button class="modal-btn" id="adminInputSaveBtn">Save</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="adminDeleteModal">
-    <div class="modal-box">
-        <div class="modal-content">
-            <h3 style="margin: 0 0 10px 0; text-align:center; color: var(--danger);">Confirm Deletion</h3>
-            <p style="color:var(--text-muted); font-size:14px; text-align:center; margin:0;" id="adminDeleteText"></p>
-        </div>
-        <div class="modal-actions">
-            <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
-            <button class="modal-btn" style="color:var(--danger);" id="adminDeleteConfirmBtn">Delete</button>
-        </div>
     </div>
 </div>
 
@@ -216,236 +210,198 @@
 
 <div class="modal-overlay" id="songSettingsModal">
     <div class="modal-box">
-        <div class="modal-content">
-            <h3 style="margin: 0 0 5px 0; text-align:center;">Song Settings</h3>
-            <label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input">
-            <label class="input-label">Token Cost (0 = Free)</label><input type="number" id="settingPrice" class="modal-input" min="0">
-            <button class="btn-primary" style="width: 100%; margin-top: 25px; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3);" onclick="executeDeleteFromModal()">Delete Song Permanently</button>
-        </div>
-        <div class="modal-actions">
-            <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
-            <button class="modal-btn" onclick="saveSongSettings()">Save Changes</button>
-        </div>
+        <div class="modal-content"><h3 style="margin: 0 0 5px 0; text-align:center;">Song Settings</h3><label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input"><label class="input-label">Token Cost</label><input type="number" id="settingPrice" class="modal-input" min="0"><button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button></div>
+        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveSongSettings()">Save Changes</button></div>
     </div>
+</div>
+
+<div class="modal-overlay" id="adminTokenModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center;">Edit Tokens</h3><p style="font-size:14px; color:var(--text-muted); margin:0 0 10px 0;" id="tokenModalTarget"></p><input type="number" id="adminTokenInput" class="modal-input"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="confirmTokenUpdate()">Apply</button></div></div>
+</div>
+
+<div class="modal-overlay" id="adminContactModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center;">Edit Contact</h3><label class="input-label">Email</label><input type="text" id="adminEmailInput" class="modal-input"><label class="input-label">Phone</label><input type="text" id="adminPhoneInput" class="modal-input"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="confirmContactUpdate()">Save</button></div></div>
+</div>
+
+<div class="modal-overlay" id="adminDeleteModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center; color:var(--danger);">Delete User</h3><p style="font-size:14px; color:var(--text-muted); margin:0;" id="deleteModalTarget"></p></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" style="color:var(--danger);" onclick="confirmUserDelete()">Delete Permanently</button></div></div>
 </div>
 
 <script>
     const API_URL = '/api'; 
-    let allSongs = []; let selectedIds = []; let draggedId = null; let currentEditId = null;
-    let allUsers = []; let allLogs = [];
+    let allSongs = [], allUsers = [], logData = { register: [], admin: [] };
+    let selectedSongs = [], selectedData = [], selectedLogs = [];
+    let draggedId = null, currentEditId = null, currentEditUser = null;
 
     function showLoader() { document.getElementById('globalLoader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('globalLoader').style.display = 'none'; }
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
-    
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if(m.id !== 'globalLoader') m.style.display = 'none'; }); }
+
     function switchView(view) {
         document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
         document.getElementById(`btn-${view}`).classList.add('active');
         document.getElementById(`view-${view}`).classList.add('active');
         if(view === 'users') loadUsers();
-        if(view === 'logs') loadLogs();
+        if(view === 'data') loadLogs('register');
+        if(view === 'logs') loadLogs('admin');
     }
 
     async function loadSettings() { 
         const res = await fetch(`${API_URL}/settings`);
-        if(res.ok) {
-            const data = await res.json();
-            document.getElementById('headerInput').value = data.headerTitle || "DJ Music Library"; 
-            if(data.bannerUrl) { const banner = document.getElementById('bannerImage'); banner.src = data.bannerUrl; banner.style.display = 'block'; }
-        }
+        if(res.ok) { const data = await res.json(); document.getElementById('headerInput').value = data.headerTitle || "DJ Music Library"; if(data.bannerUrl) { document.getElementById('bannerImage').src = data.bannerUrl; document.getElementById('bannerImage').style.display = 'block'; } }
     }
-    async function saveSettings() { await fetch(`${API_URL}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({headerTitle: document.getElementById('headerInput').value})}); showToast("Saved!"); }
+    async function saveSettings() { showLoader(); await fetch(`${API_URL}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({headerTitle: document.getElementById('headerInput').value})}); hideLoader(); showToast("Saved!"); }
     function formatBytes(bytes) { if (bytes === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
 
-    // --- SONG DATA ---
+    // --- SONG MANAGER ---
     async function loadData() { allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); hideLoader(); }
-    function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.filename.toLowerCase().includes(query)); selectedIds = []; document.getElementById('selectAll').checked = false; renderList(filtered); }
+    function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.filename.toLowerCase().includes(query)); selectedSongs = []; document.getElementById('selectAllSongs').checked = false; renderList(filtered); }
 
     function renderList(songsToRender) {
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
         songsToRender.forEach(song => {
-            const isChecked = selectedIds.includes(song.id) ? 'checked' : '';
+            const isChecked = selectedSongs.includes(song.id) ? 'checked' : '';
             const row = document.createElement('div'); row.className = 'song-row song-grid'; row.draggable = true; row.dataset.id = song.id;
-
             row.addEventListener('dragstart', (e) => { draggedId = song.id; e.dataTransfer.effectAllowed = 'move'; });
             row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
             row.addEventListener('dragleave', () => { row.classList.remove('drag-over'); });
             row.addEventListener('drop', (e) => { e.preventDefault(); row.classList.remove('drag-over'); if (draggedId && draggedId !== song.id) handleDropReorder(draggedId, song.id); });
 
-            const price = song.price !== undefined ? song.price : 10;
             row.innerHTML = `
-                <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSelection(this)" ${isChecked}></div>
+                <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSongSel(this)" ${isChecked}></div>
                 <div class="seq-num" ondblclick="editSequence(this, '${song.id}', ${song.sequence})">${song.sequence}</div>
                 <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
-                <div style="color: var(--token); font-weight: bold;">${price}</div>
+                <div style="color: var(--token); font-weight: bold;">${song.price !== undefined ? song.price : 10}</div>
                 <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
                 <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
-                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${price})"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price !== undefined ? song.price : 10})"><svg viewBox="0 0 24 24"><path d="M19.14... (icon path omitted for brevity) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
             `;
             listDiv.appendChild(row);
         });
     }
 
-    // --- LOGS DATA ---
-    async function loadLogs() {
-        showLoader();
-        const res = await fetch(`${API_URL}/logs`);
-        if(res.ok) {
-            allLogs = await res.json();
-            const listDiv = document.getElementById('logsList'); listDiv.innerHTML = '';
-            if(allLogs.length === 0) listDiv.innerHTML = `<div style="padding: 20px; color: var(--text-muted);">No logs recorded.</div>`;
-            allLogs.forEach(l => {
-                const row = document.createElement('div'); row.className = 'log-row';
-                row.innerHTML = `<div class="log-time">${new Date(l.timestamp).toLocaleString()}</div><div>${l.message}</div>`;
-                listDiv.appendChild(row);
-            });
-        }
-        hideLoader();
-    }
+    function toggleSongSel(cb) { if (cb.checked) selectedSongs.push(cb.value); else selectedSongs = selectedSongs.filter(id => id !== cb.value); updateBulkBtn('song'); }
+    function toggleAllSongs() { const master = document.getElementById('selectAllSongs'); selectedSongs = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedSongs.push(cb.value); }); updateBulkBtn('song'); }
 
-    // --- USER DATA & INLINE ACTIONS ---
-    async function loadUsers() { 
-        showLoader();
-        const res = await fetch(`${API_URL}/all-users`);
-        if(res.ok) { allUsers = await res.json(); handleUserSearch(); }
-        hideLoader();
-    }
-    
+    // --- USER MANAGEMENT ---
+    async function loadUsers() { showLoader(); allUsers = await (await fetch(`${API_URL}/all-users`)).json(); handleUserSearch(); hideLoader(); }
     function handleUserSearch() {
         const query = document.getElementById('userSearchInput').value.toLowerCase();
         const filtered = allUsers.filter(u => u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query) || u.phone.includes(query));
         const listDiv = document.getElementById('userList'); listDiv.innerHTML = '';
         filtered.forEach(u => {
             const wrapper = document.createElement('div'); wrapper.className = 'user-wrapper';
-            
             let historyHTML = '';
             if(u.purchases && u.purchases.length > 0) {
                 historyHTML = `<div class="history-row history-header"><div>Song Name</div><div>Purchase Date</div><div>ID</div><div>Cost</div></div>`;
-                u.purchases.forEach(p => {
-                    historyHTML += `<div class="history-row"><div>${p.songName}</div><div>${new Date(p.purchaseTime).toLocaleString()}</div><div style="font-family:monospace;">${p.purchaseId || 'N/A'}</div><div style="color:var(--token);">${p.tokensSpent}</div></div>`;
-                });
+                u.purchases.forEach(p => { historyHTML += `<div class="history-row"><div>${p.songName}</div><div>${new Date(p.purchaseTime).toLocaleString()}</div><div style="font-family:monospace;">${p.purchaseId || 'N/A'}</div><div style="color:var(--token);">${p.tokensSpent}</div></div>`; });
             } else { historyHTML = `<div style="color:var(--text-muted); font-size:13px;">No purchases yet.</div>`; }
 
             wrapper.innerHTML = `
                 <div class="user-row">
-                    <div><button class="icon-btn" onclick="toggleUserExpand('${u.username}')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button></div>
+                    <div><button class="icon-btn" onclick="document.getElementById('expand-user-${u.username}').classList.toggle('show')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button></div>
                     <div style="font-weight: 500;">${u.username}</div>
                     <div style="color: var(--text-muted); font-size: 14px; overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
                     <div style="color: var(--text-muted); font-size: 14px;">${u.phone}</div>
                     <div style="color: var(--token); font-weight: bold;">${u.tokens}</div>
                     <div style="display:flex; gap: 5px;">
-                        <button class="icon-btn" title="Edit Tokens" onclick="openTokenModal('${u.username}', ${u.tokens})"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></button>
-                        <button class="icon-btn" title="Edit Contact" onclick="openContactModal('${u.username}', '${u.email}', '${u.phone}')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="icon-btn" title="Delete User" style="color:var(--danger);" onclick="openDeleteUserModal('${u.username}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                        <button class="icon-btn" onclick="openTokenModal('${u.username}', ${u.tokens})"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></button>
+                        <button class="icon-btn" onclick="openContactModal('${u.username}', '${u.email}', '${u.phone}')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+                        <button class="icon-btn" style="color:var(--danger);" onclick="openDeleteModal('${u.username}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                     </div>
                 </div>
-                <div class="user-expanded" id="expand-user-${u.username}">
-                    <h4 style="margin: 0 0 10px 0; color:var(--text-main);">Purchase History</h4>
-                    ${historyHTML}
-                </div>
+                <div class="user-expanded" id="expand-user-${u.username}"><h4 style="margin: 0 0 10px 0;">Purchase History</h4>${historyHTML}</div>
             `;
             listDiv.appendChild(wrapper);
         });
     }
 
-    function toggleUserExpand(username) { document.getElementById(`expand-user-${username}`).classList.toggle('show'); }
+    // Custom UI for User Edits
+    function openTokenModal(u, t) { currentEditUser = u; document.getElementById('tokenModalTarget').innerText = `Target: ${u}`; document.getElementById('adminTokenInput').value = t; document.getElementById('adminTokenModal').style.display = 'flex'; }
+    async function confirmTokenUpdate() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}/set-tokens`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: document.getElementById('adminTokenInput').value}) }); closeModals(); showToast("Tokens updated!"); loadUsers(); }
 
-    // CUSTOM APPLE-STYLE MODALS FOR ADMIN ACTIONS
-    function openTokenModal(username, current) {
-        document.getElementById('adminInputTitle').innerText = `Set Tokens for ${username}`;
-        const input = document.getElementById('adminInputValue'); input.type = 'number'; input.value = current;
-        document.getElementById('adminInputSaveBtn').onclick = async () => {
-            closeModals(); showLoader();
-            await fetch(`${API_URL}/users/${username}/set-tokens`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: input.value}) });
-            showToast("Balance updated!"); loadUsers();
-        };
-        document.getElementById('adminInputModal').style.display = 'flex';
+    function openContactModal(u, e, p) { currentEditUser = u; document.getElementById('adminEmailInput').value = e; document.getElementById('adminPhoneInput').value = p; document.getElementById('adminContactModal').style.display = 'flex'; }
+    async function confirmContactUpdate() { 
+        showLoader(); 
+        await fetch(`${API_URL}/users/${currentEditUser}/change-email`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newEmail: document.getElementById('adminEmailInput').value}) });
+        await fetch(`${API_URL}/users/${currentEditUser}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone: document.getElementById('adminPhoneInput').value}) });
+        closeModals(); showToast("Contact updated!"); loadUsers(); 
     }
 
-    function openContactModal(username, email, phone) {
-        // We'll reuse the input modal twice smoothly
-        document.getElementById('adminInputTitle').innerText = `Update Email for ${username}`;
-        const input = document.getElementById('adminInputValue'); input.type = 'text'; input.value = email;
-        document.getElementById('adminInputSaveBtn').onclick = async () => {
-            const newEmail = input.value;
-            await fetch(`${API_URL}/users/${username}/change-email`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newEmail}) });
-            
-            // Step 2: Phone
-            document.getElementById('adminInputTitle').innerText = `Update Phone for ${username}`;
-            input.value = phone;
-            document.getElementById('adminInputSaveBtn').onclick = async () => {
-                closeModals(); showLoader();
-                await fetch(`${API_URL}/users/${username}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone: input.value}) });
-                showToast("Contact updated!"); loadUsers();
-            };
-        };
-        document.getElementById('adminInputModal').style.display = 'flex';
+    function openDeleteModal(u) { currentEditUser = u; document.getElementById('deleteModalTarget').innerText = `Warning: Permanently removing '${u}'`; document.getElementById('adminDeleteModal').style.display = 'flex'; }
+    async function confirmUserDelete() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}`, { method: 'DELETE' }); closeModals(); showToast("User deleted."); loadUsers(); }
+
+    // --- DATA & LOGS MANAGER ---
+    async function loadLogs(type) {
+        showLoader();
+        logData[type] = await (await fetch(`${API_URL}/logs/${type}`)).json();
+        const listDiv = document.getElementById(type === 'register' ? 'dataList' : 'logsList'); listDiv.innerHTML = '';
+        if(type==='register') selectedData = []; else selectedLogs = [];
+        document.getElementById(type === 'register' ? 'selectAllData' : 'selectAllLogs').checked = false;
+        
+        logData[type].forEach(log => {
+            const row = document.createElement('div'); row.className = 'log-row';
+            row.innerHTML = `<div><input type="checkbox" class="${type}-check" value="${log.id}" onchange="toggleLogSel(this, '${type}')"></div><div style="padding-right:15px;">${log.message}</div><div style="color:var(--text-muted); font-size:12px;">${new Date(log.timestamp).toLocaleString()}</div>`;
+            listDiv.appendChild(row);
+        });
+        updateBulkBtn(type); hideLoader();
     }
 
-    function openDeleteUserModal(username) {
-        document.getElementById('adminDeleteText').innerHTML = `Are you sure you want to delete <br><b style="color:var(--text-main);">${username}</b>?`;
-        document.getElementById('adminDeleteConfirmBtn').onclick = async () => {
-            closeModals(); showLoader();
-            await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' });
-            showToast("User deleted."); loadUsers();
-        };
-        document.getElementById('adminDeleteModal').style.display = 'flex';
+    function toggleLogSel(cb, type) { 
+        let arr = type === 'register' ? selectedData : selectedLogs;
+        if (cb.checked) arr.push(cb.value); else { const idx = arr.indexOf(cb.value); if(idx > -1) arr.splice(idx, 1); } updateBulkBtn(type); 
+    }
+    function toggleAllLogs(type) { 
+        const isData = type === 'data'; const valStr = isData ? 'register' : 'admin';
+        const master = document.getElementById(isData ? 'selectAllData' : 'selectAllLogs');
+        let arr = []; document.querySelectorAll(`.${valStr}-check`).forEach(cb => { cb.checked = master.checked; if (master.checked) arr.push(cb.value); });
+        if(isData) selectedData = arr; else selectedLogs = arr; updateBulkBtn(valStr);
+    }
+    
+    function updateBulkBtn(type) {
+        if(type === 'song') { const btn = document.getElementById('bulkDeleteSongsBtn'); if (selectedSongs.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedSongs.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Selected'; } }
+        else {
+            const arr = type === 'register' ? selectedData : selectedLogs; const btn = document.getElementById(type === 'register' ? 'bulkDeleteDataBtn' : 'bulkDeleteLogsBtn');
+            if(arr.length > 0) { btn.classList.add('active'); btn.innerText = `Clear (${arr.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Clear Selected'; }
+        }
+    }
+
+    async function clearLogs(type, isAll) {
+        showLoader();
+        if(isAll) await fetch(`${API_URL}/logs/${type}/all`, { method: 'DELETE' });
+        else { const arr = type === 'register' ? selectedData : selectedLogs; if(arr.length === 0) { hideLoader(); return; } await fetch(`${API_URL}/logs/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ids: arr}) }); }
+        loadLogs(type); showToast("Logs cleared.");
     }
 
     // --- REORDER & DRAG ---
     function editSequence(div, id, currentSeq) {
-        div.innerHTML = `<input type="number" class="seq-input" value="${currentSeq}" id="seqInput-${id}">`;
-        const input = document.getElementById(`seqInput-${id}`); input.focus();
-        input.addEventListener('blur', () => {
-            let newSeq = parseInt(input.value); if (isNaN(newSeq) || newSeq < 1) newSeq = 1; if (newSeq > allSongs.length) newSeq = allSongs.length;
-            const songIndex = allSongs.findIndex(s => s.id === id); const [movedSong] = allSongs.splice(songIndex, 1);
-            allSongs.splice(newSeq - 1, 0, movedSong); saveReorderToServer();
-        });
+        div.innerHTML = `<input type="number" class="seq-input" value="${currentSeq}" id="seqInput-${id}">`; const input = document.getElementById(`seqInput-${id}`); input.focus();
+        input.addEventListener('blur', () => { let newSeq = parseInt(input.value); if (isNaN(newSeq) || newSeq < 1) newSeq = 1; if (newSeq > allSongs.length) newSeq = allSongs.length; const songIndex = allSongs.findIndex(s => s.id === id); const [movedSong] = allSongs.splice(songIndex, 1); allSongs.splice(newSeq - 1, 0, movedSong); saveReorderToServer(); });
         input.addEventListener('keypress', (e) => { if (e.key === 'Enter') input.blur(); });
     }
     function handleDropReorder(dragId, dropTargetId) { const fromIndex = allSongs.findIndex(s => s.id === dragId); const toIndex = allSongs.findIndex(s => s.id === dropTargetId); const [movedSong] = allSongs.splice(fromIndex, 1); allSongs.splice(toIndex, 0, movedSong); saveReorderToServer(); }
     async function saveReorderToServer() { showLoader(); const orderedIds = allSongs.map(s => s.id); await fetch(`${API_URL}/songs/reorder`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({orderedIds}) }); loadData(); showToast("Sequence Updated"); }
 
-    function toggleSelection(cb) { if (cb.checked) selectedIds.push(cb.value); else selectedIds = selectedIds.filter(id => id !== cb.value); updateBulkBtn(); }
-    function toggleAll() { const master = document.getElementById('selectAll'); selectedIds = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedIds.push(cb.value); }); updateBulkBtn(); }
-    function updateBulkBtn() { const btn = document.getElementById('bulkDeleteBtn'); if (selectedIds.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedIds.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Permanently'; } }
-    
-    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if(m.id !== 'globalLoader') m.style.display = 'none'; }); currentEditId = null; }
-    
-    function openSettingsModal(id, name, price) {
-        currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price;
-        document.getElementById('songSettingsModal').style.display = 'flex';
-    }
-
-    async function saveSongSettings() {
-        if(!currentEditId) return; const newName = document.getElementById('settingName').value; const newPrice = document.getElementById('settingPrice').value;
-        closeModals(); showLoader();
-        await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName, newPrice}) });
-        loadData(); showToast("Settings Updated");
-    }
-
-    async function executeDeleteFromModal() { if(!currentEditId) return; if(confirm("Permanently delete this song?")) { closeModals(); showLoader(); await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); loadData(); showToast("Deleted successfully."); } }
-    async function executeDelete() { if(confirm(`Permanently delete ${selectedIds.length} songs?`)) { showLoader(); await Promise.all(selectedIds.map(id => fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }))); loadData(); showToast("Deleted successfully."); } }
+    function openSettingsModal(id, name, price) { currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price; document.getElementById('songSettingsModal').style.display = 'flex'; }
+    async function saveSongSettings() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName: document.getElementById('settingName').value, newPrice: document.getElementById('settingPrice').value}) }); closeModals(); loadData(); showToast("Settings Updated"); }
+    async function executeDeleteFromModal() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); loadData(); showToast("Deleted successfully."); }
+    async function executeDelete() { showLoader(); await Promise.all(selectedSongs.map(id => fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }))); loadData(); showToast("Deleted successfully."); }
 
     document.getElementById('fileInput').addEventListener('change', async (e) => {
-        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); 
-        showLoader();
-        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
-        if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } else { hideLoader(); showToast("Upload failed.", true); }
+        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); showLoader();
+        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } else { hideLoader(); showToast("Upload failed.", true); }
     });
-
     document.getElementById('bannerInput').addEventListener('change', async (e) => {
         if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showLoader();
-        const res = await fetch(`${API_URL}/upload-banner`, { method: 'POST', body: fd });
-        if (res.ok) { e.target.value = ''; showToast("Banner Updated!"); const settings = await res.json(); document.getElementById('bannerImage').src = settings.bannerUrl; document.getElementById('bannerImage').style.display = 'block'; hideLoader(); } 
+        const res = await fetch(`${API_URL}/upload-banner`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Banner Updated!"); document.getElementById('bannerImage').src = (await res.json()).bannerUrl; document.getElementById('bannerImage').style.display = 'block'; hideLoader(); } 
     });
 
     function openTransloadModal() { document.getElementById('transloadInput').value = ''; document.getElementById('transloadModal').style.display = 'flex'; }
     document.getElementById('confirmTransloadBtn').addEventListener('click', async () => {
         const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); showLoader();
-        const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
-        if (res.ok) { await loadData(); showToast("Fetch successful!"); } else { hideLoader(); showToast("Failed to transload", true); }
+        const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) }); if (res.ok) { await loadData(); showToast("Fetch successful!"); } else { hideLoader(); showToast("Failed to transload", true); }
     });
 
     showLoader(); loadSettings(); loadData();
