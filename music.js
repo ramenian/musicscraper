@@ -22,7 +22,7 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
         admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-        console.log('✅ Google Firebase (Database) Connected!');
+        console.log('✅ Google Firebase Connected!');
         db = admin.firestore();
     } catch (error) { console.error('❌ Firebase Connection Error:', error.message); }
 }
@@ -30,17 +30,13 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 // --- 2. CLOUDINARY INITIALIZATION ---
 if (process.env.CLOUDINARY_CLOUD_NAME) {
     cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
-    console.log('✅ Cloudinary (Storage) Connected!');
 }
-
 const storage = new CloudinaryStorage({ cloudinary: cloudinary, params: { folder: 'dj_music', resource_type: 'auto' }});
 const upload = multer({ storage: storage });
 
-// --- HELPER: SYSTEM LOGGING ---
-async function createLog(message) {
-    if(!db) return;
-    try { await db.collection('logs').add({ message: message, timestamp: new Date().toISOString() }); } 
-    catch(e) { console.error("Log error", e); }
+// --- HELPER: LOGGING SYSTEM ---
+async function logEvent(type, message) {
+    try { if(db) await db.collection('logs').add({ type, message, timestamp: new Date().toISOString() }); } catch(e) {}
 }
 
 app.get('/health', (req, res) => res.status(200).send('OK'));
@@ -61,7 +57,9 @@ app.post('/api/register', async (req, res) => {
             tokens: 0, profilePic: '', purchases: [], createdAt: new Date().toISOString()
         });
         
-        await createLog(`<span style="color:#34c759; font-weight:bold;">${username}</span> registered with ${contact}`);
+        // Log Registration
+        await logEvent('register', `<span style="color:#34c759; font-weight:600;">${username}</span> registered with ${contact}`);
+        
         res.json({ success: true, username });
     } catch (e) { res.status(500).send('DB Error: ' + e.message); }
 });
@@ -85,53 +83,58 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/users/:username', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     const doc = await db.collection('users').doc(req.params.username.toLowerCase()).get();
-    if (doc.exists) res.json(doc.data()); else res.status(404).send('Not found');
+    if (doc.exists) res.json(doc.data()); else res.status(404).send('User not found');
 });
 
 app.get('/api/all-users', async (req, res) => {
     if(!db) return res.json([]);
     try {
         const snapshot = await db.collection('users').get();
-        res.json(snapshot.docs.map(doc => {
-            const d = doc.data(); return { username: d.username, email: d.email, phone: d.phone, tokens: d.tokens || 0, purchases: d.purchases || [], createdAt: d.createdAt };
-        }));
+        res.json(snapshot.docs.map(doc => { const d = doc.data(); return { username: d.username, email: d.email, phone: d.phone, tokens: d.tokens || 0, purchases: d.purchases || [] }; }));
     } catch (e) { res.status(500).json([]); }
 });
 
-// Logs API for Admin
-app.get('/api/logs', async (req, res) => {
-    if(!db) return res.json([]);
+app.post('/api/users/:username/profile-pic', async (req, res) => {
     try {
-        const snapshot = await db.collection('logs').orderBy('timestamp', 'desc').limit(100).get();
-        res.json(snapshot.docs.map(doc => doc.data()));
-    } catch (e) { res.status(500).json([]); }
+        if(!db) return res.status(500).send('Database not connected');
+        const userRef = db.collection('users').doc(req.params.username.toLowerCase());
+        if (!(await userRef.get()).exists) return res.status(404).send('Not found');
+        const result = await cloudinary.uploader.upload(req.body.imageBase64, { folder: 'dj_profiles' });
+        await userRef.update({ profilePic: result.secure_url }); res.json({ profilePic: result.secure_url });
+    } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
 });
+
+app.put('/api/users/:username/change-username', async (req, res) => {
+    try {
+        if(!db) return res.status(500).send('Database not connected');
+        const oldId = req.params.username.toLowerCase(); const newId = req.body.newUsername.toLowerCase();
+        if ((await db.collection('users').doc(newId).get()).exists) return res.status(400).send('Username taken.');
+        const oldRef = db.collection('users').doc(oldId); const doc = await oldRef.get(); if (!doc.exists) return res.status(404).send('Not found');
+        const data = doc.data(); data.username = req.body.newUsername; 
+        await db.collection('users').doc(newId).set(data); await oldRef.delete();
+        res.json({ success: true, username: req.body.newUsername });
+    } catch (e) { res.status(500).send('DB Error: ' + e.message); }
+});
+
+app.put('/api/users/:username/change-email', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ email: req.body.newEmail }); res.send('Updated'); });
+app.put('/api/users/:username/change-phone', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ phone: req.body.newPhone }); res.send('Updated'); });
 
 app.put('/api/users/:username/set-tokens', async (req, res) => { 
     await db.collection('users').doc(req.params.username.toLowerCase()).update({ tokens: parseInt(req.body.tokens) || 0 }); 
-    await createLog(`Admin modified tokens for <span style="font-weight:bold;">${req.params.username}</span> to ${req.body.tokens}`);
+    await logEvent('admin', `Modified token balance for <span style="font-weight:600;">${req.params.username}</span> to ${req.body.tokens}`);
     res.send('Updated'); 
 });
-app.put('/api/users/:username/change-email', async (req, res) => { 
-    await db.collection('users').doc(req.params.username.toLowerCase()).update({ email: req.body.newEmail }); 
-    await createLog(`Admin modified email for <span style="font-weight:bold;">${req.params.username}</span>`);
-    res.send('Updated'); 
-});
-app.put('/api/users/:username/change-phone', async (req, res) => { 
-    await db.collection('users').doc(req.params.username.toLowerCase()).update({ phone: req.body.newPhone }); 
-    await createLog(`Admin modified phone for <span style="font-weight:bold;">${req.params.username}</span>`);
-    res.send('Updated'); 
-});
+
 app.delete('/api/users/:username', async (req, res) => { 
     await db.collection('users').doc(req.params.username.toLowerCase()).delete(); 
-    await createLog(`Admin deleted user account: <span style="color:#ff3b30; font-weight:bold;">${req.params.username}</span>`);
+    await logEvent('admin', `Deleted user account: <span style="font-weight:600; color:var(--danger);">${req.params.username}</span>`);
     res.send('Deleted'); 
 });
 
 app.post('/api/users/:username/topup', async (req, res) => {
     if(!db) return res.status(500).send('Database not connected');
     const userRef = db.collection('users').doc(req.params.username.toLowerCase());
-    const doc = await userRef.get(); if (!doc.exists) return res.status(404).send('Not found');
+    const doc = await userRef.get(); if (!doc.exists) return res.status(404).send('User not found');
     const newTokens = (doc.data().tokens || 0) + req.body.amount;
     await userRef.update({ tokens: newTokens }); res.json({ tokens: newTokens });
 });
@@ -141,12 +144,10 @@ app.post('/api/users/:username/purchase', async (req, res) => {
         if(!db) return res.status(500).send('Database not connected');
         const songDoc = await db.collection('songs').doc(req.body.songId).get(); if (!songDoc.exists) return res.status(404).send('Song not found');
         const song = songDoc.data();
-        
         const userRef = db.collection('users').doc(req.params.username.toLowerCase());
-        const userDoc = await userRef.get(); 
-        if (!userDoc.exists) return res.status(404).send('Not found'); // Triggers "Sorry Something Went Wrong" if user is deleted
-        
+        const userDoc = await userRef.get(); if (!userDoc.exists) return res.status(404).send('User not found');
         const user = userDoc.data();
+
         user.purchases = user.purchases || [];
         if (user.purchases.find(p => p.songId === req.body.songId)) return res.status(400).send('Already purchased');
 
@@ -154,9 +155,7 @@ app.post('/api/users/:username/purchase', async (req, res) => {
         if (user.tokens >= price) {
             user.tokens -= price;
             const purchaseId = Math.random().toString(36).substr(2, 10).toUpperCase();
-            const purchaseTime = new Date().toISOString();
-            
-            user.purchases.push({ songId: req.body.songId, songName: song.filename, filepath: song.filepath, tokensSpent: price, purchaseId, purchaseTime });
+            user.purchases.push({ songId: req.body.songId, songName: song.filename, filepath: song.filepath, tokensSpent: price, purchaseId, purchaseTime: new Date().toISOString() });
             await userRef.update({ tokens: user.tokens, purchases: user.purchases });
             res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
         } else res.status(400).send('Insufficient tokens');
@@ -164,8 +163,7 @@ app.post('/api/users/:username/purchase', async (req, res) => {
 });
 
 app.post('/api/forgot-password', async (req, res) => {
-    if(!db) return res.status(500).send('Database not connected');
-    const { contact } = req.body; 
+    if(!db) return res.status(500).send('Database not connected'); const { contact } = req.body; 
     let uQ = await db.collection('users').where('contact', '==', contact).get();
     if(uQ.empty) uQ = await db.collection('users').where('email', '==', contact).get();
     if(uQ.empty) uQ = await db.collection('users').where('phone', '==', contact).get();
@@ -176,7 +174,31 @@ app.post('/api/reset-password', async (req, res) => {
     if (doc.exists) { await userRef.update({ password: req.body.newPassword }); res.send('Password reset.'); } else res.status(400).send('Invalid token.');
 });
 
-// --- 4. ADMIN / LIBRARY API ---
+// --- 4. LOGS API ---
+app.get('/api/logs/:type', async (req, res) => {
+    if(!db) return res.json([]);
+    try {
+        const snap = await db.collection('logs').where('type', '==', req.params.type).get();
+        let logs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        res.json(logs);
+    } catch(e) { res.json([]); }
+});
+
+app.post('/api/logs/delete', async (req, res) => {
+    if(!db) return res.send('ok');
+    const batch = db.batch(); req.body.ids.forEach(id => batch.delete(db.collection('logs').doc(id)));
+    await batch.commit(); res.send('ok');
+});
+
+app.delete('/api/logs/:type/all', async (req, res) => {
+    if(!db) return res.send('ok');
+    const snap = await db.collection('logs').where('type', '==', req.params.type).get();
+    const batch = db.batch(); snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit(); res.send('ok');
+});
+
+// --- 5. ADMIN / LIBRARY API ---
 app.get('/api/settings', async (req, res) => {
     if(!db) return res.json({ headerTitle: 'DJ Music Library', bannerUrl: '' });
     const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'DJ Music Library', bannerUrl: '' });
