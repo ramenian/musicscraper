@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DJ Manager</title>
     <style>
-        :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --gold: #ffffff;}
+        :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --token: #ffffff;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
         
-        /* Centered Header */
-        .header-top { width: 100%; max-width: 1000px; margin-bottom: 20px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center; }
+        /* Header Centered */
+        .header-top { width: 100%; max-width: 1000px; margin-bottom: 30px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center;}
+        
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
         
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
@@ -51,23 +52,19 @@
         .song-row.drag-over { border-top: 2px solid var(--accent); }
         .song-row:hover { background-color: rgba(255, 255, 255, 0.05); }
 
+        /* USER LIST STYLES */
+        .user-wrapper { border-bottom: 1px solid var(--border-color); }
+        .user-row { display: grid; grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px; padding: 16px 20px; align-items: center; transition: 0.2s; }
+        .user-row:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .user-expanded { display: none; padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); }
+        .user-expanded.show { display: block; animation: fadeIn 0.2s; }
+        .history-row { display: grid; grid-template-columns: 2fr 1fr 100px 100px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: var(--text-muted); align-items: center;}
+        .history-row:last-child { border-bottom: none; }
+        .history-header { font-weight: bold; text-transform: uppercase; color: var(--text-main); margin-bottom: 5px; }
+
         .seq-num { font-weight: bold; color: var(--accent); cursor: text; padding: 5px; border-radius: 5px; text-align: center; width: 30px;}
         .seq-input { width: 30px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--accent); border-radius: 4px; text-align: center; outline: none; font-weight: bold;}
         
-        /* EXPANDABLE USERS */
-        .user-wrapper { border-bottom: 1px solid var(--border-color); }
-        .user-main { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; cursor: pointer; transition: 0.2s;}
-        .user-main:hover { background: rgba(255,255,255,0.05); }
-        .user-info { display: flex; align-items: center; gap: 15px; }
-        .user-pic { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #1c1c1e; }
-        .user-details-form { padding: 20px; background: rgba(0,0,0,0.3); display: none; }
-        .user-details-form.show { display: block; }
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
-        
-        .purchase-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
-        .purchase-table th { text-align: left; color: var(--text-muted); padding: 8px; border-bottom: 1px solid var(--border-color); }
-        .purchase-table td { padding: 8px; border-bottom: 1px solid var(--border-color); color: var(--text-main);}
-
         input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
         .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px; transition: 0.2s;}
         .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
@@ -90,20 +87,15 @@
         .modal-btn { flex: 1; padding: 14px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 500; transition: 0.2s;}
         .modal-btn:hover { background: rgba(255,255,255,0.05); }
         .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-main); font-weight: 400;}
-        
-        .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
-        .btn-danger-full:hover { background: var(--danger); color: white; }
 
         @media (max-width: 768px) {
             body { padding: 20px 10px; }
             .container { flex-direction: column; gap: 20px; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px;}
             .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
-            .settings-bar { flex-direction: column; align-items: stretch; gap: 10px; }
-            .settings-bar .btn-primary { width: 100%; margin-top: 5px; }
-            .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
-            .upload-bar > div { flex-direction: column; align-items: stretch; }
-            .form-row { flex-direction: column; gap: 5px; }
+            .upload-bar, .settings-bar { flex-direction: column; align-items: stretch; gap: 15px;}
+            .toolbar { flex-direction: column; align-items: flex-start; }
+            .search-input { width: 100%; box-sizing: border-box; }
         }
     </style>
 </head>
@@ -113,12 +105,14 @@
 <div class="header-top">Admin Dashboard</div>
 
 <div class="container">
+    
     <div class="sidebar">
         <button class="sidebar-btn active" onclick="switchView('general')" id="btn-general">General</button>
         <button class="sidebar-btn" onclick="switchView('users')" id="btn-users">Users</button>
     </div>
 
     <div class="content-area">
+        
         <div id="view-general" class="view-section active">
             <img id="bannerImage" class="global-banner" src="" alt="Global Banner">
 
@@ -164,9 +158,17 @@
                     <span style="font-size: 15px; font-weight: 600;">Registered Users</span>
                     <input type="text" id="userSearchInput" class="search-input" placeholder="Search user..." oninput="handleUserSearch()">
                 </div>
-                <div id="userList" style="max-height: 700px; overflow-y: auto;"></div>
+                <div class="table-container">
+                    <div class="table-inner">
+                        <div class="header-row" style="grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px;">
+                            <div></div><div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div><div>Actions</div>
+                        </div>
+                        <div id="userList"></div>
+                    </div>
+                </div>
             </div>
         </div>
+
     </div>
 </div>
 
@@ -180,7 +182,7 @@
             <h3 style="margin: 0 0 5px 0; text-align:center;">Song Settings</h3>
             <label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input">
             <label class="input-label">Token Cost (0 = Free)</label><input type="number" id="settingPrice" class="modal-input" min="0">
-            <button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button>
+            <button class="btn-primary" style="width: 100%; margin-top: 25px; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3);" onclick="executeDeleteFromModal()">Delete Song Permanently</button>
         </div>
         <div class="modal-actions">
             <button class="modal-btn cancel" onclick="closeModals()">Cancel</button>
@@ -193,8 +195,6 @@
     const API_URL = '/api'; 
     let allSongs = []; let selectedIds = []; let draggedId = null; let currentEditId = null;
     let allUsers = [];
-
-    const defaultPfp = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
     
@@ -233,21 +233,20 @@
             row.addEventListener('drop', (e) => { e.preventDefault(); row.classList.remove('drag-over'); if (draggedId && draggedId !== song.id) handleDropReorder(draggedId, song.id); });
 
             const price = song.price !== undefined ? song.price : 10;
-
             row.innerHTML = `
                 <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSelection(this)" ${isChecked}></div>
                 <div class="seq-num" ondblclick="editSequence(this, '${song.id}', ${song.sequence})">${song.sequence}</div>
                 <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
-                <div style="color: var(--gold); font-weight: bold;">${price}</div>
+                <div style="color: var(--token); font-weight: bold;">${price}</div>
                 <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
                 <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
-                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${price})"><svg viewBox="0 0 24 24"><path d="M19.14,12.94...c0.04-0.3...12,15.6z"/></svg></button></div>
+                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${price})"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
             `;
             listDiv.appendChild(row);
         });
     }
 
-    // --- USER DATA & ACCORDION ---
+    // --- USER DATA & INLINE ACTIONS ---
     async function loadUsers() { 
         const res = await fetch(`${API_URL}/all-users`);
         if(res.ok) { allUsers = await res.json(); handleUserSearch(); }
@@ -257,72 +256,63 @@
         const query = document.getElementById('userSearchInput').value.toLowerCase();
         const filtered = allUsers.filter(u => u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query) || u.phone.includes(query));
         const listDiv = document.getElementById('userList'); listDiv.innerHTML = '';
-        
         filtered.forEach(u => {
             const wrapper = document.createElement('div'); wrapper.className = 'user-wrapper';
             
-            let purchasesHtml = '';
+            // Build Purchase History Table
+            let historyHTML = '';
             if(u.purchases && u.purchases.length > 0) {
-                purchasesHtml = `<table class="purchase-table"><tr><th>Date</th><th>ID</th><th>Song Name</th><th>Tokens</th></tr>`;
+                historyHTML = `<div class="history-row history-header"><div>Song Name</div><div>Purchase Date</div><div>ID</div><div>Cost</div></div>`;
                 u.purchases.forEach(p => {
-                    const d = p.purchaseTime ? new Date(p.purchaseTime).toLocaleString() : '-';
-                    purchasesHtml += `<tr><td>${d}</td><td>${p.purchaseId || '-'}</td><td>${p.songName}</td><td>${p.tokensSpent || 10}</td></tr>`;
+                    historyHTML += `<div class="history-row"><div>${p.songName}</div><div>${new Date(p.purchaseTime).toLocaleString()}</div><div style="font-family:monospace;">${p.purchaseId || 'N/A'}</div><div style="color:var(--token);">${p.tokensSpent}</div></div>`;
                 });
-                purchasesHtml += `</table>`;
-            } else {
-                purchasesHtml = `<div style="padding: 10px 0; color: var(--text-muted); font-size: 13px;">No purchases yet.</div>`;
-            }
+            } else { historyHTML = `<div style="color:var(--text-muted); font-size:13px;">No purchases yet.</div>`; }
 
             wrapper.innerHTML = `
-                <div class="user-main" onclick="toggleUserExpand('${u.username}')">
-                    <div class="user-info">
-                        <img src="${u.profilePic || defaultPfp}" class="user-pic">
-                        <div><div style="font-weight: bold;">${u.username}</div><div style="font-size:12px; color:var(--text-muted);">${u.email}</div></div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap: 15px;">
-                        <span style="color:var(--gold); font-weight:bold;">${u.tokens} Tokens</span>
-                        <button class="icon-btn" onclick="deleteUser(event, '${u.username}')" style="color: var(--danger);"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
-                        <svg viewBox="0 0 24 24" style="fill:var(--text-muted);" id="arrow-${u.username}"><path d="M7 10l5 5 5-5z"/></svg>
+                <div class="user-row">
+                    <div><button class="icon-btn" onclick="toggleUserExpand('${u.username}')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button></div>
+                    <div style="font-weight: 500;">${u.username}</div>
+                    <div style="color: var(--text-muted); font-size: 14px; overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
+                    <div style="color: var(--text-muted); font-size: 14px;">${u.phone}</div>
+                    <div style="color: var(--token); font-weight: bold;">${u.tokens}</div>
+                    <div style="display:flex; gap: 5px;">
+                        <button class="icon-btn" title="Edit Token Balance" onclick="adminSetTokens('${u.username}', ${u.tokens})"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></button>
+                        <button class="icon-btn" title="Edit Contact" onclick="adminEditContact('${u.username}', '${u.email}', '${u.phone}')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+                        <button class="icon-btn" title="Delete User" style="color:var(--danger);" onclick="adminDeleteUser('${u.username}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                     </div>
                 </div>
-                <div class="user-details-form" id="details-${u.username}">
-                    <div class="form-row">
-                        <input type="number" id="t-${u.username}" class="input-text" placeholder="Tokens" value="${u.tokens}">
-                        <input type="text" id="e-${u.username}" class="input-text" placeholder="Email" value="${u.email}">
-                        <input type="text" id="p-${u.username}" class="input-text" placeholder="Phone" value="${u.phone}">
-                        <button class="btn-primary" onclick="saveUserEdit('${u.username}')">Save Profile</button>
-                    </div>
-                    <h4 style="margin: 15px 0 0 0;">Purchase History</h4>
-                    ${purchasesHtml}
+                <div class="user-expanded" id="expand-user-${u.username}">
+                    <h4 style="margin: 0 0 10px 0; color:var(--text-main);">Purchase History</h4>
+                    ${historyHTML}
                 </div>
             `;
             listDiv.appendChild(wrapper);
         });
     }
 
-    function toggleUserExpand(username) { 
-        const details = document.getElementById(`details-${username}`);
-        const arrow = document.getElementById(`arrow-${username}`);
-        if(details.classList.contains('show')) { details.classList.remove('show'); arrow.style.transform = 'rotate(0deg)'; }
-        else { details.classList.add('show'); arrow.style.transform = 'rotate(180deg)'; }
-    }
+    function toggleUserExpand(username) { document.getElementById(`expand-user-${username}`).classList.toggle('show'); }
 
-    async function saveUserEdit(username) {
-        const t = document.getElementById(`t-${username}`).value;
-        const e = document.getElementById(`e-${username}`).value;
-        const p = document.getElementById(`p-${username}`).value;
-        await fetch(`${API_URL}/admin/users/${username}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: t, email: e, phone: p}) });
-        showToast("User Updated!"); loadUsers();
+    async function adminSetTokens(username, current) {
+        const val = prompt(`Set exact token balance for ${username}:`, current);
+        if(val !== null && !isNaN(val)) {
+            await fetch(`${API_URL}/users/${username}/set-tokens`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: val}) });
+            showToast("Balance updated!"); loadUsers();
+        }
     }
-
-    async function deleteUser(e, username) {
-        e.stopPropagation();
-        if(confirm(`Completely delete user ${username}?`)) {
-            await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' });
-            showToast("User Deleted!"); loadUsers();
+    async function adminEditContact(username, email, phone) {
+        const newEmail = prompt(`Update email for ${username}:`, email);
+        if(newEmail !== null) await fetch(`${API_URL}/users/${username}/change-email`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newEmail}) });
+        const newPhone = prompt(`Update phone for ${username}:`, phone);
+        if(newPhone !== null) await fetch(`${API_URL}/users/${username}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone}) });
+        if(newEmail !== null || newPhone !== null) { showToast("Contact updated!"); loadUsers(); }
+    }
+    async function adminDeleteUser(username) {
+        if(confirm(`Are you sure you want to completely delete the user '${username}'? This cannot be undone.`)) {
+            await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' }); showToast("User deleted."); loadUsers();
         }
     }
 
+    // --- REORDER & DRAG ---
     function editSequence(div, id, currentSeq) {
         div.innerHTML = `<input type="number" class="seq-input" value="${currentSeq}" id="seqInput-${id}">`;
         const input = document.getElementById(`seqInput-${id}`); input.focus();
@@ -333,7 +323,6 @@
         });
         input.addEventListener('keypress', (e) => { if (e.key === 'Enter') input.blur(); });
     }
-
     function handleDropReorder(dragId, dropTargetId) { const fromIndex = allSongs.findIndex(s => s.id === dragId); const toIndex = allSongs.findIndex(s => s.id === dropTargetId); const [movedSong] = allSongs.splice(fromIndex, 1); allSongs.splice(toIndex, 0, movedSong); saveReorderToServer(); }
     async function saveReorderToServer() { const orderedIds = allSongs.map(s => s.id); await fetch(`${API_URL}/songs/reorder`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({orderedIds}) }); loadData(); showToast("Sequence Updated"); }
 
@@ -349,32 +338,32 @@
     }
 
     async function saveSongSettings() {
-        if(!currentEditId) return;
-        const newName = document.getElementById('settingName').value; const newPrice = document.getElementById('settingPrice').value;
+        if(!currentEditId) return; const newName = document.getElementById('settingName').value; const newPrice = document.getElementById('settingPrice').value;
         await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName, newPrice}) });
         closeModals(); loadData(); showToast("Settings Updated");
     }
 
     async function executeDeleteFromModal() { if(!currentEditId) return; if(confirm("Permanently delete this song?")) { await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); loadData(); showToast("Deleted successfully."); } }
-    async function executeDelete() { if(confirm(`Permanently delete ${selectedIds.length} songs?`)) { await fetch(`${API_URL}/songs/bulk-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedIds }) }); loadData(); showToast("Deleted successfully."); } }
+    async function executeDelete() { if(confirm(`Permanently delete ${selectedIds.length} songs?`)) { await Promise.all(selectedIds.map(id => fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }))); loadData(); showToast("Deleted successfully."); } }
 
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); 
+        showToast("Uploading Audio...");
         const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
         if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } else { showToast("Upload failed.", true); }
     });
 
     document.getElementById('bannerInput').addEventListener('change', async (e) => {
-        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showToast("Uploading...");
+        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showToast("Uploading Banner...");
         const res = await fetch(`${API_URL}/upload-banner`, { method: 'POST', body: fd });
-        if (res.ok) { e.target.value = ''; showToast("Banner Updated!"); const settings = await res.json(); const banner = document.getElementById('bannerImage'); banner.src = settings.bannerUrl; banner.style.display = 'block'; } 
+        if (res.ok) { e.target.value = ''; showToast("Banner Updated!"); const settings = await res.json(); document.getElementById('bannerImage').src = settings.bannerUrl; document.getElementById('bannerImage').style.display = 'block'; } 
     });
 
     function openTransloadModal() { document.getElementById('transloadInput').value = ''; document.getElementById('transloadModal').style.display = 'flex'; }
     document.getElementById('confirmTransloadBtn').addEventListener('click', async () => {
-        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); 
+        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); showToast("Transloading...");
         const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
-        if (res.ok) { const newSong = await res.json(); await loadData(); openSettingsModal(newSong.id, newSong.filename, newSong.price); showToast("Fetch successful!"); } else { showToast(await res.text(), true); }
+        if (res.ok) { await loadData(); showToast("Fetch successful!"); } else { showToast("Failed to transload", true); }
     });
 
     loadSettings(); loadData();
