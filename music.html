@@ -16,7 +16,7 @@
         
         .profile-dropdown { position: absolute; top: 55px; left: 0; background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 14px; width: 200px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; overflow: hidden;}
         .profile-dropdown.show { display: flex; animation: popIn 0.2s; }
-        .dropdown-item { padding: 14px 20px; color: var(--text-main); text-decoration: none; font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--border-color); transition: 0.2s; cursor: pointer; background: none; border-radius:0; text-align: left; border-left:none; border-right:none; border-top:none; display: block;}
+        .dropdown-item { padding: 14px 20px; color: var(--text-main); text-decoration: none; font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--border-color); transition: 0.2s; cursor: pointer; background: none; border-left:none; border-right:none; border-top:none; text-align:left;}
         .dropdown-item:last-child { border-bottom: none; }
         .dropdown-item:hover { background: rgba(255,255,255,0.1); }
 
@@ -73,7 +73,7 @@
         @keyframes shake { 0%, 100% { transform: translateX(-50%); } 25% { transform: translateX(-55%); } 75% { transform: translateX(-45%); } }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
-        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 320px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
+        .modal-box { background: rgba(40, 40, 40, 0.85); backdrop-filter: blur(30px); width: 100%; max-width: 320px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; }
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
@@ -104,7 +104,7 @@
 <div class="header-top">
     <div class="profile-trigger" id="profileBtn" onclick="toggleDropdown(event)"></div>
     <div class="profile-dropdown" id="profileDropdown">
-        <a class="dropdown-item" href="profile.html">Profile Settings</a>
+        <a href="profile.html" class="dropdown-item">Profile Settings</a>
         <button class="dropdown-item" style="color: var(--danger);" onclick="logout()">Logout</button>
     </div>
     <div class="token-pill" onclick="openBalanceModal()" id="tokenUI">
@@ -115,6 +115,7 @@
 
 <div class="container">
     <img id="bannerImage" class="global-banner" src="" alt="Banner">
+    
     <div class="glass-panel">
         <div class="tab-bar">
             <button class="tab-btn active" id="tab-library" onclick="switchTab('library')">Store</button>
@@ -142,19 +143,29 @@
 
 <div class="modal-overlay" id="topUpModal">
     <div class="modal-box">
-        <div class="modal-content" id="topUpContent"></div>
+        <div class="modal-content" id="topUpContent">
+            <h3 style="margin: 0 0 5px 0;">Select Amount</h3>
+            <div class="topup-grid">
+                <div class="topup-card" onclick="processTopUp(10)">+ 10</div><div class="topup-card" onclick="processTopUp(50)">+ 50</div>
+                <div class="topup-card" onclick="processTopUp(100)">+ 100</div><div class="topup-card" onclick="processTopUp(200)">+ 200</div>
+                <div class="topup-card" onclick="processTopUp(500)">+ 500</div><div class="topup-card" onclick="processTopUp(1000)">+ 1000</div>
+            </div>
+        </div>
         <div class="modal-actions"><button class="modal-btn cancel" onclick="openBalanceModal()" style="border:none;">Cancel</button></div>
     </div>
 </div>
 
 <div class="modal-overlay" id="purchaseModal">
-    <div class="modal-box"><div class="modal-content" id="purchaseContent"></div><div class="modal-actions" id="purchaseActions"></div></div>
+    <div class="modal-box">
+        <div class="modal-content" id="purchaseContent"></div>
+        <div class="modal-actions" id="purchaseActions"></div>
+    </div>
 </div>
 
-<div class="modal-overlay" id="purchaseSuccessModal" style="z-index: 10001;">
-    <div class="modal-box" style="padding: 40px;">
-        <svg viewBox="0 0 24 24" style="width:70px; height:70px; fill:var(--accent); margin: 0 auto 15px auto;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        <h3 style="margin:0; font-size: 20px;">Purchased Successfully</h3>
+<div class="modal-overlay" id="successPurchaseModal">
+    <div class="modal-box" style="padding: 40px 20px;">
+        <svg viewBox="0 0 24 24" style="width:70px; height:70px; fill:var(--accent); margin-bottom: 15px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <h2 style="margin:0; font-size: 20px; letter-spacing: 0.5px;">Purchased Successfully!</h2>
     </div>
 </div>
 
@@ -164,7 +175,7 @@
             <h3 style="margin: 0 0 15px 0; text-align:center;">Purchase Details</h3>
             <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">Order ID: <span id="infoId" style="color:white; font-family: monospace;"></span></div>
             <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">Date: <span id="infoDate" style="color:white;"></span></div>
-            <div style="font-size: 14px; color: var(--text-muted);">Cost: <span id="infoCost" style="color:var(--token); font-weight:bold;"></span></div>
+            <div style="font-size: 14px; color: var(--text-muted);">Cost: <span id="infoCost" style="color:var(--token); font-weight:bold;"></span> Tokens</div>
         </div>
         <div class="modal-actions"><button class="modal-btn cancel" style="border:none;" onclick="closeModals()">Close</button></div>
     </div>
@@ -184,7 +195,20 @@
     
     function showLoader() { document.getElementById('globalLoader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('globalLoader').style.display = 'none'; }
-    function showToast(msg, isError = false) { const t = document.getElementById('toast'); t.className = 'toast'; if(isError) t.classList.add('error'); t.innerHTML = `<span style="color:${isError ? 'white' : 'var(--accent)'}; font-weight:bold;">${isError ? '!' : '✓'}</span> ${msg}`; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+    
+    function showToast(msg, isError = false) { 
+        const t = document.getElementById('toast'); t.className = 'toast'; if(isError) t.classList.add('error'); 
+        t.innerHTML = `<span style="color:${isError ? 'white' : 'var(--accent)'}; font-weight:bold;">${isError ? '!' : '✓'}</span> ${msg}`; 
+        t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); 
+    }
+    
+    function checkOfflineError(res, errText) {
+        if(res.status === 404 && (errText.includes('Not found') || errText.includes('User not found'))) {
+            showToast("Sorry Something Went Wrong.", true); localStorage.removeItem('djUsername'); setTimeout(()=>window.location.reload(), 2000); return true;
+        }
+        return false;
+    }
+
     function formatBytes(bytes) { if (bytes === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
     function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m = Math.floor(sec / 60), s = Math.floor(sec % 60); return `${m}:${s < 10 ? '0'+s : s}`; }
 
@@ -195,13 +219,11 @@
         document.getElementById('tokenUI').style.display = 'none';
         document.getElementById('tab-mysongs').style.display = 'none';
     } else {
-        profileBtn.innerHTML = `<img id="headerProfilePic" class="profile-pic" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><span class="profile-name" id="mainHeader">${username}</span><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>`;
-    }
-
-    async function handleAuthError() {
-        localStorage.removeItem('djUsername');
-        showToast("Sorry Something Went Wrong", true);
-        setTimeout(() => window.location.href = '/register.html', 2000);
+        profileBtn.innerHTML = `
+            <img id="headerProfilePic" class="profile-pic" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+            <span class="profile-name" id="mainHeader">${username}</span>
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>
+        `;
     }
 
     async function loadData() {
@@ -213,10 +235,11 @@
         
         if(username) {
             const uRes = await fetch(`${API_URL}/users/${username}`);
-            if(uRes.status === 404) return handleAuthError(); // Block deleted users
             if(uRes.ok) { 
                 const data = await uRes.json(); userTokens = data.tokens || 0; userPurchases = data.purchases || []; updateTokenUI(); 
                 if(data.profilePic) document.getElementById('headerProfilePic').src = data.profilePic;
+            } else if(uRes.status === 404) {
+                localStorage.removeItem('djUsername'); window.location.reload();
             }
         }
         allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch();
@@ -246,8 +269,8 @@
     async function processTopUp(amount) {
         document.getElementById('topUpContent').innerHTML = `<div style="padding:40px 0;"><div class="apple-spinner"></div><p style="margin-top:15px; color:var(--text-muted);">Processing...</p></div>`;
         const res = await fetch(`${API_URL}/users/${username}/topup`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount }) });
-        if(res.status === 404) return handleAuthError();
         if(res.ok) { userTokens = (await res.json()).tokens; updateTokenUI(); closeModals(); showToast(`Added ${amount} Tokens!`); }
+        else { const err = await res.text(); if(!checkOfflineError(res, err)) showToast(err, true); closeModals(); }
     }
 
     function promptPurchase(songId, songName, filepath, price) {
@@ -264,11 +287,15 @@
         document.getElementById('purchaseActions').innerHTML = '';
         
         const res = await fetch(`${API_URL}/users/${username}/purchase`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({songId}) });
-        if(res.status === 404) return handleAuthError();
         if(res.ok) { 
-            const data = await res.json(); userTokens = data.tokens; userPurchases = data.purchases; updateTokenUI(); renderPage(); 
-            closeModals(); document.getElementById('purchaseSuccessModal').style.display = 'flex'; setTimeout(() => closeModals(), 2000);
-        } else { closeModals(); showToast("Sorry Something Went Wrong", true); }
+            const data = await res.json(); userTokens = data.tokens; userPurchases = data.purchases; updateTokenUI(); 
+            closeModals(); 
+            document.getElementById('successPurchaseModal').style.display = 'flex';
+            setTimeout(() => { closeModals(); renderPage(); }, 2000);
+        } else { 
+            const err = await res.text(); closeModals(); 
+            if(!checkOfflineError(res, err)) showToast(err, true); 
+        }
     }
 
     function showInfo(purchaseId, dateStr, cost) {
@@ -348,7 +375,9 @@
         });
     }
 
-    function buildExpandedPlayer(id, filepath, isPurchased) { return `<div class="expanded-player" id="expand-${id}"><span class="time-display" id="curr-${id}">0:00</span><div class="slider-container"><input type="range" class="seeker" id="seek-${id}" value="0" step="0.1" oninput="seekAudio('${id}', this.value)"><div class="inline-progress-fill" id="inline-prog-${id}"></div></div><span class="time-display" id="dur-${id}">0:00</span></div><audio id="audio-${id}" src="${filepath}" preload="metadata" data-id="${id}" data-purchased="${isPurchased}"></audio>`; }
+    function buildExpandedPlayer(id, filepath, isPurchased) {
+        return `<div class="expanded-player" id="expand-${id}"><span class="time-display" id="curr-${id}">0:00</span><div class="slider-container"><input type="range" class="seeker" id="seek-${id}" value="0" step="0.1" oninput="seekAudio('${id}', this.value)"><div class="inline-progress-fill" id="inline-prog-${id}"></div></div><span class="time-display" id="dur-${id}">0:00</span></div><audio id="audio-${id}" src="${filepath}" preload="metadata" data-id="${id}" data-purchased="${isPurchased}"></audio>`;
+    }
 
     function changePage(dir) { currentPage += dir; renderPage(); }
 
@@ -372,7 +401,8 @@
     function seekAudio(id, val) { const audio = document.getElementById(`audio-${id}`); if(audio.dataset.purchased === "false" && val >= 30) val = 29.9; audio.currentTime = val; }
     function toggleExpand(id) { document.getElementById(`expand-${id}`).classList.toggle('show'); }
 
-    showLoader(); switchTab('library'); loadData();
+    showLoader();
+    switchTab('library'); loadData();
 </script>
 </body>
 </html>
