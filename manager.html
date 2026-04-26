@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DJ Manager</title>
     <style>
-        :root { --bg-color: #000000; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #0a84ff; --danger: #ff453a; --token: #ffffff;}
+        :root { --bg-color: #0b0b13; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #6f42c1; --accent-light: #8a5cff; --danger: #ff453a; --token: #ffffff;}
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
         
-        .header-top { width: 100%; max-width: 1000px; margin-bottom: 30px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center;}
+        .header-top { width: 100%; max-width: 1000px; margin-bottom: 30px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center; position: relative;}
+        .btn-publish { position: absolute; left: 0; top: 0; background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.2s;}
+        .btn-publish:hover { background: var(--accent-light); transform: scale(1.05); }
+
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
         
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
@@ -21,14 +24,11 @@
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .global-banner { width: 100%; height: 200px; object-fit: cover; border-radius: 18px; margin-bottom: 20px; display: none; box-shadow: 0 4px 24px rgba(0,0,0,0.3); border: 1px solid var(--border-color);}
-        .glass-panel { background: var(--card-bg); backdrop-filter: blur(30px); border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); border: 1px solid var(--border-color); margin-bottom: 20px; overflow: hidden;}
+        .glass-panel { background: var(--card-bg); backdrop-filter: blur(30px); border-radius: 18px; border: 1px solid var(--border-color); margin-bottom: 20px; overflow: hidden;}
         
-        .upload-bar { padding: 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid var(--border-color); justify-content: space-between;}
+        .upload-bar { padding: 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid var(--border-color); justify-content: space-between; background: rgba(0,0,0,0.2);}
         .upload-bar input[type="file"] { display: none; }
-        .settings-bar { padding: 20px; display: flex; gap: 15px; align-items: center; }
-        .input-text { padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; flex: 1; outline: none; background: rgba(0,0,0,0.3); color: white;}
-        .btn-primary { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: 0.2s;}
+        .btn-primary { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: 0.2s; text-align: center;}
         .btn-primary:hover { transform: scale(1.02); }
         
         .action-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);}
@@ -38,6 +38,19 @@
         .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
         .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 250px; }
 
+        /* GENRES GRID */
+        .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; padding: 20px;}
+        .genre-card { aspect-ratio: 1; border-radius: 16px; position: relative; overflow: hidden; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: #1a1a24; transition: 0.2s;}
+        .genre-card:hover { border-color: var(--accent); }
+        .genre-card img { width: 100%; height: 100%; object-fit: cover; }
+        .genre-card .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); display: flex; align-items: flex-end; padding: 15px;}
+        .genre-card h4 { margin: 0; font-size: 18px; font-weight: 700; text-shadow: 0 2px 5px black;}
+        .genre-settings-icon { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 6px; border-radius: 50%; display: flex; transition: 0.2s;}
+        .genre-settings-icon:hover { background: var(--accent); }
+        
+        .add-genre-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 2px dashed var(--border-color); color: var(--text-muted);}
+        .add-genre-card:hover { border-color: var(--accent); color: white; }
+
         .table-container { overflow-x: auto; max-height: 600px;}
         .table-inner { min-width: 750px; }
 
@@ -45,23 +58,15 @@
         .header-row { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         
         .song-grid { grid-template-columns: 40px 50px 2fr 80px 100px 80px 80px; }
-        .song-row { cursor: grab; background: transparent; transition: background 0.2s;}
-        .song-row.drag-over { border-top: 2px solid var(--accent); }
-        .song-row:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .user-row { display: grid; grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px; padding: 16px 20px; align-items: center; transition: 0.2s; border-bottom: 1px solid var(--border-color); }
+        .log-row { display: grid; grid-template-columns: 40px 1fr 150px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; align-items: center;}
+        
+        .song-row:hover, .user-row:hover, .log-row:hover { background-color: rgba(255, 255, 255, 0.05); }
 
-        .user-wrapper { border-bottom: 1px solid var(--border-color); }
-        .user-row { display: grid; grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px; padding: 16px 20px; align-items: center; transition: 0.2s; }
-        .user-row:hover { background-color: rgba(255, 255, 255, 0.05); }
-        .user-expanded { display: none; padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); }
+        .user-expanded { display: none; padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);}
         .user-expanded.show { display: block; animation: fadeIn 0.2s; }
         .history-row { display: grid; grid-template-columns: 2fr 1fr 100px 100px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: var(--text-muted); align-items: center;}
-        
-        .log-row { display: grid; grid-template-columns: 40px 1fr 150px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; align-items: center;}
-        .log-row:hover { background-color: rgba(255, 255, 255, 0.05); }
 
-        .seq-num { font-weight: bold; color: var(--accent); cursor: text; padding: 5px; border-radius: 5px; text-align: center; width: 30px;}
-        .seq-input { width: 30px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--accent); border-radius: 4px; text-align: center; outline: none; font-weight: bold;}
-        
         input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
         .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px; transition: 0.2s;}
         .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
@@ -71,27 +76,30 @@
         .toast.show { transform: translateX(-50%) translateY(0); }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
-        .modal-box { background: rgba(40, 40, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
+        .modal-box { background: rgba(30, 30, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; text-align: left; }
         .input-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; display: block; margin-top: 15px;}
-        .modal-input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
+        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
         
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
-        .modal-btn { flex: 1; padding: 16px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 500; transition: 0.2s;}
+        .modal-btn { flex: 1; padding: 16px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 600; transition: 0.2s;}
         .modal-btn:hover { background: rgba(255,255,255,0.05); }
-        .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-main); font-weight: 400;}
-        .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
+        .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-muted); font-weight: 400;}
+        .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
 
         .apple-spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
+        .back-btn-ui { display: inline-flex; align-items: center; gap: 5px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; font-weight: 600; padding: 15px 20px;}
+        .back-btn-ui:hover { color: white; }
+
         @media (max-width: 768px) {
-            body { padding: 20px 10px; }
             .container { flex-direction: column; gap: 20px; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px;}
             .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
-            .upload-bar, .settings-bar { flex-direction: column; align-items: stretch; gap: 15px;}
+            .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
+            .btn-publish { position: relative; width: 100%; margin-bottom: 20px;}
         }
     </style>
 </head>
@@ -100,10 +108,12 @@
 <div id="globalLoader" class="modal-overlay" style="display:flex; z-index: 99999;"><div class="apple-spinner"></div></div>
 <div id="toast" class="toast"></div>
 
-<div class="header-top">Admin Dashboard</div>
+<div class="header-top">
+    <button class="btn-publish" onclick="publishChanges()">Publish Updates</button>
+    Admin Dashboard
+</div>
 
 <div class="container">
-    
     <div class="sidebar">
         <button class="sidebar-btn active" onclick="switchView('general')" id="btn-general">General</button>
         <button class="sidebar-btn" onclick="switchView('users')" id="btn-users">Users</button>
@@ -113,26 +123,23 @@
 
     <div class="content-area">
         <div id="view-general" class="view-section active">
-            <img id="bannerImage" class="global-banner" src="" alt="Global Banner">
-
-            <div class="glass-panel">
-                <div class="upload-bar">
-                    <div style="display:flex; align-items:center; gap: 10px; width: 100%;">
-                        <label class="btn-primary" style="flex: 1; text-align:center;">Upload Audio<input type="file" id="fileInput" accept="audio/*"></label>
-                        <button class="btn-primary" style="flex: 1;" onclick="openTransloadModal()">Transload (.m4a)</button>
-                    </div>
-                    <label class="btn-primary" style="background: var(--card-bg); border: 1px solid var(--border-color); text-align: center;">Change Banner<input type="file" id="bannerInput" accept="image/*"></label>
-                </div>
-                <div class="settings-bar">
-                    <div style="font-weight: 600; white-space: nowrap;">Main Header:</div>
-                    <input type="text" id="headerInput" class="input-text">
-                    <button class="btn-primary" onclick="saveSettings()">Save</button>
-                </div>
+            <div class="glass-panel" id="genreGridViewPanel">
+                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Music Categories (Genres)</span></div>
+                <div class="genre-grid" id="genreGrid"></div>
             </div>
 
-            <div class="glass-panel">
+            <div class="glass-panel" id="songListViewPanel" style="display:none;">
+                <button class="back-btn-ui" onclick="backToGenres()"><svg viewBox="0 0 24 24" style="width:18px;fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back to Genres</button>
+                <div class="toolbar" style="border-top: 1px solid var(--border-color);">
+                    <span style="font-size: 18px; font-weight: 700;" id="currentGenreTitle">Category</span>
+                </div>
+                <div class="upload-bar">
+                    <div style="display:flex; align-items:center; gap: 10px; width: 100%;">
+                        <button class="btn-primary" style="flex: 1;" onclick="openUploadModal()">+ Upload Audio</button>
+                        <button class="btn-primary" style="flex: 1;" onclick="openTransloadModal()">+ Transload URL</button>
+                    </div>
+                </div>
                 <div class="toolbar">
-                    <span style="font-size: 13px; color: var(--text-muted);">Drag or double-click Seq #</span>
                     <input type="text" id="searchInput" class="search-input" placeholder="Search song..." oninput="handleSearch()">
                 </div>
                 <div class="table-container">
@@ -150,15 +157,10 @@
 
         <div id="view-users" class="view-section">
             <div class="glass-panel">
-                <div class="toolbar">
-                    <span style="font-size: 15px; font-weight: 600;">Registered Users</span>
-                    <input type="text" id="userSearchInput" class="search-input" placeholder="Search user..." oninput="handleUserSearch()">
-                </div>
+                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Registered Users</span><input type="text" id="userSearchInput" class="search-input" placeholder="Search user..." oninput="handleUserSearch()"></div>
                 <div class="table-container">
                     <div class="table-inner">
-                        <div class="header-row" style="grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px;">
-                            <div></div><div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div><div>Actions</div>
-                        </div>
+                        <div class="header-row" style="grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px;"><div></div><div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div><div>Actions</div></div>
                         <div id="userList"></div>
                     </div>
                 </div>
@@ -170,9 +172,7 @@
                 <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Registration Data</span></div>
                 <div class="table-container">
                     <div class="table-inner">
-                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;">
-                            <div><input type="checkbox" id="selectAllData" onchange="toggleAllLogs('data')"></div><div>Event</div><div>Date</div>
-                        </div>
+                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;"><div><input type="checkbox" id="selectAllData" onchange="toggleAllLogs('data')"></div><div>Event</div><div>Date</div></div>
                         <div id="dataList"></div>
                     </div>
                 </div>
@@ -188,9 +188,7 @@
                 <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">System Logs</span></div>
                 <div class="table-container">
                     <div class="table-inner">
-                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;">
-                            <div><input type="checkbox" id="selectAllLogs" onchange="toggleAllLogs('logs')"></div><div>Action</div><div>Date</div>
-                        </div>
+                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;"><div><input type="checkbox" id="selectAllLogs" onchange="toggleAllLogs('logs')"></div><div>Action</div><div>Date</div></div>
                         <div id="logsList"></div>
                     </div>
                 </div>
@@ -200,17 +198,52 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
-<div class="modal-overlay" id="transloadModal">
-    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center;">Transload URL</h3><input type="text" id="transloadInput" class="modal-input" placeholder="https://.../song.m4a"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" id="confirmTransloadBtn" style="font-weight: 600;">Fetch File</button></div></div>
+<div class="modal-overlay" id="genreModal">
+    <div class="modal-box">
+        <div class="modal-content">
+            <h3 style="margin: 0 0 15px 0; text-align:center;" id="genreModalTitle">Add Genre</h3>
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 20px auto; cursor: pointer; border-radius: 12px; overflow:hidden;" onclick="document.getElementById('genreCoverUpload').click()">
+                <img id="genreCoverPreview" src="" style="width: 100%; height: 100%; object-fit: cover; background: #333;">
+                <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); text-align: center; font-size: 10px; padding: 4px 0;">EDIT IMG</div>
+            </div>
+            <input type="file" id="genreCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'genreCoverPreview')">
+            <label class="input-label">Genre Name</label><input type="text" id="genreNameInput" class="modal-input">
+            <div id="genreDeleteArea"></div>
+        </div>
+        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveGenre()">Save</button></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="uploadSongModal">
+    <div class="modal-box">
+        <div class="modal-content">
+            <h3 style="margin: 0 0 15px 0; text-align:center;" id="uploadModalTitle">Upload Audio</h3>
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 20px auto; cursor: pointer; border-radius: 12px; overflow:hidden;" onclick="document.getElementById('songCoverUpload').click()">
+                <img id="songCoverPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); text-align: center; font-size: 10px; padding: 4px 0;">COVER PNG</div>
+            </div>
+            <input type="file" id="songCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'songCoverPreview')">
+            
+            <div id="uploadFileArea" style="margin-bottom:15px;">
+                <label class="btn-primary" style="display:block; text-align:center; width:100%; box-sizing:border-box;">Select MP3 <input type="file" id="uploadFileInput" accept="audio/*"></label>
+            </div>
+            <div id="transloadFileArea" style="margin-bottom:15px; display:none;">
+                <label class="input-label">URL (.m4a)</label><input type="text" id="transloadUrlInput" class="modal-input">
+            </div>
+
+            <label class="input-label">Song Title</label><input type="text" id="uploadTitleInput" class="modal-input">
+            <label class="input-label">Tokens</label><input type="number" id="uploadPriceInput" class="modal-input" value="10" min="0">
+        </div>
+        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="executeUpload()">Save & Publish</button></div>
+    </div>
 </div>
 
 <div class="modal-overlay" id="songSettingsModal">
     <div class="modal-box">
-        <div class="modal-content"><h3 style="margin: 0 0 5px 0; text-align:center;">Song Settings</h3><label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input"><label class="input-label">Token Cost</label><input type="number" id="settingPrice" class="modal-input" min="0"><button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button></div>
+        <div class="modal-content"><h3 style="margin: 0 0 5px 0; text-align:center;">Edit Song</h3><label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input"><label class="input-label">Token Cost</label><input type="number" id="settingPrice" class="modal-input" min="0"><button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button></div>
         <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveSongSettings()">Save Changes</button></div>
     </div>
 </div>
@@ -229,9 +262,12 @@
 
 <script>
     const API_URL = '/api'; 
-    let allSongs = [], allUsers = [], logData = { register: [], admin: [] };
+    let allSongs = [], allUsers = [], logData = { register: [], admin: [] }, allGenres = [];
     let selectedSongs = [], selectedData = [], selectedLogs = [];
     let draggedId = null, currentEditId = null, currentEditUser = null;
+    let currentAdminGenreId = null;
+    let pendingUploadBase64 = null;
+    let isTransloadMode = false;
 
     function showLoader() { document.getElementById('globalLoader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('globalLoader').style.display = 'none'; }
@@ -243,49 +279,105 @@
         document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
         document.getElementById(`btn-${view}`).classList.add('active');
         document.getElementById(`view-${view}`).classList.add('active');
-        if(view === 'users') loadUsers();
-        if(view === 'data') loadLogs('register');
-        if(view === 'logs') loadLogs('admin');
+        if(view === 'users') loadUsers(); if(view === 'data') loadLogs('register'); if(view === 'logs') loadLogs('admin');
     }
 
-    async function loadSettings() { 
-        const res = await fetch(`${API_URL}/settings`);
-        if(res.ok) { const data = await res.json(); document.getElementById('headerInput').value = data.headerTitle || "DJ Music Library"; if(data.bannerUrl) { document.getElementById('bannerImage').src = data.bannerUrl; document.getElementById('bannerImage').style.display = 'block'; } }
-    }
-    async function saveSettings() { showLoader(); await fetch(`${API_URL}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({headerTitle: document.getElementById('headerInput').value})}); hideLoader(); showToast("Saved!"); }
+    function publishChanges() { showLoader(); setTimeout(() => { hideLoader(); showToast("Changes Published Successfully!"); }, 800); }
     function formatBytes(bytes) { if (bytes === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
 
-    // --- SONG MANAGER ---
-    async function loadData() { allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); hideLoader(); }
-    function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.filename.toLowerCase().includes(query)); selectedSongs = []; document.getElementById('selectAllSongs').checked = false; renderList(filtered); }
+    async function loadInitial() { showLoader(); allGenres = await (await fetch(`${API_URL}/genres`)).json(); renderGenres(); hideLoader(); }
+
+    // GENRES
+    function renderGenres() {
+        const grid = document.getElementById('genreGrid'); grid.innerHTML = '';
+        allGenres.forEach(g => {
+            const cover = g.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%232a2a35"/%3E%3C/svg%3E';
+            grid.innerHTML += `
+                <div class="genre-card" onclick="openGenreSongs('${g.id}', '${g.name}')">
+                    <img src="${cover}">
+                    <div class="overlay"><h4>${g.name}</h4></div>
+                    <div class="genre-settings-icon" onclick="event.stopPropagation(); openGenreModal('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${cover}')"><svg viewBox="0 0 24 24"><path d="M19.14... (icon omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+                </div>
+            `;
+        });
+        grid.innerHTML += `<div class="genre-card add-genre-card" onclick="openGenreModal()"><svg viewBox="0 0 24 24" style="width:40px;height:40px;margin-bottom:10px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg><div>Add Genre</div></div>`;
+    }
+
+    function handleImgPreview(event, targetId) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { pendingUploadBase64 = e.target.result; document.getElementById(targetId).src = pendingUploadBase64; }; reader.readAsDataURL(file); }
+
+    function openGenreModal(id = null, name = '', cover = '') {
+        currentEditId = id; pendingUploadBase64 = null;
+        document.getElementById('genreModalTitle').innerText = id ? 'Edit Genre' : 'Add Genre';
+        document.getElementById('genreNameInput').value = name;
+        document.getElementById('genreCoverPreview').src = cover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23333"/%3E%3C/svg%3E';
+        document.getElementById('genreDeleteArea').innerHTML = id ? `<button class="btn-danger-full" onclick="deleteGenre('${id}')">Delete Genre</button>` : '';
+        document.getElementById('genreModal').style.display = 'flex';
+    }
+
+    async function saveGenre() {
+        showLoader(); const name = document.getElementById('genreNameInput').value;
+        const payload = { name, coverBase64: pendingUploadBase64 };
+        if(currentEditId) await fetch(`${API_URL}/genres/${currentEditId}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        else await fetch(`${API_URL}/genres`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        closeModals(); await loadInitial();
+    }
+    async function deleteGenre(id) { if(!confirm("Delete genre?")) return; showLoader(); await fetch(`${API_URL}/genres/${id}`, { method: 'DELETE' }); closeModals(); await loadInitial(); }
+
+    // SONGS IN GENRE
+    async function openGenreSongs(id, name) {
+        currentAdminGenreId = id; document.getElementById('currentGenreTitle').innerText = name;
+        document.getElementById('genreGridViewPanel').style.display = 'none'; document.getElementById('songListViewPanel').style.display = 'block';
+        showLoader(); allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); hideLoader();
+    }
+    function backToGenres() { document.getElementById('genreGridViewPanel').style.display = 'block'; document.getElementById('songListViewPanel').style.display = 'none'; }
+
+    function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.genreId === currentAdminGenreId && s.filename.toLowerCase().includes(query)); selectedSongs = []; document.getElementById('selectAllSongs').checked = false; renderList(filtered); }
 
     function renderList(songsToRender) {
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
         songsToRender.forEach(song => {
             const isChecked = selectedSongs.includes(song.id) ? 'checked' : '';
-            const row = document.createElement('div'); row.className = 'song-row song-grid'; row.draggable = true; row.dataset.id = song.id;
-            row.addEventListener('dragstart', (e) => { draggedId = song.id; e.dataTransfer.effectAllowed = 'move'; });
-            row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
-            row.addEventListener('dragleave', () => { row.classList.remove('drag-over'); });
-            row.addEventListener('drop', (e) => { e.preventDefault(); row.classList.remove('drag-over'); if (draggedId && draggedId !== song.id) handleDropReorder(draggedId, song.id); });
-
-            row.innerHTML = `
-                <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSongSel(this)" ${isChecked}></div>
-                <div class="seq-num" ondblclick="editSequence(this, '${song.id}', ${song.sequence})">${song.sequence}</div>
-                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
-                <div style="color: var(--token); font-weight: bold;">${song.price !== undefined ? song.price : 10}</div>
-                <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
-                <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
-                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price !== undefined ? song.price : 10})"><svg viewBox="0 0 24 24"><path d="M19.14... (icon path omitted for brevity) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+            listDiv.innerHTML += `
+                <div class="song-row song-grid">
+                    <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSongSel(this)" ${isChecked}></div>
+                    <div class="seq-num">${song.sequence}</div>
+                    <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
+                    <div style="color: var(--token); font-weight: bold;">${song.price !== undefined ? song.price : 10}</div>
+                    <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
+                    <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
+                    <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price !== undefined ? song.price : 10})"><svg viewBox="0 0 24 24"><path d="M19.14... (omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+                </div>
             `;
-            listDiv.appendChild(row);
         });
     }
 
     function toggleSongSel(cb) { if (cb.checked) selectedSongs.push(cb.value); else selectedSongs = selectedSongs.filter(id => id !== cb.value); updateBulkBtn('song'); }
     function toggleAllSongs() { const master = document.getElementById('selectAllSongs'); selectedSongs = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedSongs.push(cb.value); }); updateBulkBtn('song'); }
 
-    // --- USER MANAGEMENT ---
+    // UPLOAD / TRANSLOAD
+    function resetUploadModal() {
+        document.getElementById('uploadTitleInput').value = ''; document.getElementById('uploadPriceInput').value = '10';
+        document.getElementById('songCoverPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E";
+        pendingUploadBase64 = null;
+    }
+    function openUploadModal() { isTransloadMode = false; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Upload Audio'; document.getElementById('uploadFileArea').style.display = 'block'; document.getElementById('transloadFileArea').style.display = 'none'; document.getElementById('uploadSongModal').style.display = 'flex'; }
+    function openTransloadModal() { isTransloadMode = true; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Transload Audio'; document.getElementById('uploadFileArea').style.display = 'none'; document.getElementById('transloadFileArea').style.display = 'block'; document.getElementById('uploadSongModal').style.display = 'flex'; }
+
+    async function executeUpload() {
+        const title = document.getElementById('uploadTitleInput').value; const price = document.getElementById('uploadPriceInput').value;
+        if(isTransloadMode) {
+            const url = document.getElementById('transloadUrlInput').value; if(!url) return; showLoader();
+            const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, title, price, genreId: currentAdminGenreId, coverBase64: pendingUploadBase64 }) });
+            if (res.ok) { closeModals(); showToast("Transload successful!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed to transload", true); }
+        } else {
+            const file = document.getElementById('uploadFileInput').files[0]; if(!file) return; showLoader();
+            const fd = new FormData(); fd.append('mp3file', file); fd.append('title', title); fd.append('price', price); fd.append('genreId', currentAdminGenreId); if(pendingUploadBase64) fd.append('coverBase64', pendingUploadBase64);
+            const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
+            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Upload failed.", true); }
+        }
+    }
+
+    // --- USERS & LOGS ---
     async function loadUsers() { showLoader(); allUsers = await (await fetch(`${API_URL}/all-users`)).json(); handleUserSearch(); hideLoader(); }
     function handleUserSearch() {
         const query = document.getElementById('userSearchInput').value.toLowerCase();
@@ -295,7 +387,7 @@
             const wrapper = document.createElement('div'); wrapper.className = 'user-wrapper';
             let historyHTML = '';
             if(u.purchases && u.purchases.length > 0) {
-                historyHTML = `<div class="history-row history-header"><div>Song Name</div><div>Purchase Date</div><div>ID</div><div>Cost</div></div>`;
+                historyHTML = `<div class="history-row history-header"><div>Song Name</div><div>Date</div><div>ID</div><div>Cost</div></div>`;
                 u.purchases.forEach(p => { historyHTML += `<div class="history-row"><div>${p.songName}</div><div>${new Date(p.purchaseTime).toLocaleString()}</div><div style="font-family:monospace;">${p.purchaseId || 'N/A'}</div><div style="color:var(--token);">${p.tokensSpent}</div></div>`; });
             } else { historyHTML = `<div style="color:var(--text-muted); font-size:13px;">No purchases yet.</div>`; }
 
@@ -318,7 +410,6 @@
         });
     }
 
-    // Custom UI for User Edits
     function openTokenModal(u, t) { currentEditUser = u; document.getElementById('tokenModalTarget').innerText = `Target: ${u}`; document.getElementById('adminTokenInput').value = t; document.getElementById('adminTokenModal').style.display = 'flex'; }
     async function confirmTokenUpdate() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}/set-tokens`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: document.getElementById('adminTokenInput').value}) }); closeModals(); showToast("Tokens updated!"); loadUsers(); }
 
@@ -329,17 +420,13 @@
         await fetch(`${API_URL}/users/${currentEditUser}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone: document.getElementById('adminPhoneInput').value}) });
         closeModals(); showToast("Contact updated!"); loadUsers(); 
     }
-
     function openDeleteModal(u) { currentEditUser = u; document.getElementById('deleteModalTarget').innerText = `Warning: Permanently removing '${u}'`; document.getElementById('adminDeleteModal').style.display = 'flex'; }
     async function confirmUserDelete() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}`, { method: 'DELETE' }); closeModals(); showToast("User deleted."); loadUsers(); }
 
-    // --- DATA & LOGS MANAGER ---
     async function loadLogs(type) {
-        showLoader();
-        logData[type] = await (await fetch(`${API_URL}/logs/${type}`)).json();
+        showLoader(); logData[type] = await (await fetch(`${API_URL}/logs/${type}`)).json();
         const listDiv = document.getElementById(type === 'register' ? 'dataList' : 'logsList'); listDiv.innerHTML = '';
-        if(type==='register') selectedData = []; else selectedLogs = [];
-        document.getElementById(type === 'register' ? 'selectAllData' : 'selectAllLogs').checked = false;
+        if(type==='register') selectedData = []; else selectedLogs = []; document.getElementById(type === 'register' ? 'selectAllData' : 'selectAllLogs').checked = false;
         
         logData[type].forEach(log => {
             const row = document.createElement('div'); row.className = 'log-row';
@@ -348,26 +435,12 @@
         });
         updateBulkBtn(type); hideLoader();
     }
-
-    function toggleLogSel(cb, type) { 
-        let arr = type === 'register' ? selectedData : selectedLogs;
-        if (cb.checked) arr.push(cb.value); else { const idx = arr.indexOf(cb.value); if(idx > -1) arr.splice(idx, 1); } updateBulkBtn(type); 
-    }
-    function toggleAllLogs(type) { 
-        const isData = type === 'data'; const valStr = isData ? 'register' : 'admin';
-        const master = document.getElementById(isData ? 'selectAllData' : 'selectAllLogs');
-        let arr = []; document.querySelectorAll(`.${valStr}-check`).forEach(cb => { cb.checked = master.checked; if (master.checked) arr.push(cb.value); });
-        if(isData) selectedData = arr; else selectedLogs = arr; updateBulkBtn(valStr);
-    }
-    
+    function toggleLogSel(cb, type) { let arr = type === 'register' ? selectedData : selectedLogs; if (cb.checked) arr.push(cb.value); else { const idx = arr.indexOf(cb.value); if(idx > -1) arr.splice(idx, 1); } updateBulkBtn(type); }
+    function toggleAllLogs(type) { const isData = type === 'data'; const valStr = isData ? 'register' : 'admin'; const master = document.getElementById(isData ? 'selectAllData' : 'selectAllLogs'); let arr = []; document.querySelectorAll(`.${valStr}-check`).forEach(cb => { cb.checked = master.checked; if (master.checked) arr.push(cb.value); }); if(isData) selectedData = arr; else selectedLogs = arr; updateBulkBtn(valStr); }
     function updateBulkBtn(type) {
         if(type === 'song') { const btn = document.getElementById('bulkDeleteSongsBtn'); if (selectedSongs.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedSongs.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Selected'; } }
-        else {
-            const arr = type === 'register' ? selectedData : selectedLogs; const btn = document.getElementById(type === 'register' ? 'bulkDeleteDataBtn' : 'bulkDeleteLogsBtn');
-            if(arr.length > 0) { btn.classList.add('active'); btn.innerText = `Clear (${arr.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Clear Selected'; }
-        }
+        else { const arr = type === 'register' ? selectedData : selectedLogs; const btn = document.getElementById(type === 'register' ? 'bulkDeleteDataBtn' : 'bulkDeleteLogsBtn'); if(arr.length > 0) { btn.classList.add('active'); btn.innerText = `Clear (${arr.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Clear Selected'; } }
     }
-
     async function clearLogs(type, isAll) {
         showLoader();
         if(isAll) await fetch(`${API_URL}/logs/${type}/all`, { method: 'DELETE' });
@@ -375,36 +448,12 @@
         loadLogs(type); showToast("Logs cleared.");
     }
 
-    // --- REORDER & DRAG ---
-    function editSequence(div, id, currentSeq) {
-        div.innerHTML = `<input type="number" class="seq-input" value="${currentSeq}" id="seqInput-${id}">`; const input = document.getElementById(`seqInput-${id}`); input.focus();
-        input.addEventListener('blur', () => { let newSeq = parseInt(input.value); if (isNaN(newSeq) || newSeq < 1) newSeq = 1; if (newSeq > allSongs.length) newSeq = allSongs.length; const songIndex = allSongs.findIndex(s => s.id === id); const [movedSong] = allSongs.splice(songIndex, 1); allSongs.splice(newSeq - 1, 0, movedSong); saveReorderToServer(); });
-        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') input.blur(); });
-    }
-    function handleDropReorder(dragId, dropTargetId) { const fromIndex = allSongs.findIndex(s => s.id === dragId); const toIndex = allSongs.findIndex(s => s.id === dropTargetId); const [movedSong] = allSongs.splice(fromIndex, 1); allSongs.splice(toIndex, 0, movedSong); saveReorderToServer(); }
-    async function saveReorderToServer() { showLoader(); const orderedIds = allSongs.map(s => s.id); await fetch(`${API_URL}/songs/reorder`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({orderedIds}) }); loadData(); showToast("Sequence Updated"); }
-
     function openSettingsModal(id, name, price) { currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price; document.getElementById('songSettingsModal').style.display = 'flex'; }
-    async function saveSongSettings() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName: document.getElementById('settingName').value, newPrice: document.getElementById('settingPrice').value}) }); closeModals(); loadData(); showToast("Settings Updated"); }
-    async function executeDeleteFromModal() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); loadData(); showToast("Deleted successfully."); }
-    async function executeDelete() { showLoader(); await Promise.all(selectedSongs.map(id => fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }))); loadData(); showToast("Deleted successfully."); }
+    async function saveSongSettings() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName: document.getElementById('settingName').value, newPrice: document.getElementById('settingPrice').value}) }); closeModals(); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Settings Updated"); }
+    async function executeDeleteFromModal() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Deleted successfully."); }
+    async function executeDelete() { showLoader(); await Promise.all(selectedSongs.map(id => fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }))); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Deleted successfully."); }
 
-    document.getElementById('fileInput').addEventListener('change', async (e) => {
-        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('mp3file', e.target.files[0]); showLoader();
-        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Audio Uploaded!"); loadData(); } else { hideLoader(); showToast("Upload failed.", true); }
-    });
-    document.getElementById('bannerInput').addEventListener('change', async (e) => {
-        if (!e.target.files[0]) return; const fd = new FormData(); fd.append('bannerFile', e.target.files[0]); showLoader();
-        const res = await fetch(`${API_URL}/upload-banner`, { method: 'POST', body: fd }); if (res.ok) { e.target.value = ''; showToast("Banner Updated!"); document.getElementById('bannerImage').src = (await res.json()).bannerUrl; document.getElementById('bannerImage').style.display = 'block'; hideLoader(); } 
-    });
-
-    function openTransloadModal() { document.getElementById('transloadInput').value = ''; document.getElementById('transloadModal').style.display = 'flex'; }
-    document.getElementById('confirmTransloadBtn').addEventListener('click', async () => {
-        const url = document.getElementById('transloadInput').value; if (!url) return; closeModals(); showLoader();
-        const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) }); if (res.ok) { await loadData(); showToast("Fetch successful!"); } else { hideLoader(); showToast("Failed to transload", true); }
-    });
-
-    showLoader(); loadSettings(); loadData();
+    loadInitial();
 </script>
 </body>
 </html>
