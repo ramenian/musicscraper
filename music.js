@@ -1,11 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
+const fileUpload = require('express-fileupload');
 const path = require('path');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 80;
@@ -13,6 +15,12 @@ const PORT = process.env.PORT || 80;
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(__dirname));
+
+// Use express-fileupload for easier handling of multiple fields/files
+app.use(fileUpload({
+    useTempFiles: true,
+    tempFileDir: '/tmp/'
+}));
 
 // --- 1. FIREBASE INITIALIZATION ---
 let db;
@@ -28,11 +36,23 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 }
 
 // --- 2. CLOUDINARY INITIALIZATION ---
-if (process.env.CLOUDINARY_CLOUD_NAME) {
-    cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
+if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    console.error("❌ FATAL ERROR: Missing Cloudinary Variables!");
+} else {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+    console.log('✅ Cloudinary Connected!');
 }
-const storage = new CloudinaryStorage({ cloudinary: cloudinary, params: { folder: 'dj_music', resource_type: 'auto' }});
-const upload = multer({ storage: storage });
+
+// Set up Storage for Multer (we only use Multer for MP3 upload now)
+const multerStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: { folder: 'dj_music', resource_type: 'auto' }
+});
+const multerUpload = multer({ storage: multerStorage });
 
 // --- HELPER: LOGGING SYSTEM ---
 async function logEvent(type, message) {
@@ -99,6 +119,7 @@ app.post('/api/users/:username/profile-pic', async (req, res) => {
         if(!db) return res.status(500).send('Database not connected');
         const userRef = db.collection('users').doc(req.params.username.toLowerCase());
         if (!(await userRef.get()).exists) return res.status(404).send('Not found');
+        
         const result = await cloudinary.uploader.upload(req.body.imageBase64, { folder: 'dj_profiles' });
         await userRef.update({ profilePic: result.secure_url }); res.json({ profilePic: result.secure_url });
     } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
@@ -142,20 +163,21 @@ app.post('/api/users/:username/topup', async (req, res) => {
 app.post('/api/users/:username/purchase', async (req, res) => {
     try {
         if(!db) return res.status(500).send('Database not connected');
-        const songDoc = await db.collection('songs').doc(req.body.songId).get(); if (!songDoc.exists) return res.status(404).send('Song not found');
+        // Search in the *published* collection
+        const songDoc = await db.collection('publishedSongs').doc(req.body.songId).get(); if (!songDoc.exists) return res.status(404).send('Song not found');
         const song = songDoc.data();
         const userRef = db.collection('users').doc(req.params.username.toLowerCase());
         const userDoc = await userRef.get(); if (!userDoc.exists) return res.status(404).send('User not found');
         const user = userDoc.data();
 
         user.purchases = user.purchases || [];
-        if (user.purchases.find(p => p.songId === req.body.songId)) return res.status(400).send('Already purchased');
+        if (user.purchases.some(p => p.songId === req.body.songId)) return res.status(400).send('Already purchased');
 
         const price = song.price !== undefined ? song.price : 10;
         if (user.tokens >= price) {
             user.tokens -= price;
             const purchaseId = Math.random().toString(36).substr(2, 10).toUpperCase();
-            user.purchases.push({ songId: req.body.songId, songName: song.filename, filepath: song.filepath, tokensSpent: price, purchaseId, purchaseTime: new Date().toISOString() });
+            user.purchases.push({ songId: req.body.songId, songName: song.title, filepath: song.filepath, tokensSpent: price, purchaseId, purchaseTime: new Date().toISOString() });
             await userRef.update({ tokens: user.tokens, purchases: user.purchases });
             res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
         } else res.status(400).send('Insufficient tokens');
@@ -198,56 +220,199 @@ app.delete('/api/logs/:type/all', async (req, res) => {
     await batch.commit(); res.send('ok');
 });
 
-// --- 5. ADMIN / LIBRARY API ---
+// --- 5. ADMIN / LIBRARY API (PENDING) ---
+// Global settings
 app.get('/api/settings', async (req, res) => {
-    if(!db) return res.json({ headerTitle: 'DJ Music Library', bannerUrl: '' });
-    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'DJ Music Library', bannerUrl: '' });
+    if(!db) return res.json({ headerTitle: 'musicscraper', description: 'Music Library Portal', bannerUrl: '' });
+    const doc = await db.collection('settings').doc('global').get(); 
+    res.json(doc.exists ? doc.data() : { headerTitle: 'musicscraper', description: 'Music Library Portal', bannerUrl: '' });
 });
-app.put('/api/settings', async (req, res) => { await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle }, { merge: true }); res.send('Updated'); });
-app.post('/api/upload-banner', upload.single('bannerFile'), async (req, res) => {
-    if(!db) return res.status(500).send('Database not connected'); if (!req.file) return res.status(400).send('No file.');
-    await db.collection('settings').doc('global').set({ bannerUrl: req.file.path }, { merge: true }); res.json((await db.collection('settings').doc('global').get()).data());
+app.put('/api/settings', async (req, res) => { 
+    if(!db) return res.status(500).send('DB not connected');
+    await db.collection('settings').doc('global').set(req.body, { merge: true }); 
+    res.send('Updated'); 
 });
 
-app.get('/api/songs', async (req, res) => {
+app.post('/api/upload-banner', async (req, res) => {
+    if(!db || !req.files || !req.files.bannerFile) return res.status(400).send('Request failed');
+    try {
+        const result = await cloudinary.uploader.upload(req.files.bannerFile.tempFilePath, { folder: 'dj_assets' });
+        await db.collection('settings').doc('global').set({ bannerUrl: result.secure_url }, { merge: true });
+        res.json({ bannerUrl: result.secure_url });
+    } catch(e) { res.status(500).send('Upload Error: ' + e.message); }
+});
+
+// Genres (Pending)
+app.get('/api/genres/pending', async (req, res) => {
     if(!db) return res.json([]);
-    try { const snap = await db.collection('songs').orderBy('sequence').get(); res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
+    try { const snap = await db.collection('pendingGenres').orderBy('name').get(); res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
 });
 
-app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
-    if(!db) return res.status(500).send('Database not connected'); if (!req.file) return res.status(400).send('No file.');
+app.post('/api/genres/pending', async (req, res) => {
+    if(!db || !req.files || !req.files.genrePic) return res.status(400).send('Missing fields');
     try {
-        const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
-        const newSong = { filename: originalName, filepath: req.file.path, size: req.file.size, uploadTime: new Date().toISOString(), sequence: (await db.collection('songs').get()).size + 1, price: 10 };
-        const docRef = await db.collection('songs').add(newSong); res.json({ id: docRef.id, ...newSong });
-    } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
+        const result = await cloudinary.uploader.upload(req.files.genrePic.tempFilePath, { folder: 'dj_genres' });
+        const newGenre = { name: req.body.name, pictureUrl: result.secure_url, description: req.body.description || '' };
+        const docRef = await db.collection('pendingGenres').add(newGenre);
+        res.json({ id: docRef.id, ...newGenre });
+    } catch(e) { res.status(500).send('Upload Error: ' + e.message); }
 });
 
-app.post('/api/transload', async (req, res) => {
-    if(!db) return res.status(500).send('Database not connected'); const { url } = req.body; 
-    if (!url || url.toLowerCase().includes('.html') || !url.toLowerCase().split('?')[0].endsWith('.m4a')) return res.status(400).send('Only .m4a URLs allowed.');
-    try {
-        const result = await cloudinary.uploader.upload(url, { resource_type: "auto", folder: "dj_music" });
-        const newSong = { filename: 'New Transloaded Track.m4a', filepath: result.secure_url, size: result.bytes, uploadTime: new Date().toISOString(), sequence: (await db.collection('songs').get()).size + 1, price: 10 };
-        const docRef = await db.collection('songs').add(newSong); res.json({ id: docRef.id, ...newSong });
-    } catch (error) { res.status(400).send('Transload Error: ' + error.message); }
+app.put('/api/genres/pending/:id', async (req, res) => {
+    if(!db) return res.status(500).send('DB not connected');
+    let updates = { name: req.body.name, description: req.body.description || '' };
+    if(req.files && req.files.genrePic) {
+        const result = await cloudinary.uploader.upload(req.files.genrePic.tempFilePath, { folder: 'dj_genres' });
+        updates.pictureUrl = result.secure_url;
+    }
+    await db.collection('pendingGenres').doc(req.params.id).update(updates);
+    res.send('Updated');
 });
 
-app.put('/api/songs/:id/settings', async (req, res) => {
-    const songRef = db.collection('songs').doc(req.params.id); const doc = await songRef.get(); if (!doc.exists) return res.status(404).send('Not found');
-    let updates = {};
-    if (req.body.newName) { let n = req.body.newName; const ext = doc.data().filename.includes('.m4a') ? '.m4a' : '.mp3'; if (!n.toLowerCase().endsWith(ext)) n += ext; updates.filename = n; }
-    if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
-    await songRef.update(updates); res.send('Updated');
-});
-
-app.put('/api/songs/reorder', async (req, res) => {
-    const batch = db.batch(); req.body.orderedIds.forEach((id, index) => { batch.update(db.collection('songs').doc(id), { sequence: index + 1 }); }); await batch.commit(); res.send('Reordered');
-});
-app.delete('/api/songs/:id', async (req, res) => {
-    await db.collection('songs').doc(req.params.id).delete();
-    const snap = await db.collection('songs').orderBy('sequence').get(); const batch = db.batch(); snap.docs.forEach((d, i) => batch.update(d.ref, { sequence: i + 1 })); await batch.commit();
+app.delete('/api/genres/pending/:id', async (req, res) => {
+    if(!db) return res.status(500).send('DB not connected');
+    await db.collection('pendingGenres').doc(req.params.id).delete();
     res.send('Deleted');
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server bound to 0.0.0.0 on Port ${PORT}`));
+// Songs (Pending)
+app.get('/api/songs/pending', async (req, res) => {
+    if(!db) return res.json([]);
+    try { const snap = await db.collection('pendingSongs').orderBy('sequence').get(); res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
+});
+
+app.post('/api/songs/pending', async (req, res) => {
+    if(!db || !req.files || !req.files.mp3file || !req.files.coverArt || !req.body.name || !req.body.categoryIds) return res.status(400).send('Missing critical fields');
+    try {
+        // Upload MP3 to 'dj_music' folder (resource_type: "auto" is important)
+        const mp3Result = await cloudinary.uploader.upload(req.files.mp3file.tempFilePath, { folder: 'dj_music', resource_type: "auto" });
+        // Upload Cover Art to 'dj_covers' folder
+        const coverResult = await cloudinary.uploader.upload(req.files.coverArt.tempFilePath, { folder: 'dj_covers' });
+        
+        const categoryIds = req.body.categoryIds.split(','); // Convert string from FormData to array
+
+        const newSong = { 
+            title: req.body.name,
+            artist: req.body.artist || 'musicscraper',
+            categoryIds: categoryIds, 
+            filepath: mp3Result.secure_url, 
+            coverUrl: coverResult.secure_url,
+            size: req.files.mp3file.size, 
+            uploadTime: new Date().toISOString(), 
+            sequence: (await db.collection('pendingSongs').get()).size + 1, 
+            price: parseInt(req.body.price) || 10 
+        };
+        const docRef = await db.collection('pendingSongs').add(newSong);
+        res.json({ id: docRef.id, ...newSong });
+    } catch (e) { res.status(500).send('Upload Error: ' + e.message); }
+});
+
+// Detailed Transload endpoint
+app.post('/api/transload/pending', async (req, res) => {
+    if(!db || !req.files || !req.files.coverArt || !req.body.name || !req.body.categoryIds || !req.body.mp3Url) return res.status(400).send('Missing fields');
+    try {
+        // Upload cover art
+        const coverResult = await cloudinary.uploader.upload(req.files.coverArt.tempFilePath, { folder: 'dj_covers' });
+        // Fetch mp3 to get size
+        const response = await fetch(req.body.mp3Url);
+        if(!response.ok) throw new Error("Could not fetch MP3 for sizing");
+        const size = response.headers.get('content-length') || 0;
+
+        const categoryIds = req.body.categoryIds.split(',');
+        const newSong = {
+            title: req.body.name,
+            artist: req.body.artist || 'musicscraper',
+            categoryIds: categoryIds,
+            filepath: req.body.mp3Url, // Use direct URL
+            coverUrl: coverResult.secure_url,
+            size: parseInt(size),
+            uploadTime: new Date().toISOString(),
+            sequence: (await db.collection('pendingSongs').get()).size + 1,
+            price: parseInt(req.body.price) || 10
+        };
+        const docRef = await db.collection('pendingSongs').add(newSong);
+        res.json({ id: docRef.id, ...newSong });
+    } catch(e) { res.status(500).send('Transload Error: ' + e.message); }
+});
+
+app.put('/api/songs/pending/:id', async (req, res) => {
+    if(!db) return res.status(500).send('DB not connected');
+    let updates = {
+        title: req.body.name,
+        artist: req.body.artist || 'musicscraper',
+        price: parseInt(req.body.price) || 10,
+        categoryIds: req.body.categoryIds ? req.body.categoryIds.split(',') : []
+    };
+    if(req.files && req.files.coverArt) {
+        const result = await cloudinary.uploader.upload(req.files.coverArt.tempFilePath, { folder: 'dj_covers' });
+        updates.coverUrl = result.secure_url;
+    }
+    await db.collection('pendingSongs').doc(req.params.id).update(updates);
+    res.send('Updated');
+});
+
+app.put('/api/songs/pending/reorder', async (req, res) => {
+    const batch = db.batch(); req.body.orderedIds.forEach((id, index) => { batch.update(db.collection('pendingSongs').doc(id), { sequence: index + 1 }); }); await batch.commit(); res.send('Reordered');
+});
+app.delete('/api/songs/pending/:id', async (req, res) => {
+    await db.collection('pendingSongs').doc(req.params.id).delete();
+    const snap = await db.collection('pendingSongs').orderBy('sequence').get(); const batch = db.batch(); snap.docs.forEach((d, i) => batch.update(d.ref, { sequence: i + 1 })); await batch.commit();
+    res.send('Deleted');
+});
+
+// --- 6. PUBLISH ENDPOINT ---
+app.post('/api/publish', async (req, res) => {
+    if(!db) return res.status(500).send('DB not connected');
+    try {
+        logEvent('admin', 'Initiated data publish sequence.');
+        // Clear old published data
+        const pSongsSnap = await db.collection('publishedSongs').get();
+        const pGenresSnap = await db.collection('publishedGenres').get();
+        const batch = db.batch();
+        pSongsSnap.docs.forEach(doc => batch.delete(doc.ref));
+        pGenresSnap.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit(); // Perform deletion
+
+        // Copy pending to final collections
+        const newBatch = db.batch();
+        const pendingSongs = await db.collection('pendingSongs').get();
+        const pendingGenres = await db.collection('pendingGenres').get();
+        
+        pendingSongs.docs.forEach(doc => newBatch.set(db.collection('publishedSongs').doc(doc.id), doc.data()));
+        pendingGenres.docs.forEach(doc => newBatch.set(db.collection('publishedGenres').doc(doc.id), doc.data()));
+        
+        await newBatch.commit();
+        logEvent('admin', 'Published new genre and song list data successfully.');
+        res.send('Publish successful!');
+    } catch(e) { res.status(500).send('Publish failed: ' + e.message); }
+});
+
+// --- 7. PUBLIC API (PUBLISHED DATA) ---
+// Fetch public genres (published)
+app.get('/api/genres', async (req, res) => {
+    if(!db) return res.json([]);
+    try { const snap = await db.collection('publishedGenres').orderBy('name').get(); res.json(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
+});
+
+// Fetch public songs by genre ID (published)
+app.get('/api/genres/:id/songs', async (req, res) => {
+    if(!db) return res.json([]);
+    try {
+        const snap = await db.collection('publishedSongs').where('categoryIds', 'array-contains', req.params.id).get();
+        let songs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        songs.sort((a,b) => a.sequence - b.sequence);
+        res.json(songs);
+    } catch(e) { res.status(500).json([]); }
+});
+
+// Fetch detailed song info by ID (published)
+app.get('/api/songs/:id', async (req, res) => {
+    if(!db) return res.status(500).send('DB not connected');
+    try {
+        const doc = await db.collection('publishedSongs').doc(req.params.id).get();
+        if(doc.exists) res.json({id: doc.id, ...doc.data()});
+        else res.status(404).send('Song not found');
+    } catch(e) { res.status(500).send('DB Error: ' + e.message); }
+});
+
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 musicscraper bound to 0.0.0.0 on Port ${PORT}`));
