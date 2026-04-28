@@ -13,6 +13,7 @@
         .btn-publish:hover { background: var(--accent-light); transform: scale(1.05); }
 
         .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
+        
         .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
         .sidebar-btn { text-align: left; padding: 12px 20px; background: transparent; border: none; color: var(--text-muted); font-size: 16px; font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
         .sidebar-btn.active { background: rgba(255,255,255,0.1); color: var(--text-main); }
@@ -37,31 +38,30 @@
         .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
         .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 250px; }
 
-        .settings-grid { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 20px; border-bottom: 1px solid var(--border-color); }
-        .input-text { padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; width: 100%; box-sizing: border-box; outline: none; background: rgba(0,0,0,0.3); color: white;}
-
+        /* GENRES GRID */
         .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; padding: 20px;}
         .genre-card { aspect-ratio: 1; border-radius: 16px; position: relative; overflow: hidden; cursor: grab; border: 1px solid rgba(255,255,255,0.1); background: #1a1a24; transition: 0.2s;}
-        .genre-card.drag-over { border-color: var(--accent); border-width: 3px; }
+        .genre-card.drag-over { border-top: 3px solid var(--accent); }
         .genre-card:hover { border-color: var(--accent); }
         .genre-card img { width: 100%; height: 100%; object-fit: cover; }
         .genre-card .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); display: flex; align-items: flex-end; padding: 15px;}
         .genre-card h4 { margin: 0; font-size: 18px; font-weight: 700; text-shadow: 0 2px 5px black;}
-        .genre-settings-icon { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 6px; border-radius: 50%; display: flex; transition: 0.2s;}
+        .genre-settings-icon { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 6px; border-radius: 50%; display: flex; transition: 0.2s; cursor: pointer; z-index: 10;}
         .genre-settings-icon:hover { background: var(--accent); }
+        
         .add-genre-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 2px dashed var(--border-color); color: var(--text-muted); cursor: pointer;}
         .add-genre-card:hover { border-color: var(--accent); color: white; }
 
         .table-container { overflow-x: auto; max-height: 600px;}
         .table-inner { min-width: 750px; }
+
         .header-row, .song-row { display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); }
         .header-row { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
         
         .song-grid { grid-template-columns: 40px 50px 2fr 80px 100px 80px 80px; }
-        .song-row { cursor: grab; background: transparent; transition: background 0.2s;}
-        .song-row.drag-over { border-top: 2px solid var(--accent); }
         .user-row { display: grid; grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px; padding: 16px 20px; align-items: center; transition: 0.2s; border-bottom: 1px solid var(--border-color); }
         .log-row { display: grid; grid-template-columns: 40px 1fr 150px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; align-items: center;}
+        
         .song-row:hover, .user-row:hover, .log-row:hover { background-color: rgba(255, 255, 255, 0.05); }
 
         .user-expanded { display: none; padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);}
@@ -75,19 +75,23 @@
 
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
         .toast.show { transform: translateX(-50%) translateY(0); }
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
         .modal-box { background: rgba(30, 30, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; text-align: left; }
         .input-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; display: block; margin-top: 15px;}
-        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
+        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
+        
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
         .modal-btn { flex: 1; padding: 16px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 600; transition: 0.2s;}
         .modal-btn:hover { background: rgba(255,255,255,0.05); }
         .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-muted); font-weight: 400;}
         .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
+
         .apple-spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
         .back-btn-ui { display: inline-flex; align-items: center; gap: 5px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; font-weight: 600; padding: 15px 20px;}
         .back-btn-ui:hover { color: white; }
 
@@ -97,6 +101,8 @@
             .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
             .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
             .btn-publish { position: relative; width: 100%; margin-bottom: 20px;}
+            /* 2 Columns on Mobile for Genres */
+            .genre-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
         }
     </style>
 </head>
@@ -120,14 +126,21 @@
 
     <div class="content-area">
         <div id="view-general" class="view-section active">
-            <div class="glass-panel" id="genreGridViewPanel">
-                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Main Landing Interface</span></div>
-                <div class="settings-grid">
-                    <div><div style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">Hero Main Title (e.g. 专属DJ节奏空间)</div><input type="text" id="heroTitleInput" class="input-text"></div>
-                    <div><div style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">Hero Subtitle</div><input type="text" id="heroSubtitleInput" class="input-text"></div>
-                    <button class="btn-primary" style="margin-top:10px;" onclick="saveSettings()">Save Layout Settings</button>
+            
+            <div class="glass-panel" style="padding: 15px 20px; display:flex; flex-wrap:wrap; gap: 10px; align-items:center;">
+                <div style="flex:1;">
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:bold; margin-bottom:5px;">WEBSITE NAME</div>
+                    <input type="text" id="headerInput" class="input-text" style="width:100%; box-sizing:border-box;">
                 </div>
-                <div class="toolbar" style="border-top:1px solid var(--border-color);"><span style="font-size: 15px; font-weight: 600;">Music Categories (Drag to Reorder)</span></div>
+                <div style="flex:2;">
+                    <div style="font-size:12px; color:var(--text-muted); font-weight:bold; margin-bottom:5px;">HERO TITLE (Ex: 专属DJ节奏空间)</div>
+                    <input type="text" id="heroTitleInput" class="input-text" style="width:100%; box-sizing:border-box;">
+                </div>
+                <button class="btn-primary" style="margin-top:18px;" onclick="saveSettings()">Save Texts</button>
+            </div>
+
+            <div class="glass-panel" id="genreGridViewPanel">
+                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Music Categories (Drag to Reorder)</span></div>
                 <div class="genre-grid" id="genreGrid"></div>
             </div>
 
@@ -143,7 +156,6 @@
                     </div>
                 </div>
                 <div class="toolbar">
-                    <span style="font-size: 13px; color: var(--text-muted);">Drag songs to reorder</span>
                     <input type="text" id="searchInput" class="search-input" placeholder="Search song..." oninput="handleSearch()">
                 </div>
                 <div class="table-container">
@@ -268,14 +280,13 @@
     const API_URL = '/api'; 
     let allSongs = [], allUsers = [], logData = { register: [], admin: [] }, allGenres = [];
     let selectedSongs = [], selectedData = [], selectedLogs = [];
-    let draggedId = null, draggedGenreId = null, currentEditId = null, currentEditUser = null;
-    let currentAdminGenreId = null;
+    let draggedId = null, currentEditId = null, currentEditUser = null, currentAdminGenreId = null, draggedGenreId = null;
     let pendingUploadBase64 = null;
     let isTransloadMode = false;
 
     function showLoader() { document.getElementById('globalLoader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('globalLoader').style.display = 'none'; }
-    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+    function showToast(msg, isError = false) { const t = document.getElementById('toast'); t.className='toast'; if(isError) t.style.borderColor = 'var(--danger)'; t.innerText = msg; t.classList.add('show'); setTimeout(() => {t.classList.remove('show'); t.style.borderColor='var(--border-color)';}, 4000); }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if(m.id !== 'globalLoader') m.style.display = 'none'; }); }
 
     function switchView(view) {
@@ -287,48 +298,51 @@
     }
 
     function publishChanges() { showLoader(); setTimeout(() => { hideLoader(); showToast("Changes Published Successfully!"); }, 800); }
-    function formatBytes(bytes) { if (!bytes) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
+    function formatBytes(bytes) { if (bytes === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
 
     async function loadInitial() { 
         showLoader(); 
-        const setRes = await fetch(`${API_URL}/settings`);
-        if(setRes.ok) { const s = await setRes.json(); document.getElementById('heroTitleInput').value = s.heroTitle || "专属DJ节奏空间"; document.getElementById('heroSubtitleInput').value = s.heroSubtitle || "专属DJ节奏空间 · 电音串烧 · 车载热播 · 精选原创作品"; }
+        const res = await fetch(`${API_URL}/settings`);
+        if(res.ok) { const data = await res.json(); document.getElementById('headerInput').value = data.headerTitle || "MusicScraper"; document.getElementById('heroTitleInput').value = data.heroTitle || "专属DJ节奏空间"; }
         allGenres = await (await fetch(`${API_URL}/genres`)).json(); 
         renderGenres(); 
         hideLoader(); 
     }
-    async function saveSettings() { showLoader(); await fetch(`${API_URL}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({heroTitle: document.getElementById('heroTitleInput').value, heroSubtitle: document.getElementById('heroSubtitleInput').value})}); hideLoader(); showToast("Layout Saved!"); }
+    
+    async function saveSettings() { showLoader(); await fetch(`${API_URL}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({headerTitle: document.getElementById('headerInput').value, heroTitle: document.getElementById('heroTitleInput').value})}); hideLoader(); showToast("Texts Saved!"); }
 
-    // --- GENRES & DRAG DROP ---
+    // --- GENRES (With Drag & Drop) ---
     function renderGenres() {
         const grid = document.getElementById('genreGrid'); grid.innerHTML = '';
         allGenres.forEach(g => {
             const cover = g.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%232a2a35"/%3E%3C/svg%3E';
-            const card = document.createElement('div'); card.className = 'genre-card'; card.draggable = true;
+            const card = document.createElement('div');
+            card.className = 'genre-card'; card.draggable = true; card.dataset.id = g.id;
             
             card.addEventListener('dragstart', (e) => { draggedGenreId = g.id; e.dataTransfer.effectAllowed = 'move'; });
             card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('drag-over'); });
             card.addEventListener('dragleave', () => { card.classList.remove('drag-over'); });
-            card.addEventListener('drop', (e) => { e.preventDefault(); card.classList.remove('drag-over'); if (draggedGenreId && draggedGenreId !== g.id) handleGenreDropReorder(draggedGenreId, g.id); });
+            card.addEventListener('drop', (e) => { e.preventDefault(); card.classList.remove('drag-over'); if (draggedGenreId && draggedGenreId !== g.id) handleGenreReorder(draggedGenreId, g.id); });
 
             card.innerHTML = `
                 <div onclick="openGenreSongs('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="width:100%;height:100%;">
                     <img src="${cover}">
                     <div class="overlay"><h4>${g.name}</h4></div>
                 </div>
-                <div class="genre-settings-icon" onclick="event.stopPropagation(); openGenreModal('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${cover}')"><svg viewBox="0 0 24 24"><path d="M19.14... (omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+                <div class="genre-settings-icon" onclick="event.stopPropagation(); openGenreModal('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${cover}')"><svg viewBox="0 0 24 24"><path d="M19.14... (icon omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
             `;
             grid.appendChild(card);
         });
         grid.innerHTML += `<div class="genre-card add-genre-card" onclick="openGenreModal()"><svg viewBox="0 0 24 24" style="width:40px;height:40px;margin-bottom:10px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg><div>Add Genre</div></div>`;
     }
 
-    async function handleGenreDropReorder(dragId, dropTargetId) {
-        const fromIndex = allGenres.findIndex(g => g.id === dragId); const toIndex = allGenres.findIndex(g => g.id === dropTargetId);
+    async function handleGenreReorder(dragId, dropId) {
+        showLoader();
+        const fromIndex = allGenres.findIndex(g => g.id === dragId); const toIndex = allGenres.findIndex(g => g.id === dropId);
         const [moved] = allGenres.splice(fromIndex, 1); allGenres.splice(toIndex, 0, moved);
-        showLoader(); const orderedIds = allGenres.map(g => g.id);
+        const orderedIds = allGenres.map(g => g.id);
         await fetch(`${API_URL}/genres/reorder`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({orderedIds}) });
-        await loadInitial(); showToast("Genres Reordered");
+        await loadInitial();
     }
 
     function handleImgPreview(event, targetId) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { pendingUploadBase64 = e.target.result; document.getElementById(targetId).src = pendingUploadBase64; }; reader.readAsDataURL(file); }
@@ -365,34 +379,28 @@
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
         songsToRender.forEach(song => {
             const isChecked = selectedSongs.includes(song.id) ? 'checked' : '';
-            const row = document.createElement('div'); row.className = 'song-row song-grid'; row.draggable = true; row.dataset.id = song.id;
-            row.addEventListener('dragstart', (e) => { draggedId = song.id; e.dataTransfer.effectAllowed = 'move'; });
-            row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
-            row.addEventListener('dragleave', () => { row.classList.remove('drag-over'); });
-            row.addEventListener('drop', (e) => { e.preventDefault(); row.classList.remove('drag-over'); if (draggedId && draggedId !== song.id) handleDropReorder(draggedId, song.id); });
-
-            row.innerHTML = `
-                <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSongSel(this)" ${isChecked}></div>
-                <div class="seq-num">${song.sequence}</div>
-                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
-                <div style="color: var(--token); font-weight: bold;">${song.price !== undefined ? song.price : 10}</div>
-                <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
-                <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
-                <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price !== undefined ? song.price : 10})"><svg viewBox="0 0 24 24"><path d="M19.14... (omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+            listDiv.innerHTML += `
+                <div class="song-row song-grid">
+                    <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSongSel(this)" ${isChecked}></div>
+                    <div class="seq-num">${song.sequence}</div>
+                    <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
+                    <div style="color: var(--token); font-weight: bold;">${song.price !== undefined ? song.price : 10}</div>
+                    <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
+                    <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
+                    <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price !== undefined ? song.price : 10})"><svg viewBox="0 0 24 24"><path d="M19.14... (omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+                </div>
             `;
-            listDiv.appendChild(row);
         });
     }
 
     function toggleSongSel(cb) { if (cb.checked) selectedSongs.push(cb.value); else selectedSongs = selectedSongs.filter(id => id !== cb.value); updateBulkBtn('song'); }
     function toggleAllSongs() { const master = document.getElementById('selectAllSongs'); selectedSongs = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedSongs.push(cb.value); }); updateBulkBtn('song'); }
-    async function handleDropReorder(dragId, dropTargetId) { const fromIndex = allSongs.findIndex(s => s.id === dragId); const toIndex = allSongs.findIndex(s => s.id === dropTargetId); const [movedSong] = allSongs.splice(fromIndex, 1); allSongs.splice(toIndex, 0, movedSong); showLoader(); const orderedIds = allSongs.map(s => s.id); await fetch(`${API_URL}/songs/reorder`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({orderedIds}) }); await openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Sequence Updated"); }
 
-    // --- UPLOAD / TRANSLOAD MP3 ---
+    // --- UPLOAD / TRANSLOAD FIX ---
     function resetUploadModal() {
         document.getElementById('uploadTitleInput').value = ''; document.getElementById('uploadPriceInput').value = '10';
         document.getElementById('songCoverPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E";
-        pendingUploadBase64 = null; document.getElementById('uploadFileInput').value = ''; document.getElementById('transloadUrlInput').value = '';
+        pendingUploadBase64 = null;
     }
     function openUploadModal() { isTransloadMode = false; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Upload Audio'; document.getElementById('uploadFileArea').style.display = 'block'; document.getElementById('transloadFileArea').style.display = 'none'; document.getElementById('uploadSongModal').style.display = 'flex'; }
     function openTransloadModal() { isTransloadMode = true; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Transload Audio'; document.getElementById('uploadFileArea').style.display = 'none'; document.getElementById('transloadFileArea').style.display = 'block'; document.getElementById('uploadSongModal').style.display = 'flex'; }
@@ -402,12 +410,12 @@
         if(isTransloadMode) {
             const url = document.getElementById('transloadUrlInput').value; if(!url) return; showLoader();
             const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, title, price, genreId: currentAdminGenreId, coverBase64: pendingUploadBase64 }) });
-            if (res.ok) { closeModals(); showToast("Transload successful!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed to transload", true); }
+            if (res.ok) { closeModals(); showToast("Transload successful!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed: " + await res.text(), true); }
         } else {
             const file = document.getElementById('uploadFileInput').files[0]; if(!file) return; showLoader();
             const fd = new FormData(); fd.append('mp3file', file); fd.append('title', title); fd.append('price', price); fd.append('genreId', currentAdminGenreId); if(pendingUploadBase64) fd.append('coverBase64', pendingUploadBase64);
             const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
-            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Upload failed.", true); }
+            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed: " + await res.text(), true); }
         }
     }
 
@@ -446,8 +454,14 @@
 
     function openTokenModal(u, t) { currentEditUser = u; document.getElementById('tokenModalTarget').innerText = `Target: ${u}`; document.getElementById('adminTokenInput').value = t; document.getElementById('adminTokenModal').style.display = 'flex'; }
     async function confirmTokenUpdate() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}/set-tokens`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: document.getElementById('adminTokenInput').value}) }); closeModals(); showToast("Tokens updated!"); loadUsers(); }
+
     function openContactModal(u, e, p) { currentEditUser = u; document.getElementById('adminEmailInput').value = e; document.getElementById('adminPhoneInput').value = p; document.getElementById('adminContactModal').style.display = 'flex'; }
-    async function confirmContactUpdate() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}/change-email`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newEmail: document.getElementById('adminEmailInput').value}) }); await fetch(`${API_URL}/users/${currentEditUser}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone: document.getElementById('adminPhoneInput').value}) }); closeModals(); showToast("Contact updated!"); loadUsers(); }
+    async function confirmContactUpdate() { 
+        showLoader(); 
+        await fetch(`${API_URL}/users/${currentEditUser}/change-email`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newEmail: document.getElementById('adminEmailInput').value}) });
+        await fetch(`${API_URL}/users/${currentEditUser}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone: document.getElementById('adminPhoneInput').value}) });
+        closeModals(); showToast("Contact updated!"); loadUsers(); 
+    }
     function openDeleteModal(u) { currentEditUser = u; document.getElementById('deleteModalTarget').innerText = `Warning: Permanently removing '${u}'`; document.getElementById('adminDeleteModal').style.display = 'flex'; }
     async function confirmUserDelete() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}`, { method: 'DELETE' }); closeModals(); showToast("User deleted."); loadUsers(); }
 
@@ -469,7 +483,12 @@
         if(type === 'song') { const btn = document.getElementById('bulkDeleteSongsBtn'); if (selectedSongs.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedSongs.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Selected'; } }
         else { const arr = type === 'register' ? selectedData : selectedLogs; const btn = document.getElementById(type === 'register' ? 'bulkDeleteDataBtn' : 'bulkDeleteLogsBtn'); if(arr.length > 0) { btn.classList.add('active'); btn.innerText = `Clear (${arr.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Clear Selected'; } }
     }
-    async function clearLogs(type, isAll) { showLoader(); if(isAll) await fetch(`${API_URL}/logs/${type}/all`, { method: 'DELETE' }); else { const arr = type === 'register' ? selectedData : selectedLogs; if(arr.length === 0) { hideLoader(); return; } await fetch(`${API_URL}/logs/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ids: arr}) }); } loadLogs(type); showToast("Logs cleared."); }
+    async function clearLogs(type, isAll) {
+        showLoader();
+        if(isAll) await fetch(`${API_URL}/logs/${type}/all`, { method: 'DELETE' });
+        else { const arr = type === 'register' ? selectedData : selectedLogs; if(arr.length === 0) { hideLoader(); return; } await fetch(`${API_URL}/logs/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ids: arr}) }); }
+        loadLogs(type); showToast("Logs cleared.");
+    }
 
     function openSettingsModal(id, name, price) { currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price; document.getElementById('songSettingsModal').style.display = 'flex'; }
     async function saveSongSettings() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName: document.getElementById('settingName').value, newPrice: document.getElementById('settingPrice').value}) }); closeModals(); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Settings Updated"); }
