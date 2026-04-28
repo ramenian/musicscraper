@@ -5,29 +5,31 @@ const path = require('path');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 const PORT = process.env.PORT || 80;
 
 app.use(cors());
-app.use(express.json({ limit: '20mb' }));
+// Increased memory limits to prevent Base64 Image / Audio upload crashes
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(__dirname));
 
-let db;
+let db, bucket;
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     console.error("❌ FATAL ERROR: Missing FIREBASE_SERVICE_ACCOUNT_JSON!");
 } else {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-        console.log('✅ Google Firebase Database Connected!');
-        db = admin.firestore();
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount), storageBucket: process.env.FIREBASE_STORAGE_BUCKET });
+        console.log('✅ Google Firebase Connected!');
+        db = admin.firestore(); bucket = admin.storage().bucket();
     } catch (error) { console.error('❌ Firebase Error:', error.message); }
 }
 
 if (process.env.CLOUDINARY_CLOUD_NAME) {
     cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
-    console.log('✅ Cloudinary Storage Connected!');
 }
 
 const upload = multer({ 
@@ -38,21 +40,10 @@ const upload = multer({
     }
 });
 
-// CLOUDINARY UPLOAD HELPERS
 async function uploadToCloudinaryBase64(base64Str, folder) {
     if(!base64Str) return '';
     const result = await cloudinary.uploader.upload(base64Str, { folder: folder, resource_type: "auto" });
     return result.secure_url;
-}
-
-function uploadBufferToCloudinary(buffer, folder, resourceType = 'auto') {
-    return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream({ folder: folder, resource_type: resourceType }, (error, result) => {
-            if (error) reject(error); else resolve(result);
-        });
-        const Readable = require('stream').Readable;
-        const r = new Readable(); r.push(buffer); r.push(null); r.pipe(stream);
-    });
 }
 
 app.get('/health', (req, res) => res.status(200).send('OK'));
@@ -89,8 +80,13 @@ app.get('/api/users/:username', async (req, res) => {
     if (doc.exists) res.json(doc.data()); else res.status(404).send('User not found');
 });
 
-app.get('/api/all-users', async (req, res) => {
-    try { res.json((await db.collection('users').get()).docs.map(d => d.data())); } catch (e) { res.status(500).json([]); }
+app.get('/api/all-users', async (req, res) => { try { res.json((await db.collection('users').get()).docs.map(d => d.data())); } catch (e) { res.status(500).json([]); }});
+
+app.post('/api/users/:username/profile-pic', async (req, res) => {
+    try {
+        const url = await uploadToCloudinaryBase64(req.body.imageBase64, 'dj_profiles');
+        await db.collection('users').doc(req.params.username.toLowerCase()).update({ profilePic: url }); res.json({ profilePic: url });
+    } catch (e) { res.status(500).send(e.message); }
 });
 
 app.put('/api/users/:username/change-username', async (req, res) => {
@@ -143,16 +139,16 @@ app.post('/api/genres', async (req, res) => {
         const docRef = await db.collection('genres').add(newGenre); res.json({ id: docRef.id, ...newGenre });
     } catch(e) { res.status(500).send(e.message); }
 });
-app.put('/api/genres/reorder', async (req, res) => {
-    try {
-        const batch = db.batch(); req.body.orderedIds.forEach((id, index) => { batch.update(db.collection('genres').doc(id), { sequence: index + 1 }); }); await batch.commit(); res.send('Reordered');
-    } catch(e) { res.status(500).send(e.message); }
-});
 app.put('/api/genres/:id', async (req, res) => {
     try {
         let updates = { name: req.body.name };
         if(req.body.coverBase64) updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_genres');
         await db.collection('genres').doc(req.params.id).update(updates); res.send('Updated');
+    } catch(e) { res.status(500).send(e.message); }
+});
+app.put('/api/genres/reorder', async (req, res) => {
+    try {
+        const batch = db.batch(); req.body.orderedIds.forEach((id, index) => { batch.update(db.collection('genres').doc(id), { sequence: index + 1 }); }); await batch.commit(); res.send('Reordered');
     } catch(e) { res.status(500).send(e.message); }
 });
 app.delete('/api/genres/:id', async (req, res) => { await db.collection('genres').doc(req.params.id).delete(); res.send('Deleted'); });
@@ -162,47 +158,34 @@ app.get('/api/songs', async (req, res) => {
     try { res.json((await db.collection('songs').orderBy('sequence').get()).docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
 });
 
-app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
-    try { 
-        if (!req.file) return res.status(400).send('No file.');
-        
-        // 1. Upload MP3 strictly to Cloudinary (Bypassing Firebase Storage)
-        const audioResult = await uploadBufferToCloudinary(req.file.buffer, 'dj_music', 'video');
-        
-        // 2. Upload Cover
-        let coverUrl = '';
-        if(req.body.coverBase64) coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_covers');
+async function saveSongData(fileBuffer, originalName, reqBody) {
+    const filename = `dj_music/${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const file = bucket.file(filename);
+    await file.save(fileBuffer, { contentType: 'audio/mpeg' });
+    const [url] = await file.getSignedUrl({ action: 'read', expires: '01-01-2100' });
+    
+    let coverUrl = '';
+    if(reqBody.coverBase64) coverUrl = await uploadToCloudinaryBase64(reqBody.coverBase64, 'dj_covers');
 
-        const snapshot = await db.collection('songs').get();
-        const newSong = {
-            filename: req.body.title || Buffer.from(req.file.originalname, 'latin1').toString('utf8'), 
-            filepath: audioResult.secure_url, 
-            coverUrl: coverUrl, genreId: req.body.genreId || 'none',
-            size: req.file.size, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: parseInt(req.body.price) || 10
-        };
-        const docRef = await db.collection('songs').add(newSong); 
-        res.json({ id: docRef.id, ...newSong });
-    } 
+    const snapshot = await db.collection('songs').get();
+    const newSong = {
+        filename: reqBody.title || originalName, filepath: url, storagePath: filename,
+        coverUrl: coverUrl, genreId: reqBody.genreId || 'none',
+        size: fileBuffer.length, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: parseInt(reqBody.price) || 10
+    };
+    const docRef = await db.collection('songs').add(newSong); return { id: docRef.id, ...newSong };
+}
+
+app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
+    try { if (!req.file) return res.status(400).send('No file.'); res.json(await saveSongData(req.file.buffer, req.file.originalname, req.body)); } 
     catch (e) { res.status(500).send(e.message); }
 });
 
 app.post('/api/transload', async (req, res) => {
     try {
-        // Direct Cloudinary transload
-        const audioResult = await cloudinary.uploader.upload(req.body.url, { resource_type: "video", folder: "dj_music" });
-        
-        let coverUrl = '';
-        if(req.body.coverBase64) coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_covers');
-
-        const snapshot = await db.collection('songs').get();
-        const newSong = {
-            filename: req.body.title || 'TransloadedTrack.m4a', 
-            filepath: audioResult.secure_url, 
-            coverUrl: coverUrl, genreId: req.body.genreId || 'none',
-            size: audioResult.bytes, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: parseInt(req.body.price) || 10
-        };
-        const docRef = await db.collection('songs').add(newSong); 
-        res.json({ id: docRef.id, ...newSong });
+        const response = await fetch(req.body.url); if (!response.ok) throw new Error(`HTTP Error from source URL`);
+        const buffer = Buffer.from(await response.arrayBuffer());
+        res.json(await saveSongData(buffer, 'TransloadedTrack.m4a', req.body));
     } catch (e) { res.status(400).send(e.message); }
 });
 
@@ -217,16 +200,13 @@ app.put('/api/songs/reorder', async (req, res) => {
 });
 app.delete('/api/songs/:id', async (req, res) => { await db.collection('songs').doc(req.params.id).delete(); res.send('Deleted'); });
 
-// --- SETTINGS (HERO TEXT) ---
+// --- SETTINGS & LOGS ---
 app.get('/api/settings', async (req, res) => {
-    if(!db) return res.json({});
-    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : {});
+    if(!db) return res.json({ headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
+    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
 });
-app.put('/api/settings', async (req, res) => { 
-    await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle, heroTitle: req.body.heroTitle, heroSubtitle: req.body.heroSubtitle }, { merge: true }); res.send('Updated'); 
-});
+app.put('/api/settings', async (req, res) => { await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle, heroTitle: req.body.heroTitle }, { merge: true }); res.send('Updated'); });
 
-// --- LOGS ---
 app.get('/api/logs/:type', async (req, res) => {
     try { const snap = await db.collection('logs').where('type', '==', req.params.type).get(); res.json(snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))); } catch(e) { res.json([]); }
 });
