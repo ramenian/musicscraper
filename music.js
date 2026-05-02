@@ -6,14 +6,15 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const { Readable } = require('stream'); // Required for Audio Streaming
+const { Readable } = require('stream');
 
 const app = express();
 const PORT = process.env.PORT || 80;
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Increased limits for larger audio/video files
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(__dirname));
 
 let db, bucket;
@@ -32,11 +33,21 @@ if (process.env.CLOUDINARY_CLOUD_NAME) {
     cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
 }
 
+// 🛠️ THE FIX: Broadened Multer Filter to explicitly accept mp4 and m4a
 const upload = multer({ 
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
-        if(file.mimetype.includes('audio') || file.mimetype.includes('image') || file.originalname.match(/\.(mp3|m4a|jpg|jpeg|png)$/i)) cb(null, true); 
-        else cb(new Error('Invalid file type.'));
+        // Accept any audio, any video, any image, or specific extensions
+        const isAudio = file.mimetype.includes('audio');
+        const isVideo = file.mimetype.includes('video');
+        const isImage = file.mimetype.includes('image');
+        const hasValidExt = file.originalname.match(/\.(mp3|m4a|mp4|wav|jpg|jpeg|png)$/i);
+        
+        if(isAudio || isVideo || isImage || hasValidExt) {
+            cb(null, true);
+        } else {
+            cb(new Error(`Invalid file type: ${file.mimetype} - ${file.originalname}`));
+        }
     }
 });
 
@@ -51,12 +62,11 @@ app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'music.html')); }
 
 async function logEvent(type, message) { try { if(db) await db.collection('logs').add({ type, message, timestamp: new Date().toISOString() }); } catch(e) {} }
 
-// --- SECURE AUDIO PROXY (ANTI-HOTLINKING) ---
+// --- SECURE AUDIO PROXY ---
 app.get('/api/stream/:songId', async (req, res) => {
     try {
         if(!db) return res.status(500).send('Database not connected');
         
-        // 1. Security Check: Prevent Direct URL Pasting
         const isAudioTag = req.headers['sec-fetch-dest'] === 'audio' || req.headers['sec-fetch-dest'] === 'video';
         const referer = req.headers.referer || '';
         const isFromApp = referer.includes(req.get('host'));
@@ -92,12 +102,10 @@ app.get('/api/stream/:songId', async (req, res) => {
             `);
         }
 
-        // 2. Fetch the Song Data
         const songDoc = await db.collection('songs').doc(req.params.songId).get();
         if (!songDoc.exists) return res.status(404).send('Song not found');
         const fileUrl = songDoc.data().filepath;
 
-        // 3. Transparent Proxy Streaming (Supports timeline scrubbing)
         const fetchHeaders = {};
         if (req.headers.range) fetchHeaders.Range = req.headers.range;
 
@@ -106,7 +114,6 @@ app.get('/api/stream/:songId', async (req, res) => {
 
         response.headers.forEach((val, key) => res.setHeader(key, val));
         res.status(response.status); 
-        
         Readable.fromWeb(response.body).pipe(res);
 
     } catch (e) {
@@ -223,9 +230,17 @@ app.get('/api/songs', async (req, res) => {
 });
 
 async function saveSongData(fileBuffer, originalName, reqBody) {
+    // 🛠️ THE FIX: Store the file in Google Storage (Supports M4A/MP4 fine)
+    const ext = path.extname(originalName) || '.mp3';
     const filename = `dj_music/${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const file = bucket.file(filename);
-    await file.save(fileBuffer, { contentType: 'audio/mpeg' });
+    
+    // Auto-detect content type based on extension to help the browser
+    let contentType = 'audio/mpeg';
+    if(ext.toLowerCase() === '.mp4') contentType = 'video/mp4';
+    if(ext.toLowerCase() === '.m4a') contentType = 'audio/mp4';
+    
+    await file.save(fileBuffer, { contentType: contentType });
     const [url] = await file.getSignedUrl({ action: 'read', expires: '01-01-2100' });
     
     let coverUrl = '';
@@ -240,16 +255,28 @@ async function saveSongData(fileBuffer, originalName, reqBody) {
     const docRef = await db.collection('songs').add(newSong); return { id: docRef.id, ...newSong };
 }
 
+// 🛠️ THE FIX: Explicitly check for req.file before continuing
 app.post('/api/upload', upload.single('mp3file'), async (req, res) => {
-    try { if (!req.file) return res.status(400).send('No file.'); res.json(await saveSongData(req.file.buffer, req.file.originalname, req.body)); } 
+    try { 
+        if (!req.file) return res.status(400).send('No file received. File type might be rejected by filter.'); 
+        res.json(await saveSongData(req.file.buffer, req.file.originalname, req.body)); 
+    } 
     catch (e) { res.status(500).send(e.message); }
 });
 
 app.post('/api/transload', async (req, res) => {
     try {
-        const response = await fetch(req.body.url); if (!response.ok) throw new Error(`HTTP Error from source URL`);
+        const response = await fetch(req.body.url); 
+        if (!response.ok) throw new Error(`HTTP Error from source URL`);
+        
         const buffer = Buffer.from(await response.arrayBuffer());
-        res.json(await saveSongData(buffer, 'TransloadedTrack.m4a', req.body));
+        
+        // Extract extension from the URL if possible, otherwise default to m4a
+        let ext = '.m4a';
+        if(req.body.url.toLowerCase().includes('.mp4')) ext = '.mp4';
+        if(req.body.url.toLowerCase().includes('.mp3')) ext = '.mp3';
+
+        res.json(await saveSongData(buffer, `TransloadedTrack${ext}`, req.body));
     } catch (e) { res.status(400).send(e.message); }
 });
 
