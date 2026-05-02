@@ -6,12 +6,12 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const https = require('https'); // <-- ADDED FOR SECURE AUDIO PROXY
 
 const app = express();
 const PORT = process.env.PORT || 80;
 
 app.use(cors());
-// Increased memory limits to prevent Base64 Image / Audio upload crashes
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(__dirname));
@@ -212,5 +212,38 @@ app.get('/api/logs/:type', async (req, res) => {
 });
 app.post('/api/logs/delete', async (req, res) => { const batch = db.batch(); req.body.ids.forEach(id => batch.delete(db.collection('logs').doc(id))); await batch.commit(); res.send('ok'); });
 app.delete('/api/logs/:type/all', async (req, res) => { const batch = db.batch(); (await db.collection('logs').where('type', '==', req.params.type).get()).docs.forEach(d => batch.delete(d.ref)); await batch.commit(); res.send('ok'); });
+
+// --- SECURE AUDIO PROXY (ANTI-PIRACY) ---
+app.get('/api/play/:id', async (req, res) => {
+    // 1. Security Check: Blocks direct URL copy-pasting (403 Forbidden)
+    const referer = req.headers.referer || req.headers.referrer;
+    if (!referer || !referer.includes(req.get('host'))) {
+        return res.status(403).send('403 Forbidden: Direct access denied. Please play through the app.');
+    }
+
+    try {
+        if(!db) return res.status(500).send('Database Error');
+        const doc = await db.collection('songs').doc(req.params.id).get();
+        if (!doc.exists) return res.status(404).send('Song not found');
+
+        const songUrl = doc.data().filepath;
+
+        // 2. Forward Range headers for seeking/scrubbing in the audio player
+        const options = { headers: {} };
+        if (req.headers.range) { options.headers['range'] = req.headers.range; }
+
+        // 3. Stream the file directly through Render (Hiding Cloudinary/Firebase URL)
+        https.get(songUrl, options, (streamRes) => {
+            try {
+                res.writeHead(streamRes.statusCode, streamRes.headers);
+                streamRes.pipe(res);
+            } catch(err) { res.status(500).end(); }
+        }).on('error', (e) => {
+            res.status(500).end();
+        });
+    } catch (e) {
+        res.status(500).send('Server Error');
+    }
+});
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server bound to 0.0.0.0 on Port ${PORT}`));
