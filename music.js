@@ -6,7 +6,7 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const crypto = require('crypto'); // Built-in Node module for security tokens
+const https = require('https'); // Added for secure audio streaming
 
 const app = express();
 const PORT = process.env.PORT || 80;
@@ -153,71 +153,6 @@ app.put('/api/genres/reorder', async (req, res) => {
 });
 app.delete('/api/genres/:id', async (req, res) => { await db.collection('genres').doc(req.params.id).delete(); res.send('Deleted'); });
 
-
-// --- NEW SECURITY: PROXY STREAMING ROUTE ---
-// 1. Generate a temporary play token
-app.post('/api/play-token', (req, res) => {
-    const { songId } = req.body;
-    if (!songId) return res.status(400).send("No song ID");
-    
-    // Create a secure hash using the songId, the current minute, and a secret salt
-    const secretSalt = process.env.FIREBASE_PROJECT_ID || "dj_secret_salt";
-    const timeBlock = Math.floor(Date.now() / 60000); // Changes every minute
-    
-    const token = crypto.createHash('sha256').update(songId + timeBlock + secretSalt).digest('hex').substring(0, 16);
-    
-    // Send back the custom proxy URL
-    res.json({ proxyUrl: `/play/${songId}?t=${token}` });
-});
-
-// 2. The secure stream route
-app.get('/play/:songId', async (req, res) => {
-    try {
-        const { songId } = req.params;
-        const { t } = req.query; // The token
-        
-        // Validate Token
-        const secretSalt = process.env.FIREBASE_PROJECT_ID || "dj_secret_salt";
-        const timeBlock = Math.floor(Date.now() / 60000);
-        
-        // Allow tokens from the current minute OR the previous minute (to handle edge-case timing delays)
-        const validToken1 = crypto.createHash('sha256').update(songId + timeBlock + secretSalt).digest('hex').substring(0, 16);
-        const validToken2 = crypto.createHash('sha256').update(songId + (timeBlock - 1) + secretSalt).digest('hex').substring(0, 16);
-
-        if (t !== validToken1 && t !== validToken2) {
-            // Block direct downloads!
-            return res.status(403).send('403 Forbidden: Invalid or Expired Stream Token.');
-        }
-
-        // Fetch song from database to get the real Cloudinary/Firebase URL
-        const songDoc = await db.collection('songs').doc(songId).get();
-        if (!songDoc.exists) return res.status(404).send('Song not found');
-        
-        const realUrl = songDoc.data().filepath;
-
-        // Proxy the stream to hide the real URL
-        const fetch = require('node-fetch'); // Native fetch in Node 18+
-        const response = await fetch(realUrl);
-        
-        if (!response.ok) throw new Error("Failed to fetch audio stream");
-
-        // Forward headers (content-type, length, etc.) so the audio player works properly
-        res.setHeader('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
-        res.setHeader('Accept-Ranges', 'bytes');
-        if(response.headers.get('content-length')) {
-            res.setHeader('Content-Length', response.headers.get('content-length'));
-        }
-
-        // Stream data to client
-        response.body.pipe(res);
-
-    } catch (e) {
-        console.error("Stream Proxy Error:", e);
-        res.status(500).send("Error streaming media.");
-    }
-});
-
-
 // --- SONGS ---
 app.get('/api/songs', async (req, res) => {
     try { res.json((await db.collection('songs').orderBy('sequence').get()).docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
@@ -277,5 +212,81 @@ app.get('/api/logs/:type', async (req, res) => {
 });
 app.post('/api/logs/delete', async (req, res) => { const batch = db.batch(); req.body.ids.forEach(id => batch.delete(db.collection('logs').doc(id))); await batch.commit(); res.send('ok'); });
 app.delete('/api/logs/:type/all', async (req, res) => { const batch = db.batch(); (await db.collection('logs').where('type', '==', req.params.type).get()).docs.forEach(d => batch.delete(d.ref)); await batch.commit(); res.send('ok'); });
+
+// =========================================================
+// 🚀 NEW SECURE AUDIO STREAMING & DOWNLOADING PROXIES
+// =========================================================
+
+// Secure Streaming Route (Hides Cloudinary URL & Clips to 30s)
+app.get('/api/stream/:songId', async (req, res) => {
+    try {
+        const { songId } = req.params;
+        const username = req.query.user;
+
+        // Fetch song data
+        const songDoc = await db.collection('songs').doc(songId).get();
+        if (!songDoc.exists) return res.status(404).send('Not found');
+        const song = songDoc.data();
+
+        // Check if purchased
+        let isPurchased = false;
+        if (username && username !== 'null' && username !== 'undefined') {
+            const userDoc = await db.collection('users').doc(username.toLowerCase()).get();
+            if (userDoc.exists) {
+                const purchases = userDoc.data().purchases || [];
+                if (purchases.some(p => p.songId === songId)) isPurchased = true;
+            }
+        }
+
+        let targetUrl = song.filepath;
+        
+        // If not purchased, chop audio to EXACTLY 30 seconds physically at the media server level
+        if (!isPurchased && targetUrl.includes('/upload/')) {
+            targetUrl = targetUrl.replace('/upload/', '/upload/eo_30.0/');
+        }
+
+        // Proxy the audio stream to completely hide the backend URLs from the client
+        https.get(targetUrl, { headers: { 'Range': req.headers.range || 'bytes=0-' } }, (proxyRes) => {
+            res.writeHead(proxyRes.statusCode, proxyRes.headers);
+            proxyRes.pipe(res);
+        }).on('error', (e) => {
+            res.status(500).send('Stream error');
+        });
+
+    } catch (e) { res.status(500).send(e.message); }
+});
+
+// Secure Download Route (Blocks unpurchased downloads)
+app.get('/api/download/:songId', async (req, res) => {
+    try {
+        const { songId } = req.params;
+        const username = req.query.user;
+
+        if (!username || username === 'null') return res.status(403).send('Not authorized. Please login.');
+
+        // Fetch user & song
+        const userDoc = await db.collection('users').doc(username.toLowerCase()).get();
+        if (!userDoc.exists) return res.status(403).send('User not found.');
+        
+        const songDoc = await db.collection('songs').doc(songId).get();
+        if (!songDoc.exists) return res.status(404).send('Song not found.');
+        const song = songDoc.data();
+
+        // Verify purchase
+        const purchases = userDoc.data().purchases || [];
+        if (purchases.some(p => p.songId === songId)) {
+            // Apply Cloudinary 'fl_attachment' transformation to force browser download
+            let downloadUrl = song.filepath;
+            if(downloadUrl.includes('/upload/')) {
+                downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+            }
+            res.redirect(downloadUrl);
+        } else {
+            res.status(403).send('You must purchase this song to download it.');
+        }
+
+    } catch (e) { res.status(500).send(e.message); }
+});
+
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server bound to 0.0.0.0 on Port ${PORT}`));
