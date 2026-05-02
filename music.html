@@ -117,7 +117,6 @@
             .player-right { width: 100%; }
             .lib-row { grid-template-columns: 60px 1fr 50px; }
             .lib-row .col-size, .lib-row .col-id { display: none; }
-            /* 2 Columns on Mobile */
             .grid-layout { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .nav-tabs { gap: 15px; }
             .logo-container { font-size: 18px; }
@@ -281,8 +280,8 @@
     
     // --- LANGUAGE SYSTEM ---
     const dict = {
-        en: { store: "Store", library: "Library", profile: "Profile Settings", logout: "Logout", login: "Login", heroSub: "Exclusive DJ Rhythms · Electro · Club Bangers", search: "Search songs...", back: "Back", balTitle: "Token Balance", close: "Close", topup: "Top Up", selectAmt: "Select Amount", cancel: "Cancel", successBuy: "Purchased Successfully!", buyDetails: "Purchase Details", save: "Save", emptyLib: "Your library is empty.", previewLimit: "Login to purchase. Preview limited to 30s.", buyBtn: "BUY", download: "Download" },
-        cn: { store: "首页", library: "我的音乐", profile: "个人设置", logout: "登出", login: "登录", heroSub: "专属DJ节奏空间 · 电音串烧 · 车载热播 · 精选原创作品", search: "搜索歌曲...", back: "返回", balTitle: "代币余额", close: "关闭", topup: "充值", selectAmt: "选择充值金额", cancel: "取消", successBuy: "购买成功!", buyDetails: "购买记录", save: "保存", emptyLib: "你的音乐库是空的。", previewLimit: "未登录仅可试听 30 秒", buyBtn: "购买", download: "下载" }
+        en: { store: "Store", library: "Library", profile: "Profile Settings", logout: "Logout", login: "Login", heroSub: "Exclusive DJ Rhythms · Electro · Club Bangers", search: "Search songs...", back: "Back", balTitle: "Token Balance", close: "Close", topup: "Top Up", selectAmt: "Select Amount", cancel: "Cancel", successBuy: "Purchased Successfully!", buyDetails: "Purchase Details", save: "Save", emptyLib: "Your library is empty.", previewLimit: "Login to purchase. Preview limited to 30s.", buyBtn: "BUY" },
+        cn: { store: "首页", library: "我的音乐", profile: "个人设置", logout: "登出", login: "登录", heroSub: "专属DJ节奏空间 · 电音串烧 · 车载热播 · 精选原创作品", search: "搜索歌曲...", back: "返回", balTitle: "代币余额", close: "关闭", topup: "充值", selectAmt: "选择充值金额", cancel: "取消", successBuy: "购买成功!", buyDetails: "购买记录", save: "保存", emptyLib: "你的音乐库是空的。", previewLimit: "未登录仅可试听 30 秒", buyBtn: "购买" }
     };
     let currentLang = localStorage.getItem('djLang') || 'cn';
 
@@ -301,6 +300,7 @@
         if(document.getElementById('view-library').classList.contains('active')) renderLibrary(); // refresh lib lang
     }
 
+    // Waveform aesthetic generator
     function generateWaveform() {
         const wf = document.getElementById('waveform'); wf.innerHTML = '';
         for(let i=0; i<40; i++) {
@@ -328,6 +328,7 @@
     function formatBytes(bytes) { if (!bytes) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
     function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m = Math.floor(sec / 60), s = Math.floor(sec % 60); return `${m}:${s < 10 ? '0'+s : s}`; }
 
+    // INITIALIZATION
     const profileBtn = document.getElementById('profileBtn');
     if(!username) { 
         profileBtn.innerHTML = `<span style="padding: 2px 10px; font-weight: bold;" id="profileBtnText">Login</span>`;
@@ -422,12 +423,10 @@
         
         const price = currentSong.price || 10;
         const actionsDiv = document.getElementById('playerActions');
+        
         if(isPurchased) {
-            // UPDATED: Now uses the Secure Proxy Route + standard download button
-            actionsDiv.innerHTML = `
-                <button onclick="downloadSecurely('${id}', '${currentSong.filename.replace(/'/g, "\\'")}')" class="btn-buy-big">
-                    <svg viewBox="0 0 24 24" style="width:20px;fill:white;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> ${dict[currentLang].download}
-                </button>`;
+            // NEW SECURE DOWNLOAD ROUTE
+            actionsDiv.innerHTML = `<a href="/api/download/${id}?user=${username || ''}" download="${currentSong.filename}" style="text-decoration:none;" class="btn-buy-big"><svg viewBox="0 0 24 24" style="width:20px;fill:white;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Download</a>`;
         } else {
             actionsDiv.innerHTML = `
                 <button class="btn-buy-big" onclick="promptPurchase('${id}', '${currentSong.filename.replace(/'/g, "\\'")}', '${currentSong.filepath}', ${price})">
@@ -438,41 +437,14 @@
             `;
         }
 
-        // 🛠 THE FIX: Request a secure token URL before playing
-        fetchSecureTokenAndPlay(id, isPurchased);
+        // NEW SECURE STREAMING ROUTE
+        audioEl.src = `/api/stream/${id}?user=${username || ''}`; 
+        audioEl.dataset.purchased = isPurchased;
+        
+        document.getElementById('playerPlayBtn').innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+        document.getElementById('playerSeek').value = 0; document.getElementById('playerProg').style.width = '0%';
         switchView('song');
     }
-
-    // Requests the Proxy URL from the backend
-    async function fetchSecureTokenAndPlay(songId, isPurchased) {
-        document.getElementById('playerPlayBtn').innerHTML = `<div class="apple-spinner small"></div>`;
-        try {
-            const res = await fetch(`${API_URL}/play-token`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId }) });
-            if (res.ok) {
-                const data = await res.json();
-                audioEl.src = data.proxyUrl; // Audio player uses the PROXY, not Cloudinary directly
-                audioEl.dataset.purchased = isPurchased;
-                document.getElementById('playerSeek').value = 0; document.getElementById('playerProg').style.width = '0%';
-                document.getElementById('playerPlayBtn').innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-            }
-        } catch (e) { console.error("Error fetching secure audio."); }
-    }
-
-    // Handles the secure download by generating an invisible link
-    async function downloadSecurely(songId, filename) {
-        showToast("Generating secure download link...");
-        const res = await fetch(`${API_URL}/play-token`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId }) });
-        if (res.ok) {
-            const data = await res.json();
-            // Fetch the stream as a Blob, then trigger the download natively
-            fetch(data.proxyUrl).then(resp => resp.blob()).then(blob => {
-                const blobUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.style.display = 'none'; a.href = blobUrl; a.download = filename;
-                document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(blobUrl);
-            });
-        }
-    }
-
 
     function renderLibrary() {
         const listDiv = document.getElementById('libraryList'); listDiv.innerHTML = '';
@@ -487,7 +459,7 @@
                     <div style="color: var(--token); font-weight: bold;">💎 ${p.tokensSpent}</div>
                     <div><button class="icon-btn" onclick="openSong('${p.songId}')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div>
                     <div style="display:flex; align-items:center; gap: 5px;">
-                        <button onclick="downloadSecurely('${p.songId}', '${p.songName.replace(/'/g, "\\'")}')" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
+                        <a href="/api/download/${p.songId}?user=${username || ''}" download="${p.songName}" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>
                         <button class="icon-btn" onclick="showInfo('${p.purchaseId}', '${p.purchaseTime}', ${p.tokensSpent})"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button>
                     </div>
                 </div>
