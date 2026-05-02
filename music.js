@@ -6,7 +6,7 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const https = require('https'); // Added for secure audio streaming
+const { Readable } = require('stream'); // Required for Audio Streaming
 
 const app = express();
 const PORT = process.env.PORT || 80;
@@ -50,6 +50,70 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'music.html')); });
 
 async function logEvent(type, message) { try { if(db) await db.collection('logs').add({ type, message, timestamp: new Date().toISOString() }); } catch(e) {} }
+
+// --- SECURE AUDIO PROXY (ANTI-HOTLINKING) ---
+app.get('/api/stream/:songId', async (req, res) => {
+    try {
+        if(!db) return res.status(500).send('Database not connected');
+        
+        // 1. Security Check: Prevent Direct URL Pasting
+        const isAudioTag = req.headers['sec-fetch-dest'] === 'audio' || req.headers['sec-fetch-dest'] === 'video';
+        const referer = req.headers.referer || '';
+        const isFromApp = referer.includes(req.get('host'));
+
+        if (!isFromApp && !isAudioTag) {
+            return res.status(403).send(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>403 - Forbidden</title>
+                    <style>
+                        body { background-color: #0b0b13; background-image: radial-gradient(circle at 50% 0%, #1a1a3a 0%, #0b0b13 70%); color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                        .container { text-align: center; background: rgba(20, 20, 35, 0.8); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 320px; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+                        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+                        .icon { width: 80px; height: 80px; fill: #ff453a; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,69,58,0.5)); }
+                        h1 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.5px; }
+                        p { color: #a0a0b0; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; }
+                        .btn { background: #ff453a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: 0.2s; display: inline-block; }
+                        .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255,69,58,0.4); }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <h1>403 Forbidden</h1>
+                        <p>Direct linking is not allowed. Please play or download music directly through the platform.</p>
+                        <a href="/" class="btn">Return to Portal</a>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+
+        // 2. Fetch the Song Data
+        const songDoc = await db.collection('songs').doc(req.params.songId).get();
+        if (!songDoc.exists) return res.status(404).send('Song not found');
+        const fileUrl = songDoc.data().filepath;
+
+        // 3. Transparent Proxy Streaming (Supports timeline scrubbing)
+        const fetchHeaders = {};
+        if (req.headers.range) fetchHeaders.Range = req.headers.range;
+
+        const response = await fetch(fileUrl, { headers: fetchHeaders });
+        if (!response.ok) throw new Error('Cloudinary fetch failed');
+
+        response.headers.forEach((val, key) => res.setHeader(key, val));
+        res.status(response.status); 
+        
+        Readable.fromWeb(response.body).pipe(res);
+
+    } catch (e) {
+        console.error('Stream Error:', e.message);
+        res.status(500).end();
+    }
+});
 
 // --- AUTH & USERS ---
 app.post('/api/register', async (req, res) => {
@@ -212,81 +276,5 @@ app.get('/api/logs/:type', async (req, res) => {
 });
 app.post('/api/logs/delete', async (req, res) => { const batch = db.batch(); req.body.ids.forEach(id => batch.delete(db.collection('logs').doc(id))); await batch.commit(); res.send('ok'); });
 app.delete('/api/logs/:type/all', async (req, res) => { const batch = db.batch(); (await db.collection('logs').where('type', '==', req.params.type).get()).docs.forEach(d => batch.delete(d.ref)); await batch.commit(); res.send('ok'); });
-
-// =========================================================
-// 🚀 NEW SECURE AUDIO STREAMING & DOWNLOADING PROXIES
-// =========================================================
-
-// Secure Streaming Route (Hides Cloudinary URL & Clips to 30s)
-app.get('/api/stream/:songId', async (req, res) => {
-    try {
-        const { songId } = req.params;
-        const username = req.query.user;
-
-        // Fetch song data
-        const songDoc = await db.collection('songs').doc(songId).get();
-        if (!songDoc.exists) return res.status(404).send('Not found');
-        const song = songDoc.data();
-
-        // Check if purchased
-        let isPurchased = false;
-        if (username && username !== 'null' && username !== 'undefined') {
-            const userDoc = await db.collection('users').doc(username.toLowerCase()).get();
-            if (userDoc.exists) {
-                const purchases = userDoc.data().purchases || [];
-                if (purchases.some(p => p.songId === songId)) isPurchased = true;
-            }
-        }
-
-        let targetUrl = song.filepath;
-        
-        // If not purchased, chop audio to EXACTLY 30 seconds physically at the media server level
-        if (!isPurchased && targetUrl.includes('/upload/')) {
-            targetUrl = targetUrl.replace('/upload/', '/upload/eo_30.0/');
-        }
-
-        // Proxy the audio stream to completely hide the backend URLs from the client
-        https.get(targetUrl, { headers: { 'Range': req.headers.range || 'bytes=0-' } }, (proxyRes) => {
-            res.writeHead(proxyRes.statusCode, proxyRes.headers);
-            proxyRes.pipe(res);
-        }).on('error', (e) => {
-            res.status(500).send('Stream error');
-        });
-
-    } catch (e) { res.status(500).send(e.message); }
-});
-
-// Secure Download Route (Blocks unpurchased downloads)
-app.get('/api/download/:songId', async (req, res) => {
-    try {
-        const { songId } = req.params;
-        const username = req.query.user;
-
-        if (!username || username === 'null') return res.status(403).send('Not authorized. Please login.');
-
-        // Fetch user & song
-        const userDoc = await db.collection('users').doc(username.toLowerCase()).get();
-        if (!userDoc.exists) return res.status(403).send('User not found.');
-        
-        const songDoc = await db.collection('songs').doc(songId).get();
-        if (!songDoc.exists) return res.status(404).send('Song not found.');
-        const song = songDoc.data();
-
-        // Verify purchase
-        const purchases = userDoc.data().purchases || [];
-        if (purchases.some(p => p.songId === songId)) {
-            // Apply Cloudinary 'fl_attachment' transformation to force browser download
-            let downloadUrl = song.filepath;
-            if(downloadUrl.includes('/upload/')) {
-                downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
-            }
-            res.redirect(downloadUrl);
-        } else {
-            res.status(403).send('You must purchase this song to download it.');
-        }
-
-    } catch (e) { res.status(500).send(e.message); }
-});
-
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server bound to 0.0.0.0 on Port ${PORT}`));
