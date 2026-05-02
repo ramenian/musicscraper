@@ -117,6 +117,7 @@
             .player-right { width: 100%; }
             .lib-row { grid-template-columns: 60px 1fr 50px; }
             .lib-row .col-size, .lib-row .col-id { display: none; }
+            /* 2 Columns on Mobile */
             .grid-layout { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .nav-tabs { gap: 15px; }
             .logo-container { font-size: 18px; }
@@ -278,25 +279,34 @@
     const username = localStorage.getItem('djUsername');
     const audioEl = document.getElementById('mainAudio');
     
+    // --- LANGUAGE SYSTEM ---
     const dict = {
-        en: { store: "Store", library: "Library", profile: "Profile Settings", logout: "Logout", login: "Login", heroSub: "Exclusive DJ Rhythms · Electro · Club Bangers", search: "Search songs...", back: "Back", balTitle: "Token Balance", close: "Close", topup: "Top Up", selectAmt: "Select Amount", cancel: "Cancel", successBuy: "Purchased Successfully!", buyDetails: "Purchase Details", save: "Save", emptyLib: "Your library is empty.", previewLimit: "Login to purchase. Preview limited to 30s.", buyBtn: "BUY" },
-        cn: { store: "首页", library: "我的音乐", profile: "个人设置", logout: "登出", login: "登录", heroSub: "专属DJ节奏空间 · 电音串烧 · 车载热播 · 精选原创作品", search: "搜索歌曲...", back: "返回", balTitle: "代币余额", close: "关闭", topup: "充值", selectAmt: "选择充值金额", cancel: "取消", successBuy: "购买成功!", buyDetails: "购买记录", save: "保存", emptyLib: "你的音乐库是空的。", previewLimit: "未登录仅可试听 30 秒", buyBtn: "购买" }
+        en: { store: "Store", library: "Library", profile: "Profile Settings", logout: "Logout", login: "Login", heroSub: "Exclusive DJ Rhythms · Electro · Club Bangers", search: "Search songs...", back: "Back", balTitle: "Token Balance", close: "Close", topup: "Top Up", selectAmt: "Select Amount", cancel: "Cancel", successBuy: "Purchased Successfully!", buyDetails: "Purchase Details", save: "Save", emptyLib: "Your library is empty.", previewLimit: "Login to purchase. Preview limited to 30s.", buyBtn: "BUY", download: "Download" },
+        cn: { store: "首页", library: "我的音乐", profile: "个人设置", logout: "登出", login: "登录", heroSub: "专属DJ节奏空间 · 电音串烧 · 车载热播 · 精选原创作品", search: "搜索歌曲...", back: "返回", balTitle: "代币余额", close: "关闭", topup: "充值", selectAmt: "选择充值金额", cancel: "取消", successBuy: "购买成功!", buyDetails: "购买记录", save: "保存", emptyLib: "你的音乐库是空的。", previewLimit: "未登录仅可试听 30 秒", buyBtn: "购买", download: "下载" }
     };
     let currentLang = localStorage.getItem('djLang') || 'cn';
 
-    function toggleLang() { currentLang = currentLang === 'en' ? 'cn' : 'en'; localStorage.setItem('djLang', currentLang); applyLang(); }
+    function toggleLang() {
+        currentLang = currentLang === 'en' ? 'cn' : 'en';
+        localStorage.setItem('djLang', currentLang); applyLang();
+    }
 
     function applyLang() {
-        document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(dict[currentLang][key]) el.innerText = dict[currentLang][key]; });
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n'); if(dict[currentLang][key]) el.innerText = dict[currentLang][key];
+        });
         document.getElementById('mainSearch').placeholder = dict[currentLang].search;
         if(!username && document.getElementById('profileBtnText')) document.getElementById('profileBtnText').innerText = dict[currentLang].login;
-        if(currentSong) openSong(currentSong.id);
-        if(document.getElementById('view-library').classList.contains('active')) renderLibrary();
+        if(currentSong) openSong(currentSong.id); // refresh song view lang
+        if(document.getElementById('view-library').classList.contains('active')) renderLibrary(); // refresh lib lang
     }
 
     function generateWaveform() {
         const wf = document.getElementById('waveform'); wf.innerHTML = '';
-        for(let i=0; i<40; i++) { const h = Math.random() * 100 + 10; wf.innerHTML += `<div class="wave-bar" style="height:${h}%; opacity:${Math.random()*0.5+0.5}"></div>`; }
+        for(let i=0; i<40; i++) {
+            const h = Math.random() * 100 + 10;
+            wf.innerHTML += `<div class="wave-bar" style="height:${h}%; opacity:${Math.random()*0.5+0.5}"></div>`;
+        }
     }
     generateWaveform();
 
@@ -322,9 +332,13 @@
     if(!username) { 
         profileBtn.innerHTML = `<span style="padding: 2px 10px; font-weight: bold;" id="profileBtnText">Login</span>`;
         profileBtn.onclick = (e) => { e.stopPropagation(); window.location.href = '/register.html'; };
-        document.getElementById('tokenUI').style.display = 'none'; document.getElementById('nav-library').style.display = 'none';
+        document.getElementById('tokenUI').style.display = 'none';
+        document.getElementById('nav-library').style.display = 'none';
     } else {
-        profileBtn.innerHTML = `<img id="headerProfilePic" class="profile-pic" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>`;
+        profileBtn.innerHTML = `
+            <img id="headerProfilePic" class="profile-pic" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>
+        `;
     }
 
     async function init() {
@@ -353,8 +367,12 @@
     function closeDropdowns(e) { const d = document.getElementById('profileDropdown'); if(d && d.classList.contains('show') && !e.target.closest('#profileBtn')) d.classList.remove('show'); }
     function logout() { localStorage.removeItem('djUsername'); window.location.href = '/register.html'; }
 
+    // VIEWS
     function switchView(view) {
-        audioEl.pause(); document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active')); document.getElementById(`view-${view}`).classList.add('active');
+        audioEl.pause();
+        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+        document.getElementById(`view-${view}`).classList.add('active');
+        
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
         if(view === 'home' || view === 'genre' || view === 'song') document.getElementById('nav-store').classList.add('active');
         if(view === 'library') { document.getElementById('nav-library').classList.add('active'); renderLibrary(); }
@@ -364,7 +382,12 @@
         const grid = document.getElementById('genreGrid'); grid.innerHTML = '';
         allGenres.forEach(g => {
             const cover = g.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%232a2a35"/%3E%3C/svg%3E';
-            grid.innerHTML += `<div class="genre-card" onclick="openGenre('${g.id}', '${g.name}')"><img src="${cover}" class="genre-img"><div class="genre-overlay"><div class="genre-title">${g.name}</div></div></div>`;
+            grid.innerHTML += `
+                <div class="genre-card" onclick="openGenre('${g.id}', '${g.name}')">
+                    <img src="${cover}" class="genre-img">
+                    <div class="genre-overlay"><div class="genre-title">${g.name}</div></div>
+                </div>
+            `;
         });
     }
 
@@ -376,7 +399,15 @@
         if(songs.length === 0) grid.innerHTML = `<div style="color:var(--text-muted); padding:20px;">No songs here yet.</div>`;
         songs.forEach(s => {
             const cover = s.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%232a2a35"/%3E%3C/svg%3E';
-            grid.innerHTML += `<div class="song-card" onclick="openSong('${s.id}')"><img src="${cover}" class="song-cover"><div class="song-info"><div class="song-title" title="${s.filename}">${s.filename}</div><div class="song-tag"><span>MusicScraper</span> <span>💎 ${s.price||10}</span></div></div></div>`;
+            grid.innerHTML += `
+                <div class="song-card" onclick="openSong('${s.id}')">
+                    <img src="${cover}" class="song-cover">
+                    <div class="song-info">
+                        <div class="song-title" title="${s.filename}">${s.filename}</div>
+                        <div class="song-tag"><span>MusicScraper</span> <span>💎 ${s.price||10}</span></div>
+                    </div>
+                </div>
+            `;
         });
         switchView('genre');
     }
@@ -392,24 +423,61 @@
         const price = currentSong.price || 10;
         const actionsDiv = document.getElementById('playerActions');
         if(isPurchased) {
-            actionsDiv.innerHTML = `<a href="${currentSong.filepath}" download="${currentSong.filename}" style="text-decoration:none;" class="btn-buy-big"><svg viewBox="0 0 24 24" style="width:20px;fill:white;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Download</a>`;
+            // UPDATED: Now uses the Secure Proxy Route + standard download button
+            actionsDiv.innerHTML = `
+                <button onclick="downloadSecurely('${id}', '${currentSong.filename.replace(/'/g, "\\'")}')" class="btn-buy-big">
+                    <svg viewBox="0 0 24 24" style="width:20px;fill:white;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> ${dict[currentLang].download}
+                </button>`;
         } else {
-            actionsDiv.innerHTML = `<button class="btn-buy-big" onclick="promptPurchase('${id}', '${currentSong.filename.replace(/'/g, "\\'")}', '${currentSong.filepath}', ${price})"><svg viewBox="0 0 24 24" style="width:20px;fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>${dict[currentLang].buyBtn} 💎 ${price}</button><div style="display:flex;align-items:center;margin-left:15px;color:var(--text-muted);font-size:12px;">${dict[currentLang].previewLimit}</div>`;
+            actionsDiv.innerHTML = `
+                <button class="btn-buy-big" onclick="promptPurchase('${id}', '${currentSong.filename.replace(/'/g, "\\'")}', '${currentSong.filepath}', ${price})">
+                    <svg viewBox="0 0 24 24" style="width:20px;fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    ${dict[currentLang].buyBtn} 💎 ${price}
+                </button>
+                <div style="display:flex;align-items:center;margin-left:15px;color:var(--text-muted);font-size:12px;">${dict[currentLang].previewLimit}</div>
+            `;
         }
 
-        // --- THE PROXY FIX ---
-        // Instead of streaming direct from Cloudinary, we stream via the secure backend proxy
-        audioEl.src = '/api/play/' + currentSong.id; 
-        
-        audioEl.dataset.purchased = isPurchased;
-        document.getElementById('playerPlayBtn').innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-        document.getElementById('playerSeek').value = 0; document.getElementById('playerProg').style.width = '0%';
+        // 🛠 THE FIX: Request a secure token URL before playing
+        fetchSecureTokenAndPlay(id, isPurchased);
         switchView('song');
     }
+
+    // Requests the Proxy URL from the backend
+    async function fetchSecureTokenAndPlay(songId, isPurchased) {
+        document.getElementById('playerPlayBtn').innerHTML = `<div class="apple-spinner small"></div>`;
+        try {
+            const res = await fetch(`${API_URL}/play-token`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId }) });
+            if (res.ok) {
+                const data = await res.json();
+                audioEl.src = data.proxyUrl; // Audio player uses the PROXY, not Cloudinary directly
+                audioEl.dataset.purchased = isPurchased;
+                document.getElementById('playerSeek').value = 0; document.getElementById('playerProg').style.width = '0%';
+                document.getElementById('playerPlayBtn').innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            }
+        } catch (e) { console.error("Error fetching secure audio."); }
+    }
+
+    // Handles the secure download by generating an invisible link
+    async function downloadSecurely(songId, filename) {
+        showToast("Generating secure download link...");
+        const res = await fetch(`${API_URL}/play-token`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId }) });
+        if (res.ok) {
+            const data = await res.json();
+            // Fetch the stream as a Blob, then trigger the download natively
+            fetch(data.proxyUrl).then(resp => resp.blob()).then(blob => {
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.style.display = 'none'; a.href = blobUrl; a.download = filename;
+                document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(blobUrl);
+            });
+        }
+    }
+
 
     function renderLibrary() {
         const listDiv = document.getElementById('libraryList'); listDiv.innerHTML = '';
         if(userPurchases.length === 0) { listDiv.innerHTML = `<p style="color:var(--text-muted)">${dict[currentLang].emptyLib}</p>`; return; }
+        
         userPurchases.forEach(p => {
             const cover = p.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%232a2a35"/%3E%3C/svg%3E';
             listDiv.innerHTML += `
@@ -419,7 +487,7 @@
                     <div style="color: var(--token); font-weight: bold;">💎 ${p.tokensSpent}</div>
                     <div><button class="icon-btn" onclick="openSong('${p.songId}')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div>
                     <div style="display:flex; align-items:center; gap: 5px;">
-                        <a href="${p.filepath}" download="${p.songName}" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>
+                        <button onclick="downloadSecurely('${p.songId}', '${p.songName.replace(/'/g, "\\'")}')" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
                         <button class="icon-btn" onclick="showInfo('${p.purchaseId}', '${p.purchaseTime}', ${p.tokensSpent})"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button>
                     </div>
                 </div>
@@ -427,6 +495,7 @@
         });
     }
 
+    // AUDIO LOGIC
     const MAX_PREVIEW = 30;
     audioEl.addEventListener('loadedmetadata', () => { 
         const isP = audioEl.dataset.purchased === 'true';
@@ -450,8 +519,9 @@
     }
     function seekPlayerAudio(val) { if(audioEl.dataset.purchased === "false" && val >= 30) val = 29.9; audioEl.currentTime = val; }
 
-    function handleGlobalSearch(e) { if(e.key === 'Enter') { } }
+    function handleGlobalSearch(e) { if(e.key === 'Enter') { /* Implementation for global search can go here */ } }
 
+    // PURCHASING & TOKENS
     function updateTokenUI() { if(document.getElementById('tokenDisplay')) document.getElementById('tokenDisplay').innerText = userTokens; if(document.getElementById('modalTokenCount')) document.getElementById('modalTokenCount').innerText = userTokens; }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if(m.id !== 'globalLoader') m.style.display = 'none'; }); }
     
@@ -492,6 +562,7 @@
         document.getElementById('infoId').innerText = purchaseId || "N/A"; document.getElementById('infoDate').innerText = dateStr ? new Date(dateStr).toLocaleString() : "N/A"; document.getElementById('infoCost').innerText = cost || "0"; document.getElementById('infoModal').style.display = 'flex';
     }
 
+    // PROFILE SETTINGS
     let pendingPfpBase64 = null;
     function openProfileModal() { closeModals(); document.getElementById('editUsername').value = username; document.getElementById('modalPfpPreview').src = document.getElementById('headerProfilePic').src; document.getElementById('profileModal').style.display = 'flex'; pendingPfpBase64 = null; }
     function handlePfpChange(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { pendingPfpBase64 = e.target.result; document.getElementById('modalPfpPreview').src = pendingPfpBase64; }; reader.readAsDataURL(file); }
