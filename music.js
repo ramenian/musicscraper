@@ -6,7 +6,7 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const https = require('https'); // <-- ADDED FOR SECURE AUDIO PROXY
+const crypto = require('crypto'); // Built-in Node module for security tokens
 
 const app = express();
 const PORT = process.env.PORT || 80;
@@ -153,6 +153,71 @@ app.put('/api/genres/reorder', async (req, res) => {
 });
 app.delete('/api/genres/:id', async (req, res) => { await db.collection('genres').doc(req.params.id).delete(); res.send('Deleted'); });
 
+
+// --- NEW SECURITY: PROXY STREAMING ROUTE ---
+// 1. Generate a temporary play token
+app.post('/api/play-token', (req, res) => {
+    const { songId } = req.body;
+    if (!songId) return res.status(400).send("No song ID");
+    
+    // Create a secure hash using the songId, the current minute, and a secret salt
+    const secretSalt = process.env.FIREBASE_PROJECT_ID || "dj_secret_salt";
+    const timeBlock = Math.floor(Date.now() / 60000); // Changes every minute
+    
+    const token = crypto.createHash('sha256').update(songId + timeBlock + secretSalt).digest('hex').substring(0, 16);
+    
+    // Send back the custom proxy URL
+    res.json({ proxyUrl: `/play/${songId}?t=${token}` });
+});
+
+// 2. The secure stream route
+app.get('/play/:songId', async (req, res) => {
+    try {
+        const { songId } = req.params;
+        const { t } = req.query; // The token
+        
+        // Validate Token
+        const secretSalt = process.env.FIREBASE_PROJECT_ID || "dj_secret_salt";
+        const timeBlock = Math.floor(Date.now() / 60000);
+        
+        // Allow tokens from the current minute OR the previous minute (to handle edge-case timing delays)
+        const validToken1 = crypto.createHash('sha256').update(songId + timeBlock + secretSalt).digest('hex').substring(0, 16);
+        const validToken2 = crypto.createHash('sha256').update(songId + (timeBlock - 1) + secretSalt).digest('hex').substring(0, 16);
+
+        if (t !== validToken1 && t !== validToken2) {
+            // Block direct downloads!
+            return res.status(403).send('403 Forbidden: Invalid or Expired Stream Token.');
+        }
+
+        // Fetch song from database to get the real Cloudinary/Firebase URL
+        const songDoc = await db.collection('songs').doc(songId).get();
+        if (!songDoc.exists) return res.status(404).send('Song not found');
+        
+        const realUrl = songDoc.data().filepath;
+
+        // Proxy the stream to hide the real URL
+        const fetch = require('node-fetch'); // Native fetch in Node 18+
+        const response = await fetch(realUrl);
+        
+        if (!response.ok) throw new Error("Failed to fetch audio stream");
+
+        // Forward headers (content-type, length, etc.) so the audio player works properly
+        res.setHeader('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
+        res.setHeader('Accept-Ranges', 'bytes');
+        if(response.headers.get('content-length')) {
+            res.setHeader('Content-Length', response.headers.get('content-length'));
+        }
+
+        // Stream data to client
+        response.body.pipe(res);
+
+    } catch (e) {
+        console.error("Stream Proxy Error:", e);
+        res.status(500).send("Error streaming media.");
+    }
+});
+
+
 // --- SONGS ---
 app.get('/api/songs', async (req, res) => {
     try { res.json((await db.collection('songs').orderBy('sequence').get()).docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
@@ -212,38 +277,5 @@ app.get('/api/logs/:type', async (req, res) => {
 });
 app.post('/api/logs/delete', async (req, res) => { const batch = db.batch(); req.body.ids.forEach(id => batch.delete(db.collection('logs').doc(id))); await batch.commit(); res.send('ok'); });
 app.delete('/api/logs/:type/all', async (req, res) => { const batch = db.batch(); (await db.collection('logs').where('type', '==', req.params.type).get()).docs.forEach(d => batch.delete(d.ref)); await batch.commit(); res.send('ok'); });
-
-// --- SECURE AUDIO PROXY (ANTI-PIRACY) ---
-app.get('/api/play/:id', async (req, res) => {
-    // 1. Security Check: Blocks direct URL copy-pasting (403 Forbidden)
-    const referer = req.headers.referer || req.headers.referrer;
-    if (!referer || !referer.includes(req.get('host'))) {
-        return res.status(403).send('403 Forbidden: Direct access denied. Please play through the app.');
-    }
-
-    try {
-        if(!db) return res.status(500).send('Database Error');
-        const doc = await db.collection('songs').doc(req.params.id).get();
-        if (!doc.exists) return res.status(404).send('Song not found');
-
-        const songUrl = doc.data().filepath;
-
-        // 2. Forward Range headers for seeking/scrubbing in the audio player
-        const options = { headers: {} };
-        if (req.headers.range) { options.headers['range'] = req.headers.range; }
-
-        // 3. Stream the file directly through Render (Hiding Cloudinary/Firebase URL)
-        https.get(songUrl, options, (streamRes) => {
-            try {
-                res.writeHead(streamRes.statusCode, streamRes.headers);
-                streamRes.pipe(res);
-            } catch(err) { res.status(500).end(); }
-        }).on('error', (e) => {
-            res.status(500).end();
-        });
-    } catch (e) {
-        res.status(500).send('Server Error');
-    }
-});
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server bound to 0.0.0.0 on Port ${PORT}`));
