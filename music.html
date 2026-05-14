@@ -145,6 +145,7 @@
             <div class="profile-trigger" id="profileBtn" onclick="toggleDropdown(event)"></div>
             <div class="profile-dropdown" id="profileDropdown">
                 <button class="dropdown-item" onclick="openProfileModal()" data-i18n="profile">Profile Settings</button>
+                <button class="dropdown-item" onclick="registerVIP()" data-i18n="regVip">Register VIP</button>
                 <button class="dropdown-item" style="color: var(--danger);" onclick="logout()" data-i18n="logout">Logout</button>
             </div>
         </div>
@@ -280,8 +281,8 @@
     
     // --- LANGUAGE SYSTEM ---
     const dict = {
-        en: { store: "Store", library: "Library", profile: "Profile Settings", logout: "Logout", login: "Login", heroSub: "Exclusive DJ Rhythms · Electro · Club Bangers", search: "Search songs...", back: "Back", balTitle: "Token Balance", close: "Close", topup: "Top Up", selectAmt: "Select Amount", cancel: "Cancel", successBuy: "Purchased Successfully!", buyDetails: "Purchase Details", save: "Save", emptyLib: "Your library is empty.", previewLimit: "Login to purchase. Preview limited to 30s.", buyBtn: "BUY" },
-        cn: { store: "首页", library: "我的音乐", profile: "个人设置", logout: "登出", login: "登录", heroSub: "专属DJ节奏空间 · 电音串烧 · 车载热播 · 精选原创作品", search: "搜索歌曲...", back: "返回", balTitle: "代币余额", close: "关闭", topup: "充值", selectAmt: "选择充值金额", cancel: "取消", successBuy: "购买成功!", buyDetails: "购买记录", save: "保存", emptyLib: "你的音乐库是空的。", previewLimit: "未登录仅可试听 30 秒", buyBtn: "购买" }
+        en: { store: "Store", library: "Library", profile: "Profile Settings", logout: "Logout", login: "Login", regVip: "Register VIP", heroSub: "Exclusive DJ Rhythms · Electro · Club Bangers", search: "Search songs...", back: "Back", balTitle: "Token Balance", close: "Close", topup: "Top Up", selectAmt: "Select Amount", cancel: "Cancel", successBuy: "Purchased Successfully!", buyDetails: "Purchase Details", save: "Save", emptyLib: "Your library is empty.", previewLimit: "Login to purchase. Preview limited to 30s.", buyBtn: "BUY" },
+        cn: { store: "首页", library: "我的音乐", profile: "个人设置", logout: "登出", login: "登录", regVip: "注册 VIP", heroSub: "专属DJ节奏空间 · 电音串烧 · 车载热播 · 精选原创作品", search: "搜索歌曲...", back: "返回", balTitle: "代币余额", close: "关闭", topup: "充值", selectAmt: "选择充值金额", cancel: "取消", successBuy: "购买成功!", buyDetails: "购买记录", save: "保存", emptyLib: "你的音乐库是空的。", previewLimit: "未登录仅可试听 30 秒", buyBtn: "购买" }
     };
     let currentLang = localStorage.getItem('djLang') || 'cn';
 
@@ -333,11 +334,6 @@
         profileBtn.onclick = (e) => { e.stopPropagation(); window.location.href = '/register.html'; };
         document.getElementById('tokenUI').style.display = 'none';
         document.getElementById('nav-library').style.display = 'none';
-    } else {
-        profileBtn.innerHTML = `
-            <img id="headerProfilePic" class="profile-pic" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2386868b'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
-            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>
-        `;
     }
 
     async function init() {
@@ -345,7 +341,16 @@
             const uRes = await fetch(`${API_URL}/users/${username}`);
             if(uRes.ok) { 
                 const data = await uRes.json(); userTokens = data.tokens || 0; userPurchases = data.purchases || []; updateTokenUI(); 
-                if(data.profilePic) document.getElementById('headerProfilePic').src = data.profilePic;
+                
+                // VIP Status UI
+                const vipTag = data.isVip ? `<span style="color:#ffcc00; font-size:12px; font-weight:bold; margin-left:5px; border:1px solid #ffcc00; padding:2px 6px; border-radius:10px;">VIP</span>` : `<span style="color:#86868b; font-size:12px; font-weight:bold; margin-left:5px; border:1px solid #86868b; padding:2px 6px; border-radius:10px;">NORMAL</span>`;
+                
+                profileBtn.innerHTML = `
+                    <img id="headerProfilePic" class="profile-pic" src="${data.profilePic || 'data:image/svg+xml,%3Csvg xmlns=\\\'http://www.w3.org/2000/svg\\\' viewBox=\\\'0 0 24 24\\\' fill=\\\'%2386868b\\\'%3E%3Cpath d=\\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\\'/%3E%3C/svg%3E'}">
+                    <span class="profile-name" id="mainHeader">${username}</span> ${vipTag}
+                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--text-muted);"><path d="M7 10l5 5 5-5z"/></svg>
+                `;
+
             } else if(uRes.status === 404) { localStorage.removeItem('djUsername'); window.location.reload(); }
         }
         
@@ -365,6 +370,13 @@
     function toggleDropdown(e) { if(username) { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('show'); } }
     function closeDropdowns(e) { const d = document.getElementById('profileDropdown'); if(d && d.classList.contains('show') && !e.target.closest('#profileBtn')) d.classList.remove('show'); }
     function logout() { localStorage.removeItem('djUsername'); window.location.href = '/register.html'; }
+
+    async function registerVIP() {
+        showLoader();
+        const res = await fetch(`${API_URL}/users/${username}/vip`, { method: 'PUT' });
+        if(res.ok) { showToast("You are now VIP!"); setTimeout(() => window.location.reload(), 1000); }
+        else { hideLoader(); showToast("Failed to upgrade", true); }
+    }
 
     function switchView(view) {
         audioEl.pause();
@@ -421,7 +433,6 @@
         const price = currentSong.price || 10;
         const actionsDiv = document.getElementById('playerActions');
         if(isPurchased) {
-            // 🛠️ THE NEW SECURE PROXY ROUTE APPLIED HERE 🛠️
             actionsDiv.innerHTML = `<a href="/api/stream/${currentSong.id}" download="${currentSong.filename}" style="text-decoration:none;" class="btn-buy-big"><svg viewBox="0 0 24 24" style="width:20px;fill:white;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Download</a>`;
         } else {
             actionsDiv.innerHTML = `
@@ -433,7 +444,6 @@
             `;
         }
 
-        // 🛠️ THE NEW SECURE PROXY ROUTE APPLIED HERE 🛠️
         audioEl.src = `/api/stream/${currentSong.id}`;
         audioEl.dataset.purchased = isPurchased;
         document.getElementById('playerPlayBtn').innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
