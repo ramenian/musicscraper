@@ -15,50 +15,40 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(__dirname));
 
-// --- 1. FIREBASE INITIALIZATION (Database Only) ---
-let db;
+let db, bucket;
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     console.error("❌ FATAL ERROR: Missing FIREBASE_SERVICE_ACCOUNT_JSON!");
 } else {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount), storageBucket: process.env.FIREBASE_STORAGE_BUCKET });
         console.log('✅ Google Firebase Database Connected!');
         db = admin.firestore(); 
     } catch (error) { console.error('❌ Firebase Error:', error.message); }
 }
 
-// --- 2. CLOUDINARY INITIALIZATION ---
 if (process.env.CLOUDINARY_CLOUD_NAME) {
     cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
     console.log('✅ Cloudinary Storage Connected!');
 }
 
-// --- 3. FILE UPLOAD HANDLER ---
 const upload = multer({ 
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
-        // Added explicit support for .mp4, .m4a, and video mimetypes
         if(file.mimetype.includes('audio') || file.mimetype.includes('video') || file.mimetype.includes('image') || file.originalname.match(/\.(mp3|m4a|mp4|jpg|jpeg|png)$/i)) cb(null, true); 
         else cb(new Error('Invalid file type.'));
     }
 });
 
-// Helper: Stream buffers to Cloudinary securely
 function uploadStreamToCloudinary(buffer, resourceType, folder) {
     return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-            { folder: folder, resource_type: resourceType },
-            (error, result) => {
-                if (error) reject(error);
-                else resolve(result);
-            }
-        );
+        const stream = cloudinary.uploader.upload_stream({ folder: folder, resource_type: resourceType }, (error, result) => {
+            if (error) reject(error); else resolve(result);
+        });
         Readable.from(buffer).pipe(stream);
     });
 }
 
-// Helper: Upload Base64 images to Cloudinary
 async function uploadToCloudinaryBase64(base64Str, folder) {
     if(!base64Str) return '';
     const result = await cloudinary.uploader.upload(base64Str, { folder: folder, resource_type: "auto" });
@@ -70,80 +60,37 @@ app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'music.html')); }
 
 async function logEvent(type, message) { try { if(db) await db.collection('logs').add({ type, message, timestamp: new Date().toISOString() }); } catch(e) {} }
 
-// --- 4. SECURE AUDIO PROXY (ANTI-HOTLINKING) ---
 app.get('/api/stream/:songId', async (req, res) => {
     try {
         if(!db) return res.status(500).send('Database not connected');
-        
-        // 1. Security Check: Prevent Direct URL Pasting
         const isAudioTag = req.headers['sec-fetch-dest'] === 'audio' || req.headers['sec-fetch-dest'] === 'video';
         const referer = req.headers.referer || '';
         const isFromApp = referer.includes(req.get('host'));
 
         if (!isFromApp && !isAudioTag) {
             return res.status(403).send(`
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>403 - Forbidden</title>
-                    <style>
-                        body { background-color: #0b0b13; background-image: radial-gradient(circle at 50% 0%, #1a1a3a 0%, #0b0b13 70%); color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                        .container { text-align: center; background: rgba(20, 20, 35, 0.8); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 320px; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-                        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-                        .icon { width: 80px; height: 80px; fill: #ff453a; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,69,58,0.5)); }
-                        h1 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.5px; }
-                        p { color: #a0a0b0; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; }
-                        .btn { background: #ff453a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: 0.2s; display: inline-block; }
-                        .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255,69,58,0.4); }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                        <h1>403 Forbidden</h1>
-                        <p>Direct linking is not allowed. Please play or download music directly through the platform.</p>
-                        <a href="/" class="btn">Return to Portal</a>
-                    </div>
-                </body>
-                </html>
+                <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>403 - Forbidden</title><style>body { background-color: #0b0b13; background-image: radial-gradient(circle at 50% 0%, #1a1a3a 0%, #0b0b13 70%); color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } .container { text-align: center; background: rgba(20, 20, 35, 0.8); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 320px; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } } .icon { width: 80px; height: 80px; fill: #ff453a; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,69,58,0.5)); } h1 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.5px; } p { color: #a0a0b0; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; } .btn { background: #ff453a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: 0.2s; display: inline-block; } .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255,69,58,0.4); }</style></head><body><div class="container"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h1>403 Forbidden</h1><p>Direct linking is not allowed. Please play or download music directly through the platform.</p><a href="/" class="btn">Return to Portal</a></div></body></html>
             `);
         }
 
-        // 2. Fetch the Song Data
         const songDoc = await db.collection('songs').doc(req.params.songId).get();
         if (!songDoc.exists) return res.status(404).send('Song not found');
         const fileUrl = songDoc.data().filepath;
 
-        // 3. Transparent Proxy Streaming
-        const fetchHeaders = {};
-        if (req.headers.range) fetchHeaders.Range = req.headers.range;
-
+        const fetchHeaders = {}; if (req.headers.range) fetchHeaders.Range = req.headers.range;
         const response = await fetch(fileUrl, { headers: fetchHeaders });
         if (!response.ok) throw new Error('Cloudinary fetch failed');
 
-        // Safely pass back audio formatting headers
-        const contentType = response.headers.get('content-type');
-        const contentLength = response.headers.get('content-length');
-        const contentRange = response.headers.get('content-range');
-        const acceptRanges = response.headers.get('accept-ranges');
-
-        if (contentType) res.setHeader('Content-Type', contentType);
-        if (contentLength) res.setHeader('Content-Length', contentLength);
-        if (contentRange) res.setHeader('Content-Range', contentRange);
-        if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
+        const contentType = response.headers.get('content-type'); const contentLength = response.headers.get('content-length'); const contentRange = response.headers.get('content-range'); const acceptRanges = response.headers.get('accept-ranges');
+        if (contentType) res.setHeader('Content-Type', contentType); if (contentLength) res.setHeader('Content-Length', contentLength); if (contentRange) res.setHeader('Content-Range', contentRange); if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
 
         res.status(response.status); 
         Readable.fromWeb(response.body).pipe(res);
 
-    } catch (e) {
-        console.error('Stream Error:', e.message);
-        res.status(500).end();
-    }
+    } catch (e) { console.error('Stream Error:', e.message); res.status(500).end(); }
 });
 
-// --- 5. AUTH & USERS ---
+// --- AUTH & USERS ---
 app.post('/api/register', async (req, res) => {
     try {
         if(!db) return res.status(500).send('DB disconnected');
@@ -152,7 +99,7 @@ app.post('/api/register', async (req, res) => {
         if ((await userRef.get()).exists) return res.status(400).send('USER HAS BEEN REGISTERED');
         if (!(await db.collection('users').where('contact', '==', contact).get()).empty) return res.status(400).send('USER HAS BEEN REGISTERED');
         const isEmail = contact.includes('@');
-        await userRef.set({ username, contact, password, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact, tokens: 0, profilePic: '', purchases: [], createdAt: new Date().toISOString() });
+        await userRef.set({ username, contact, password, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact, tokens: 0, profilePic: '', purchases: [], isVip: false, createdAt: new Date().toISOString() });
         await logEvent('register', `<span style="color:#34c759; font-weight:600;">${username}</span> registered with ${contact}`);
         res.json({ success: true, username });
     } catch (e) { res.status(500).send(e.message); }
@@ -172,7 +119,16 @@ app.get('/api/users/:username', async (req, res) => {
     if (doc.exists) res.json(doc.data()); else res.status(404).send('User not found');
 });
 
-app.get('/api/all-users', async (req, res) => { try { res.json((await db.collection('users').get()).docs.map(d => d.data())); } catch (e) { res.status(500).json([]); }});
+app.get('/api/all-users', async (req, res) => { 
+    try { res.json((await db.collection('users').get()).docs.map(d => d.data())); } catch (e) { res.status(500).json([]); }
+});
+
+app.put('/api/users/:username/vip', async (req, res) => {
+    try {
+        await db.collection('users').doc(req.params.username.toLowerCase()).update({ isVip: true });
+        res.send('VIP Activated');
+    } catch(e) { res.status(500).send(e.message); }
+});
 
 app.post('/api/users/:username/profile-pic', async (req, res) => {
     try {
@@ -196,7 +152,6 @@ app.put('/api/users/:username/change-email', async (req, res) => { await db.coll
 app.put('/api/users/:username/change-phone', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ phone: req.body.newPhone }); res.send('Updated'); });
 app.put('/api/users/:username/set-tokens', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ tokens: parseInt(req.body.tokens) || 0 }); await logEvent('admin', `Modified token balance for <span style="font-weight:600;">${req.params.username}</span> to ${req.body.tokens}`); res.send('Updated'); });
 app.delete('/api/users/:username', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).delete(); await logEvent('admin', `Deleted user account: <span style="font-weight:600; color:var(--danger);">${req.params.username}</span>`); res.send('Deleted'); });
-
 app.post('/api/users/:username/topup', async (req, res) => {
     const userRef = db.collection('users').doc(req.params.username.toLowerCase()); const doc = await userRef.get();
     const newTokens = (doc.data().tokens || 0) + req.body.amount; await userRef.update({ tokens: newTokens }); res.json({ tokens: newTokens });
@@ -221,7 +176,7 @@ app.post('/api/users/:username/purchase', async (req, res) => {
     } catch (e) { res.status(500).send(e.message); }
 });
 
-// --- 6. GENRES ---
+// --- GENRES ---
 app.get('/api/genres', async (req, res) => {
     try { res.json((await db.collection('genres').orderBy('sequence').get()).docs.map(d => ({ id: d.id, ...d.data() }))); } catch(e) { res.status(500).json([]); }
 });
@@ -246,29 +201,20 @@ app.put('/api/genres/reorder', async (req, res) => {
 });
 app.delete('/api/genres/:id', async (req, res) => { await db.collection('genres').doc(req.params.id).delete(); res.send('Deleted'); });
 
-// --- 7. SONGS ---
+// --- SONGS ---
 app.get('/api/songs', async (req, res) => {
     try { res.json((await db.collection('songs').orderBy('sequence').get()).docs.map(doc => ({ id: doc.id, ...doc.data() }))); } catch(e) { res.status(500).json([]); }
 });
 
 async function saveSongData(fileBuffer, originalName, reqBody) {
-    // 🛠️ THE FIX: Upload MP3/M4A/MP4 securely to Cloudinary using Streams
     const audioResult = await uploadStreamToCloudinary(fileBuffer, "video", "dj_music");
     const url = audioResult.secure_url;
-    
-    let coverUrl = '';
-    if(reqBody.coverBase64) coverUrl = await uploadToCloudinaryBase64(reqBody.coverBase64, 'dj_covers');
+    let coverUrl = ''; if(reqBody.coverBase64) coverUrl = await uploadToCloudinaryBase64(reqBody.coverBase64, 'dj_covers');
 
     const snapshot = await db.collection('songs').get();
     const newSong = {
-        filename: reqBody.title || originalName, 
-        filepath: url, 
-        coverUrl: coverUrl, 
-        genreId: reqBody.genreId || 'none',
-        size: fileBuffer.length, 
-        uploadTime: new Date().toISOString(), 
-        sequence: snapshot.size + 1, 
-        price: parseInt(reqBody.price) || 10
+        filename: reqBody.title || originalName, filepath: url, coverUrl: coverUrl, genreId: reqBody.genreId || 'none',
+        size: fileBuffer.length, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: parseInt(reqBody.price) || 10
     };
     const docRef = await db.collection('songs').add(newSong); return { id: docRef.id, ...newSong };
 }
@@ -297,7 +243,7 @@ app.put('/api/songs/reorder', async (req, res) => {
 });
 app.delete('/api/songs/:id', async (req, res) => { await db.collection('songs').doc(req.params.id).delete(); res.send('Deleted'); });
 
-// --- 8. SETTINGS & LOGS ---
+// --- SETTINGS & LOGS ---
 app.get('/api/settings', async (req, res) => {
     if(!db) return res.json({ headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
     const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
