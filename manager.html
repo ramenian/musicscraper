@@ -3,230 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DJ Manager</title>
+    <title>后台管理 - MusicScraper</title>
     <style>
-        :root { --bg-color: #0b0b13; --text-main: #f5f5f7; --text-muted: #86868b; --card-bg: rgba(28, 28, 30, 0.7); --border-color: rgba(255, 255, 255, 0.1); --accent: #6f42c1; --accent-light: #8a5cff; --danger: #ff453a; --token: #ffffff;}
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; color-scheme: dark;}
+        :root { --bg-dark: #0f0f13; --bg-main: #1c1c24; --text-main: #f5f5f7; --text-muted: #86868b; --border-color: rgba(255, 255, 255, 0.05); --accent: #8a5cff; --accent-light: #a37dfc; --danger: #ff453a; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #0b0b10; color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; color-scheme: dark;}
         
-        .header-top { width: 100%; max-width: 1000px; margin-bottom: 30px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; text-align: center; position: relative;}
-        .btn-publish { position: absolute; left: 0; top: 0; background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.2s;}
-        .btn-publish:hover { background: var(--accent-light); transform: scale(1.05); }
-
-        .container { width: 100%; max-width: 1000px; display: flex; gap: 30px; }
+        /* SIDEBAR */
+        .sidebar { width: 250px; background-color: var(--bg-dark); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border-color); overflow-y: auto;}
+        .sidebar-header { padding: 30px 25px; }
+        .sidebar-logo { font-size: 20px; font-weight: 800; letter-spacing: 1px; color: white; display: flex; flex-direction: column;}
+        .sidebar-logo span { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 4px; letter-spacing: 0;}
         
-        .sidebar { width: 200px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;}
-        .sidebar-btn { text-align: left; padding: 12px 20px; background: transparent; border: none; color: var(--text-muted); font-size: 16px; font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.2s; }
-        .sidebar-btn.active { background: rgba(255,255,255,0.1); color: var(--text-main); }
-        .sidebar-btn:hover:not(.active) { background: rgba(255,255,255,0.05); }
+        .nav-section { margin-bottom: 10px; }
+        .nav-title { font-size: 12px; color: #555; padding: 10px 25px; margin-top: 10px;}
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 25px; background: transparent; border: none; color: var(--text-muted); font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; text-align: left; transition: 0.2s;}
+        .nav-item.active { background: rgba(138, 92, 255, 0.1); color: var(--text-main); position: relative;}
+        .nav-item.active::before { content: ''; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        .nav-item:hover:not(.active) { color: white; }
 
-        .content-area { flex: 1; overflow: hidden;}
-        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        /* MAIN CONTENT */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0b0b10;}
+        
+        /* TOP NAV */
+        .top-bar { height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; border-bottom: 1px solid var(--border-color); background: var(--bg-dark);}
+        .breadcrumb { font-size: 14px; color: var(--text-muted); font-weight: 500;}
+        .top-actions { display: flex; gap: 15px; align-items: center;}
+        .btn-top { border: 1px solid var(--border-color); background: transparent; color: var(--text-main); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: 0.2s;}
+        .btn-top.highlight { color: #ffcc00; border-color: #ffcc00; }
+        
+        .view-section { display: none; padding: 30px; overflow-y: auto; height: 100%; box-sizing: border-box; animation: fadeIn 0.3s ease;}
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .glass-panel { background: var(--card-bg); backdrop-filter: blur(30px); border-radius: 18px; border: 1px solid var(--border-color); margin-bottom: 20px; overflow: hidden;}
+        /* CARDS & PANELS */
+        .glass-panel { background: var(--bg-main); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; overflow: hidden;}
+        .panel-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+        .btn-primary { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 13px; transition: 0.2s;}
+        .btn-primary:hover { background: var(--accent-light); }
         
-        .upload-bar { padding: 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid var(--border-color); justify-content: space-between; background: rgba(0,0,0,0.2);}
-        .upload-bar input[type="file"] { display: none; }
-        .btn-primary { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: 0.2s; text-align: center;}
-        .btn-primary:hover { transform: scale(1.02); }
+        /* USER FILTER BAR */
+        .filter-bar { display: flex; gap: 15px; padding: 20px; background: rgba(0,0,0,0.2); flex-wrap: wrap; align-items: flex-end;}
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px;}
+        .filter-group label { font-size: 12px; color: var(--text-muted); }
+        .input-text, .select-box { padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: #0f0f13; color: white; outline: none;}
+        .btn-filter { background: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold;}
         
-        .action-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);}
-        .btn-danger { background-color: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 14px; font-weight: 500; cursor: pointer; opacity: 0.5; pointer-events: none; transition: 0.2s;}
-        .btn-danger.active { opacity: 1; pointer-events: auto; }
+        /* TABLE STYLES */
+        .table-container { width: 100%; overflow-x: auto; }
+        .table-inner { min-width: 900px; }
+        .header-row { display: grid; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 12px; font-weight: bold; color: var(--text-muted); background: rgba(0,0,0,0.2);}
+        .data-row { display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); font-size: 13px; transition: 0.2s;}
+        .data-row:hover { background: rgba(255,255,255,0.02); }
+        
+        /* Specific Grid Layouts */
+        .grid-users { grid-template-columns: 1.5fr 2fr 100px 100px 120px 100px 120px 100px; }
+        .grid-songs { grid-template-columns: 50px 2fr 80px 100px 100px 100px; }
+        .grid-logs { grid-template-columns: 40px 1fr 180px; }
 
-        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
-        .search-input { padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; font-size: 14px; outline: none; width: 250px; }
+        /* BADGES */
+        .badge-role { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; letter-spacing: 0.5px;}
+        .badge-role.normal { border: 1px solid #444; background: #222; color: #ccc;}
+        .badge-role.vip { border: 1px solid #ffcc00; background: rgba(255, 204, 0, 0.1); color: #ffcc00;}
+        .badge-status { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid #34c759; color: #34c759; background: rgba(52, 199, 89, 0.1);}
 
+        /* ACTION BUTTON & DROPDOWN */
+        .btn-manage { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: 0.2s;}
+        .btn-manage:hover { background: var(--accent-light); }
+        .manage-dropdown { position: absolute; right: 20px; top: 40px; background: #2a2a35; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none; flex-direction: column; overflow: hidden; z-index: 100; min-width: 120px;}
+        .manage-dropdown.show { display: flex; }
+        .drop-btn { padding: 12px 15px; background: none; border: none; color: white; font-size: 13px; text-align: left; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.2s;}
+        .drop-btn:hover { background: rgba(255,255,255,0.1); }
+        
         /* GENRES GRID */
-        .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; padding: 20px;}
-        .genre-card { aspect-ratio: 1; border-radius: 16px; position: relative; overflow: hidden; cursor: grab; border: 1px solid rgba(255,255,255,0.1); background: #1a1a24; transition: 0.2s;}
+        .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px;}
+        .genre-card { aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; cursor: grab; background: #1a1a24; border: 1px solid transparent; transition: 0.2s;}
         .genre-card.drag-over { border-top: 3px solid var(--accent); }
         .genre-card:hover { border-color: var(--accent); }
-        .genre-card img { width: 100%; height: 100%; object-fit: cover; }
-        .genre-card .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); display: flex; align-items: flex-end; padding: 15px;}
-        .genre-card h4 { margin: 0; font-size: 18px; font-weight: 700; text-shadow: 0 2px 5px black;}
-        .genre-settings-icon { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 6px; border-radius: 50%; display: flex; transition: 0.2s; cursor: pointer; z-index: 10;}
-        .genre-settings-icon:hover { background: var(--accent); }
-        
-        .add-genre-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 2px dashed var(--border-color); color: var(--text-muted); cursor: pointer;}
-        .add-genre-card:hover { border-color: var(--accent); color: white; }
-
-        .table-container { overflow-x: auto; max-height: 600px;}
-        .table-inner { min-width: 750px; }
-
-        .header-row, .song-row { display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); }
-        .header-row { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-        
-        .song-grid { grid-template-columns: 40px 50px 2fr 80px 100px 80px 80px; }
-        .user-row { display: grid; grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px; padding: 16px 20px; align-items: center; transition: 0.2s; border-bottom: 1px solid var(--border-color); }
-        .log-row { display: grid; grid-template-columns: 40px 1fr 150px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; align-items: center;}
-        
-        .song-row:hover, .user-row:hover, .log-row:hover { background-color: rgba(255, 255, 255, 0.05); }
-
-        .user-expanded { display: none; padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);}
-        .user-expanded.show { display: block; animation: fadeIn 0.2s; }
-        .history-row { display: grid; grid-template-columns: 2fr 1fr 100px 100px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: var(--text-muted); align-items: center;}
-
-        input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-        .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px; transition: 0.2s;}
-        .icon-btn:hover { color: white; background: rgba(255,255,255,0.1); }
-        svg { width: 18px; height: 18px; fill: currentColor; }
+        .genre-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8;}
+        .genre-card .overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 15px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);}
+        .add-genre-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); color: var(--text-muted); cursor: pointer;}
 
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; transition: transform 0.4s; z-index: 9999; color: white; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
         .toast.show { transform: translateX(-50%) translateY(0); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
-        .modal-box { background: rgba(30, 30, 40, 0.95); backdrop-filter: blur(30px); width: 100%; max-width: 340px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px;}
+        .modal-box { background: var(--bg-main); width: 100%; max-width: 360px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.2s; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content { padding: 30px 20px; text-align: left; }
-        .input-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; display: block; margin-top: 15px;}
-        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background: rgba(0,0,0,0.3); color: white;}
-        
+        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; outline: none; background: #0b0b10; color: white; margin-top: 5px; margin-bottom: 15px;}
         .modal-actions { display: flex; border-top: 1px solid var(--border-color); }
-        .modal-btn { flex: 1; padding: 16px; border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--accent); font-weight: 600; transition: 0.2s;}
+        .modal-btn { flex: 1; padding: 14px; border: none; background: transparent; font-size: 14px; cursor: pointer; color: var(--text-main); font-weight: 500; transition: 0.2s;}
         .modal-btn:hover { background: rgba(255,255,255,0.05); }
-        .modal-btn.cancel { border-right: 1px solid var(--border-color); color: var(--text-muted); font-weight: 400;}
-        .btn-danger-full { width: 100%; background: rgba(255, 69, 58, 0.1); color: var(--danger); border: 1px solid rgba(255, 69, 58, 0.3); padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s;}
 
-        .apple-spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
+        .apple-spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--text-main); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        .back-btn-ui { display: inline-flex; align-items: center; gap: 5px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; font-weight: 600; padding: 15px 20px;}
-        .back-btn-ui:hover { color: white; }
-
         @media (max-width: 768px) {
-            .container { flex-direction: column; gap: 20px; }
-            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px;}
-            .sidebar-btn { flex: 1; text-align: center; white-space: nowrap; }
-            .upload-bar { flex-direction: column; align-items: stretch; gap: 15px;}
-            .btn-publish { position: relative; width: 100%; margin-bottom: 20px;}
-            /* 2 Columns on Mobile for Genres */
-            .genre-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 60px; flex-direction: row; border-right: none; border-bottom: 1px solid var(--border-color); overflow-x: auto;}
+            .sidebar-header { display: none; }
+            .nav-section { display: flex; margin: 0; }
+            .nav-title { display: none; }
+            .nav-item { white-space: nowrap; padding: 0 20px; }
+            .grid-users { grid-template-columns: 120px 150px 100px 100px; } /* Mobile table squish */
         }
     </style>
 </head>
-<body>
+<body onclick="closeDropdowns(event)">
 
 <div id="globalLoader" class="modal-overlay" style="display:flex; z-index: 99999;"><div class="apple-spinner"></div></div>
 <div id="toast" class="toast"></div>
 
-<div class="header-top">
-    <button class="btn-publish" onclick="publishChanges()">Publish Updates</button>
-    Admin Dashboard
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">MusicScraper<span>管理后台</span></div>
+    </div>
+    
+    <div class="nav-section">
+        <div class="nav-title">内容</div>
+        <button class="nav-item active" onclick="switchView('songs', '歌曲管理')" id="nav-songs">♪ 歌曲管理</button>
+        <button class="nav-item" onclick="switchView('wip', '首页内容')" id="nav-wip1">⌂ 首页内容</button>
+        <button class="nav-item" onclick="switchView('wip', '分类管理')" id="nav-wip2">≡ 分类管理</button>
+        <button class="nav-item" onclick="switchView('wip', '推荐分类')" id="nav-wip3">✦ 推荐分类</button>
+        <button class="nav-item" onclick="switchView('wip', '举报管理')" id="nav-wip4">⚑ 举报管理</button>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-title">用户</div>
+        <button class="nav-item" onclick="switchView('users', '用户管理')" id="nav-users">◉ 用户管理</button>
+        <button class="nav-item" onclick="switchView('wip', '推荐配置')" id="nav-wip5">◇ 推荐配置</button>
+        <button class="nav-item" onclick="switchView('wip', '活动管理')" id="nav-wip6">⚡ 活动管理</button>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-title">系统 & 财务</div>
+        <button class="nav-item" onclick="switchView('data', '注册数据')" id="nav-data">❖ 注册数据</button>
+        <button class="nav-item" onclick="switchView('logs', '系统日志')" id="nav-logs">$ 系统日志</button>
+    </div>
 </div>
 
-<div class="container">
-    <div class="sidebar">
-        <button class="sidebar-btn active" onclick="switchView('general')" id="btn-general">General</button>
-        <button class="sidebar-btn" onclick="switchView('users')" id="btn-users">Users</button>
-        <button class="sidebar-btn" onclick="switchView('data')" id="btn-data">Data</button>
-        <button class="sidebar-btn" onclick="switchView('logs')" id="btn-logs">Logs</button>
+<!-- MAIN CONTENT -->
+<div class="main-content">
+    <div class="top-bar">
+        <div class="breadcrumb">后台 / <span id="breadcrumb-current">歌曲管理</span></div>
+        <div class="top-actions">
+            <button class="btn-top" onclick="publishChanges()">Publish</button>
+            <button class="btn-top">EN</button>
+            <button class="btn-top highlight">● 开发环境</button>
+        </div>
     </div>
 
-    <div class="content-area">
-        <div id="view-general" class="view-section active">
+    <!-- VIEW: WIP (Undeveloped pages) -->
+    <div id="view-wip" class="view-section">
+        <div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted); font-size:20px; font-weight:500;">
+            此页正在开发中...
+        </div>
+    </div>
+
+    <!-- VIEW: USERS (Exact Match) -->
+    <div id="view-users" class="view-section">
+        <div class="glass-panel">
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>搜索</label>
+                    <input type="text" id="userSearchInput" class="input-text" placeholder="用户名 / 邮箱..." oninput="handleUserSearch()">
+                </div>
+                <div class="filter-group">
+                    <label>角色</label>
+                    <select class="select-box" id="roleFilter" onchange="handleUserSearch()">
+                        <option value="ALL">全部</option>
+                        <option value="NORMAL">Normal</option>
+                        <option value="VIP">VIP</option>
+                    </select>
+                </div>
+                <div style="margin-left: auto;">
+                    <button class="btn-filter" style="background:transparent; color:var(--text-muted); font-weight:normal;" onclick="clearUserFilters()">清除</button>
+                    <button class="btn-filter" onclick="handleUserSearch()">筛选</button>
+                </div>
+            </div>
             
-            <div class="glass-panel" style="padding: 15px 20px; display:flex; flex-wrap:wrap; gap: 10px; align-items:center;">
-                <div style="flex:1;">
-                    <div style="font-size:12px; color:var(--text-muted); font-weight:bold; margin-bottom:5px;">WEBSITE NAME</div>
-                    <input type="text" id="headerInput" class="input-text" style="width:100%; box-sizing:border-box;">
-                </div>
-                <div style="flex:2;">
-                    <div style="font-size:12px; color:var(--text-muted); font-weight:bold; margin-bottom:5px;">HERO TITLE (Ex: 专属DJ节奏空间)</div>
-                    <input type="text" id="heroTitleInput" class="input-text" style="width:100%; box-sizing:border-box;">
-                </div>
-                <button class="btn-primary" style="margin-top:18px;" onclick="saveSettings()">Save Texts</button>
-            </div>
+            <div style="padding: 15px 20px; border-bottom: 1px solid var(--border-color); font-size: 13px; font-weight:bold;">共 <span id="userCount">0</span> 个账号</div>
 
-            <div class="glass-panel" id="genreGridViewPanel">
-                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Music Categories (Drag to Reorder)</span></div>
-                <div class="genre-grid" id="genreGrid"></div>
-            </div>
-
-            <div class="glass-panel" id="songListViewPanel" style="display:none;">
-                <button class="back-btn-ui" onclick="backToGenres()"><svg viewBox="0 0 24 24" style="width:18px;fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back to Genres</button>
-                <div class="toolbar" style="border-top: 1px solid var(--border-color);">
-                    <span style="font-size: 18px; font-weight: 700;" id="currentGenreTitle">Category</span>
-                </div>
-                <div class="upload-bar">
-                    <div style="display:flex; align-items:center; gap: 10px; width: 100%;">
-                        <button class="btn-primary" style="flex: 1;" onclick="openUploadModal()">+ Upload Audio</button>
-                        <button class="btn-primary" style="flex: 1;" onclick="openTransloadModal()">+ Transload URL</button>
+            <div class="table-container">
+                <div class="table-inner">
+                    <div class="header-row grid-users">
+                        <div>用户</div><div>邮箱</div><div>角色</div><div>等级</div><div>钻石余额</div><div>状态</div><div>注册时间</div><div style="text-align:right;">操作</div>
                     </div>
-                </div>
-                <div class="toolbar">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search song..." oninput="handleSearch()">
-                </div>
-                <div class="table-container">
-                    <div class="table-inner">
-                        <div class="header-row song-grid">
-                            <div><input type="checkbox" id="selectAllSongs" onchange="toggleAllSongs()"></div>
-                            <div>Seq</div><div>Song Name</div><div>Price</div><div>Size</div><div>Uploaded</div><div>Set</div>
-                        </div>
-                        <div id="songList"></div>
-                    </div>
-                </div>
-                <div class="action-bar"><button class="btn-danger" style="margin-left:auto;" id="bulkDeleteSongsBtn" onclick="executeDelete()">Delete Selected</button></div>
-            </div>
-        </div>
-
-        <div id="view-users" class="view-section">
-            <div class="glass-panel">
-                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Registered Users</span><input type="text" id="userSearchInput" class="search-input" placeholder="Search user..." oninput="handleUserSearch()"></div>
-                <div class="table-container">
-                    <div class="table-inner">
-                        <div class="header-row" style="grid-template-columns: 40px 1.5fr 2fr 1.5fr 100px 150px;"><div></div><div>Username</div><div>Email</div><div>Phone</div><div>Tokens</div><div>Actions</div></div>
-                        <div id="userList"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-data" class="view-section">
-            <div class="glass-panel">
-                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">Registration Data</span></div>
-                <div class="table-container">
-                    <div class="table-inner">
-                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;"><div><input type="checkbox" id="selectAllData" onchange="toggleAllLogs('data')"></div><div>Event</div><div>Date</div></div>
-                        <div id="dataList"></div>
-                    </div>
-                </div>
-                <div class="action-bar">
-                    <button class="btn-primary" style="background:transparent; border:1px solid var(--border-color);" onclick="clearLogs('register', true)">Clear All</button>
-                    <button class="btn-danger" id="bulkDeleteDataBtn" onclick="clearLogs('register', false)">Clear Selected</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-logs" class="view-section">
-            <div class="glass-panel">
-                <div class="toolbar"><span style="font-size: 15px; font-weight: 600;">System Logs</span></div>
-                <div class="table-container">
-                    <div class="table-inner">
-                        <div class="header-row" style="grid-template-columns: 40px 1fr 150px;"><div><input type="checkbox" id="selectAllLogs" onchange="toggleAllLogs('logs')"></div><div>Action</div><div>Date</div></div>
-                        <div id="logsList"></div>
-                    </div>
-                </div>
-                <div class="action-bar">
-                    <button class="btn-primary" style="background:transparent; border:1px solid var(--border-color);" onclick="clearLogs('admin', true)">Clear All</button>
-                    <button class="btn-danger" id="bulkDeleteLogsBtn" onclick="clearLogs('admin', false)">Clear Selected</button>
+                    <div id="userList"></div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- VIEW: SONGS / GENRES -->
+    <div id="view-songs" class="view-section active">
+        <!-- Text Configs -->
+        <div class="glass-panel" style="padding: 15px 20px; display:flex; flex-wrap:wrap; gap: 10px; align-items:flex-end;">
+            <div style="flex:1;"><label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">WEBSITE NAME</label><input type="text" id="headerInput" class="input-text" style="width:100%; box-sizing:border-box;"></div>
+            <div style="flex:2;"><label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">HERO TITLE (Ex: 专属DJ节奏空间)</label><input type="text" id="heroTitleInput" class="input-text" style="width:100%; box-sizing:border-box;"></div>
+            <button class="btn-primary" style="height:38px;" onclick="saveSettings()">Save</button>
+        </div>
+
+        <!-- Genres -->
+        <div class="glass-panel" id="genreGridViewPanel">
+            <div class="panel-header"><span style="font-weight: 600;">分类管理 (Categories)</span></div>
+            <div class="genre-grid" id="genreGrid"></div>
+        </div>
+
+        <!-- Song List -->
+        <div class="glass-panel" id="songListViewPanel" style="display:none;">
+            <div class="panel-header">
+                <div>
+                    <button class="btn-primary" style="background:transparent; border:1px solid var(--border-color); padding:4px 10px;" onclick="backToGenres()">← 返回</button>
+                    <span style="font-weight: 700; margin-left: 15px;" id="currentGenreTitle">Category</span>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-primary" onclick="openUploadModal()">+ Upload MP3</button>
+                    <button class="btn-primary" onclick="openTransloadModal()">+ Transload URL</button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div class="table-inner">
+                    <div class="header-row grid-songs">
+                        <div>Seq</div><div>Song Name</div><div>Price</div><div>Size</div><div>Uploaded</div><div>Actions</div>
+                    </div>
+                    <div id="songList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: DATA / LOGS -->
+    <div id="view-data" class="view-section">
+        <div class="glass-panel">
+            <div class="panel-header"><span style="font-weight: 600;">注册数据</span><button class="btn-primary" style="background:var(--danger)" onclick="clearLogs('register', true)">Clear All</button></div>
+            <div class="table-container"><div class="table-inner"><div class="header-row grid-logs"><div></div><div>Event</div><div>Date</div></div><div id="dataList"></div></div></div>
+        </div>
+    </div>
+    
+    <div id="view-logs" class="view-section">
+        <div class="glass-panel">
+            <div class="panel-header"><span style="font-weight: 600;">系统日志</span><button class="btn-primary" style="background:var(--danger)" onclick="clearLogs('admin', true)">Clear All</button></div>
+            <div class="table-container"><div class="table-inner"><div class="header-row grid-logs"><div></div><div>Action</div><div>Date</div></div><div id="logsList"></div></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Modals -->
+<div class="modal-overlay" id="adminTokenModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0;">编辑余额</h3><p style="font-size:13px; color:var(--text-muted); margin:0;" id="tokenModalTarget"></p><label class="input-label">Tokens 💎</label><input type="number" id="adminTokenInput" class="modal-input"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">取消</button><button class="modal-btn" onclick="confirmTokenUpdate()" style="color:var(--accent)">保存</button></div></div>
+</div>
+
+<div class="modal-overlay" id="adminContactModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0;">编辑信息</h3><label class="input-label">Email</label><input type="text" id="adminEmailInput" class="modal-input"><label class="input-label">Phone</label><input type="text" id="adminPhoneInput" class="modal-input"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">取消</button><button class="modal-btn" onclick="confirmContactUpdate()">保存</button></div></div>
+</div>
+
+<div class="modal-overlay" id="adminDeleteModal">
+    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; color:var(--danger);">删除用户</h3><p style="font-size:13px; color:var(--text-muted); margin:0;" id="deleteModalTarget"></p></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">取消</button><button class="modal-btn" style="color:var(--danger);" onclick="confirmUserDelete()">确认删除</button></div></div>
 </div>
 
 <div class="modal-overlay" id="genreModal">
     <div class="modal-box">
         <div class="modal-content">
             <h3 style="margin: 0 0 15px 0; text-align:center;" id="genreModalTitle">Add Genre</h3>
-            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 20px auto; cursor: pointer; border-radius: 12px; overflow:hidden;" onclick="document.getElementById('genreCoverUpload').click()">
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 10px auto; cursor: pointer; border-radius: 8px; overflow:hidden;" onclick="document.getElementById('genreCoverUpload').click()">
                 <img id="genreCoverPreview" src="" style="width: 100%; height: 100%; object-fit: cover; background: #333;">
                 <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); text-align: center; font-size: 10px; padding: 4px 0;">EDIT IMG</div>
             </div>
             <input type="file" id="genreCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'genreCoverPreview')">
-            <label class="input-label">Genre Name</label><input type="text" id="genreNameInput" class="modal-input">
+            <label class="input-label">Genre Name</label><input type="text" id="genreNameInput" class="modal-input" style="margin-bottom:0;">
             <div id="genreDeleteArea"></div>
         </div>
         <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveGenre()">Save</button></div>
@@ -237,67 +284,52 @@
     <div class="modal-box">
         <div class="modal-content">
             <h3 style="margin: 0 0 15px 0; text-align:center;" id="uploadModalTitle">Upload Audio</h3>
-            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 20px auto; cursor: pointer; border-radius: 12px; overflow:hidden;" onclick="document.getElementById('songCoverUpload').click()">
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 10px auto; cursor: pointer; border-radius: 8px; overflow:hidden;" onclick="document.getElementById('songCoverUpload').click()">
                 <img id="songCoverPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E" style="width: 100%; height: 100%; object-fit: cover;">
                 <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); text-align: center; font-size: 10px; padding: 4px 0;">COVER PNG</div>
             </div>
             <input type="file" id="songCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'songCoverPreview')">
             
-            <div id="uploadFileArea" style="margin-bottom:15px;">
-                <label class="btn-primary" style="display:block; text-align:center; width:100%; box-sizing:border-box;">Select MP3 <input type="file" id="uploadFileInput" accept="audio/*"></label>
-            </div>
-            <div id="transloadFileArea" style="margin-bottom:15px; display:none;">
-                <label class="input-label">URL (.m4a)</label><input type="text" id="transloadUrlInput" class="modal-input">
-            </div>
+            <div id="uploadFileArea" style="margin-bottom:10px;"><label class="btn-primary" style="display:block; text-align:center; width:100%; box-sizing:border-box;">Select MP3 <input type="file" id="uploadFileInput" accept="audio/*" style="display:none;"></label></div>
+            <div id="transloadFileArea" style="margin-bottom:10px; display:none;"><label class="input-label">URL (.m4a)</label><input type="text" id="transloadUrlInput" class="modal-input" style="margin-bottom:0;"></div>
 
-            <label class="input-label">Song Title</label><input type="text" id="uploadTitleInput" class="modal-input">
-            <label class="input-label">Tokens</label><input type="number" id="uploadPriceInput" class="modal-input" value="10" min="0">
+            <label class="input-label">Title</label><input type="text" id="uploadTitleInput" class="modal-input" style="margin-bottom:0;">
+            <label class="input-label">Tokens</label><input type="number" id="uploadPriceInput" class="modal-input" value="10" min="0" style="margin-bottom:0;">
         </div>
-        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="executeUpload()">Save & Publish</button></div>
+        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="executeUpload()">Upload</button></div>
     </div>
-</div>
-
-<div class="modal-overlay" id="songSettingsModal">
-    <div class="modal-box">
-        <div class="modal-content"><h3 style="margin: 0 0 5px 0; text-align:center;">Edit Song</h3><label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input"><label class="input-label">Token Cost</label><input type="number" id="settingPrice" class="modal-input" min="0"><button class="btn-danger-full" onclick="executeDeleteFromModal()">Delete Song Permanently</button></div>
-        <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveSongSettings()">Save Changes</button></div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="adminTokenModal">
-    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center;">Edit Tokens</h3><p style="font-size:14px; color:var(--text-muted); margin:0 0 10px 0;" id="tokenModalTarget"></p><input type="number" id="adminTokenInput" class="modal-input"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="confirmTokenUpdate()">Apply</button></div></div>
-</div>
-
-<div class="modal-overlay" id="adminContactModal">
-    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center;">Edit Contact</h3><label class="input-label">Email</label><input type="text" id="adminEmailInput" class="modal-input"><label class="input-label">Phone</label><input type="text" id="adminPhoneInput" class="modal-input"></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="confirmContactUpdate()">Save</button></div></div>
-</div>
-
-<div class="modal-overlay" id="adminDeleteModal">
-    <div class="modal-box"><div class="modal-content"><h3 style="margin: 0 0 10px 0; text-align:center; color:var(--danger);">Delete User</h3><p style="font-size:14px; color:var(--text-muted); margin:0;" id="deleteModalTarget"></p></div><div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" style="color:var(--danger);" onclick="confirmUserDelete()">Delete Permanently</button></div></div>
 </div>
 
 <script>
     const API_URL = '/api'; 
     let allSongs = [], allUsers = [], logData = { register: [], admin: [] }, allGenres = [];
-    let selectedSongs = [], selectedData = [], selectedLogs = [];
-    let draggedId = null, currentEditId = null, currentEditUser = null, currentAdminGenreId = null, draggedGenreId = null;
-    let pendingUploadBase64 = null;
-    let isTransloadMode = false;
+    let currentEditUser = null, currentAdminGenreId = null, draggedGenreId = null;
+    let pendingUploadBase64 = null; let isTransloadMode = false;
 
     function showLoader() { document.getElementById('globalLoader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('globalLoader').style.display = 'none'; }
-    function showToast(msg, isError = false) { const t = document.getElementById('toast'); t.className='toast'; if(isError) t.style.borderColor = 'var(--danger)'; t.innerText = msg; t.classList.add('show'); setTimeout(() => {t.classList.remove('show'); t.style.borderColor='var(--border-color)';}, 4000); }
+    function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if(m.id !== 'globalLoader') m.style.display = 'none'; }); }
 
-    function switchView(view) {
-        document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-        document.getElementById(`btn-${view}`).classList.add('active');
-        document.getElementById(`view-${view}`).classList.add('active');
-        if(view === 'users') loadUsers(); if(view === 'data') loadLogs('register'); if(view === 'logs') loadLogs('admin');
+    function closeDropdowns(e) {
+        if(!e.target.closest('.btn-manage')) {
+            document.querySelectorAll('.manage-dropdown').forEach(d => d.classList.remove('show'));
+        }
     }
 
-    function publishChanges() { showLoader(); setTimeout(() => { hideLoader(); showToast("Changes Published Successfully!"); }, 800); }
+    function switchView(viewId, titleStr = '') {
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+        
+        const navId = `nav-${viewId}`; if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
+        document.getElementById(`view-${viewId}`).classList.add('active');
+        
+        if(titleStr) document.getElementById('breadcrumb-current').innerText = titleStr;
+
+        if(viewId === 'users') loadUsers(); if(viewId === 'data') loadLogs('register'); if(viewId === 'logs') loadLogs('admin');
+    }
+
+    function publishChanges() { showLoader(); setTimeout(() => { hideLoader(); showToast("Changes Published!"); }, 800); }
     function formatBytes(bytes) { if (bytes === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; }
 
     async function loadInitial() { 
@@ -305,17 +337,16 @@
         const res = await fetch(`${API_URL}/settings`);
         if(res.ok) { const data = await res.json(); document.getElementById('headerInput').value = data.headerTitle || "MusicScraper"; document.getElementById('heroTitleInput').value = data.heroTitle || "专属DJ节奏空间"; }
         allGenres = await (await fetch(`${API_URL}/genres`)).json(); 
-        renderGenres(); 
-        hideLoader(); 
+        renderGenres(); hideLoader(); 
     }
     
     async function saveSettings() { showLoader(); await fetch(`${API_URL}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({headerTitle: document.getElementById('headerInput').value, heroTitle: document.getElementById('heroTitleInput').value})}); hideLoader(); showToast("Texts Saved!"); }
 
-    // --- GENRES (With Drag & Drop) ---
+    // --- GENRES ---
     function renderGenres() {
         const grid = document.getElementById('genreGrid'); grid.innerHTML = '';
         allGenres.forEach(g => {
-            const cover = g.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%232a2a35"/%3E%3C/svg%3E';
+            const cover = g.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%231a1a24"/%3E%3C/svg%3E';
             const card = document.createElement('div');
             card.className = 'genre-card'; card.draggable = true; card.dataset.id = g.id;
             
@@ -326,14 +357,13 @@
 
             card.innerHTML = `
                 <div onclick="openGenreSongs('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="width:100%;height:100%;">
-                    <img src="${cover}">
-                    <div class="overlay"><h4>${g.name}</h4></div>
+                    <img src="${cover}"><div class="overlay"><h4>${g.name}</h4></div>
                 </div>
-                <div class="genre-settings-icon" onclick="event.stopPropagation(); openGenreModal('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${cover}')"><svg viewBox="0 0 24 24"><path d="M19.14... (icon omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+                <div class="genre-settings-icon" onclick="event.stopPropagation(); openGenreModal('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${cover}')"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
             `;
             grid.appendChild(card);
         });
-        grid.innerHTML += `<div class="genre-card add-genre-card" onclick="openGenreModal()"><svg viewBox="0 0 24 24" style="width:40px;height:40px;margin-bottom:10px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg><div>Add Genre</div></div>`;
+        grid.innerHTML += `<div class="genre-card add-genre-card" onclick="openGenreModal()"><div style="font-size:30px; font-weight:100; margin-bottom:5px;">+</div><div>添加分类</div></div>`;
     }
 
     async function handleGenreReorder(dragId, dropId) {
@@ -348,18 +378,19 @@
     function handleImgPreview(event, targetId) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { pendingUploadBase64 = e.target.result; document.getElementById(targetId).src = pendingUploadBase64; }; reader.readAsDataURL(file); }
 
     function openGenreModal(id = null, name = '', cover = '') {
-        currentEditId = id; pendingUploadBase64 = null;
+        pendingUploadBase64 = null;
         document.getElementById('genreModalTitle').innerText = id ? 'Edit Genre' : 'Add Genre';
         document.getElementById('genreNameInput').value = name;
         document.getElementById('genreCoverPreview').src = cover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23333"/%3E%3C/svg%3E';
         document.getElementById('genreDeleteArea').innerHTML = id ? `<button class="btn-danger-full" onclick="deleteGenre('${id}')">Delete Genre</button>` : '';
+        document.getElementById('genreModal').dataset.editId = id || '';
         document.getElementById('genreModal').style.display = 'flex';
     }
 
     async function saveGenre() {
-        showLoader(); const name = document.getElementById('genreNameInput').value;
+        showLoader(); const name = document.getElementById('genreNameInput').value; const editId = document.getElementById('genreModal').dataset.editId;
         const payload = { name, coverBase64: pendingUploadBase64 };
-        if(currentEditId) await fetch(`${API_URL}/genres/${currentEditId}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        if(editId) await fetch(`${API_URL}/genres/${editId}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         else await fetch(`${API_URL}/genres`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         closeModals(); await loadInitial();
     }
@@ -369,39 +400,30 @@
     async function openGenreSongs(id, name) {
         currentAdminGenreId = id; document.getElementById('currentGenreTitle').innerText = name;
         document.getElementById('genreGridViewPanel').style.display = 'none'; document.getElementById('songListViewPanel').style.display = 'block';
-        showLoader(); allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSearch(); hideLoader();
+        showLoader(); allSongs = await (await fetch(`${API_URL}/songs`)).json(); renderSongList(allSongs.filter(s => s.genreId === id)); hideLoader();
     }
     function backToGenres() { document.getElementById('genreGridViewPanel').style.display = 'block'; document.getElementById('songListViewPanel').style.display = 'none'; }
 
-    function handleSearch() { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = allSongs.filter(s => s.genreId === currentAdminGenreId && s.filename.toLowerCase().includes(query)); selectedSongs = []; document.getElementById('selectAllSongs').checked = false; renderList(filtered); }
-
-    function renderList(songsToRender) {
+    function renderSongList(songsToRender) {
         const listDiv = document.getElementById('songList'); listDiv.innerHTML = '';
         songsToRender.forEach(song => {
-            const isChecked = selectedSongs.includes(song.id) ? 'checked' : '';
             listDiv.innerHTML += `
-                <div class="song-row song-grid">
-                    <div><input type="checkbox" class="song-check" value="${song.id}" onchange="toggleSongSel(this)" ${isChecked}></div>
+                <div class="data-row grid-songs">
                     <div class="seq-num">${song.sequence}</div>
                     <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${song.filename}</div>
                     <div style="color: var(--token); font-weight: bold;">${song.price !== undefined ? song.price : 10}</div>
-                    <div style="font-size: 14px; color: var(--text-muted);">${formatBytes(song.size)}</div>
-                    <div style="font-size: 14px; color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
-                    <div><button class="icon-btn" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price !== undefined ? song.price : 10})"><svg viewBox="0 0 24 24"><path d="M19.14... (omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button></div>
+                    <div style="color: var(--text-muted);">${formatBytes(song.size)}</div>
+                    <div style="color: var(--text-muted);">${new Date(song.uploadTime).toLocaleDateString()}</div>
+                    <button class="btn-primary" style="background:transparent; border:1px solid var(--accent);" onclick="deleteSong('${song.id}')">Delete</button>
                 </div>
             `;
         });
     }
 
-    function toggleSongSel(cb) { if (cb.checked) selectedSongs.push(cb.value); else selectedSongs = selectedSongs.filter(id => id !== cb.value); updateBulkBtn('song'); }
-    function toggleAllSongs() { const master = document.getElementById('selectAllSongs'); selectedSongs = []; document.querySelectorAll('.song-check').forEach(cb => { cb.checked = master.checked; if (master.checked) selectedSongs.push(cb.value); }); updateBulkBtn('song'); }
+    async function deleteSong(id) { if(!confirm("Delete song?")) return; showLoader(); await fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); }
 
-    // --- UPLOAD / TRANSLOAD FIX ---
-    function resetUploadModal() {
-        document.getElementById('uploadTitleInput').value = ''; document.getElementById('uploadPriceInput').value = '10';
-        document.getElementById('songCoverPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E";
-        pendingUploadBase64 = null;
-    }
+    // UPLOAD / TRANSLOAD
+    function resetUploadModal() { document.getElementById('uploadTitleInput').value = ''; document.getElementById('uploadPriceInput').value = '10'; document.getElementById('songCoverPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E"; pendingUploadBase64 = null; }
     function openUploadModal() { isTransloadMode = false; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Upload Audio'; document.getElementById('uploadFileArea').style.display = 'block'; document.getElementById('transloadFileArea').style.display = 'none'; document.getElementById('uploadSongModal').style.display = 'flex'; }
     function openTransloadModal() { isTransloadMode = true; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Transload Audio'; document.getElementById('uploadFileArea').style.display = 'none'; document.getElementById('transloadFileArea').style.display = 'block'; document.getElementById('uploadSongModal').style.display = 'flex'; }
 
@@ -410,90 +432,82 @@
         if(isTransloadMode) {
             const url = document.getElementById('transloadUrlInput').value; if(!url) return; showLoader();
             const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, title, price, genreId: currentAdminGenreId, coverBase64: pendingUploadBase64 }) });
-            if (res.ok) { closeModals(); showToast("Transload successful!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed: " + await res.text(), true); }
+            if (res.ok) { closeModals(); showToast("Transload successful!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed", true); }
         } else {
             const file = document.getElementById('uploadFileInput').files[0]; if(!file) return; showLoader();
             const fd = new FormData(); fd.append('mp3file', file); fd.append('title', title); fd.append('price', price); fd.append('genreId', currentAdminGenreId); if(pendingUploadBase64) fd.append('coverBase64', pendingUploadBase64);
             const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
-            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed: " + await res.text(), true); }
+            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); } else { hideLoader(); showToast("Failed", true); }
         }
     }
 
-    // --- USERS & LOGS ---
+    // --- USERS ---
     async function loadUsers() { showLoader(); allUsers = await (await fetch(`${API_URL}/all-users`)).json(); handleUserSearch(); hideLoader(); }
+    
+    function clearUserFilters() { document.getElementById('userSearchInput').value = ''; document.getElementById('roleFilter').value = 'ALL'; handleUserSearch(); }
+    
     function handleUserSearch() {
         const query = document.getElementById('userSearchInput').value.toLowerCase();
-        const filtered = allUsers.filter(u => u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query) || u.phone.includes(query));
+        const role = document.getElementById('roleFilter').value;
+        const filtered = allUsers.filter(u => {
+            const matchesQuery = u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query) || u.phone.includes(query);
+            const isUserVip = u.isVip || false;
+            const matchesRole = role === 'ALL' || (role === 'VIP' && isUserVip) || (role === 'NORMAL' && !isUserVip);
+            return matchesQuery && matchesRole;
+        });
+        
+        document.getElementById('userCount').innerText = filtered.length;
         const listDiv = document.getElementById('userList'); listDiv.innerHTML = '';
+        
         filtered.forEach(u => {
-            const wrapper = document.createElement('div'); wrapper.className = 'user-wrapper';
-            let historyHTML = '';
-            if(u.purchases && u.purchases.length > 0) {
-                historyHTML = `<div class="history-row history-header"><div>Song Name</div><div>Date</div><div>ID</div><div>Cost</div></div>`;
-                u.purchases.forEach(p => { historyHTML += `<div class="history-row"><div>${p.songName}</div><div>${new Date(p.purchaseTime).toLocaleString()}</div><div style="font-family:monospace;">${p.purchaseId || 'N/A'}</div><div style="color:var(--token);">${p.tokensSpent}</div></div>`; });
-            } else { historyHTML = `<div style="color:var(--text-muted); font-size:13px;">No purchases yet.</div>`; }
-
-            wrapper.innerHTML = `
-                <div class="user-row">
-                    <div><button class="icon-btn" onclick="document.getElementById('expand-user-${u.username}').classList.toggle('show')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button></div>
+            const roleBadge = u.isVip ? '<span class="badge-role vip">VIP</span>' : '<span class="badge-role normal">NORMAL</span>';
+            const dateStr = u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : 'N/A';
+            
+            listDiv.innerHTML += `
+                <div class="data-row grid-users">
                     <div style="font-weight: 500;">${u.username}</div>
-                    <div style="color: var(--text-muted); font-size: 14px; overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
-                    <div style="color: var(--text-muted); font-size: 14px;">${u.phone}</div>
-                    <div style="color: var(--token); font-weight: bold;">${u.tokens}</div>
-                    <div style="display:flex; gap: 5px;">
-                        <button class="icon-btn" onclick="openTokenModal('${u.username}', ${u.tokens})"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></button>
-                        <button class="icon-btn" onclick="openContactModal('${u.username}', '${u.email}', '${u.phone}')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="icon-btn" style="color:var(--danger);" onclick="openDeleteModal('${u.username}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                    <div style="color: var(--text-muted); overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
+                    <div>${roleBadge}</div>
+                    <div style="color:var(--text-muted)">—</div>
+                    <div style="font-weight: bold;"><span style="color:#00e5ff;">💎</span> ${u.tokens}</div>
+                    <div><span class="badge-status active">ACTIVE</span></div>
+                    <div style="color:var(--text-muted);">${dateStr}</div>
+                    <div style="text-align:right; position:relative;">
+                        <button class="btn-manage" onclick="toggleManageDrop('${u.username}', event)">管理 →</button>
+                        <div class="manage-dropdown" id="manage-drop-${u.username}">
+                            <button class="drop-btn" onclick="openTokenModal('${u.username}', ${u.tokens})">编辑余额</button>
+                            <button class="drop-btn" onclick="openContactModal('${u.username}', '${u.email}', '${u.phone}')">编辑信息</button>
+                            <button class="drop-btn" style="color:var(--danger); border-bottom:none;" onclick="openDeleteModal('${u.username}')">删除用户</button>
+                        </div>
                     </div>
                 </div>
-                <div class="user-expanded" id="expand-user-${u.username}"><h4 style="margin: 0 0 10px 0;">Purchase History</h4>${historyHTML}</div>
             `;
-            listDiv.appendChild(wrapper);
         });
+    }
+
+    function toggleManageDrop(username, e) {
+        e.stopPropagation(); document.querySelectorAll('.manage-dropdown').forEach(d => { if(d.id !== `manage-drop-${username}`) d.classList.remove('show'); });
+        document.getElementById(`manage-drop-${username}`).classList.toggle('show');
     }
 
     function openTokenModal(u, t) { currentEditUser = u; document.getElementById('tokenModalTarget').innerText = `Target: ${u}`; document.getElementById('adminTokenInput').value = t; document.getElementById('adminTokenModal').style.display = 'flex'; }
     async function confirmTokenUpdate() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}/set-tokens`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({tokens: document.getElementById('adminTokenInput').value}) }); closeModals(); showToast("Tokens updated!"); loadUsers(); }
 
     function openContactModal(u, e, p) { currentEditUser = u; document.getElementById('adminEmailInput').value = e; document.getElementById('adminPhoneInput').value = p; document.getElementById('adminContactModal').style.display = 'flex'; }
-    async function confirmContactUpdate() { 
-        showLoader(); 
-        await fetch(`${API_URL}/users/${currentEditUser}/change-email`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newEmail: document.getElementById('adminEmailInput').value}) });
-        await fetch(`${API_URL}/users/${currentEditUser}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone: document.getElementById('adminPhoneInput').value}) });
-        closeModals(); showToast("Contact updated!"); loadUsers(); 
-    }
+    async function confirmContactUpdate() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}/change-email`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newEmail: document.getElementById('adminEmailInput').value}) }); await fetch(`${API_URL}/users/${currentEditUser}/change-phone`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newPhone: document.getElementById('adminPhoneInput').value}) }); closeModals(); showToast("Contact updated!"); loadUsers(); }
+
     function openDeleteModal(u) { currentEditUser = u; document.getElementById('deleteModalTarget').innerText = `Warning: Permanently removing '${u}'`; document.getElementById('adminDeleteModal').style.display = 'flex'; }
     async function confirmUserDelete() { showLoader(); await fetch(`${API_URL}/users/${currentEditUser}`, { method: 'DELETE' }); closeModals(); showToast("User deleted."); loadUsers(); }
 
+    // --- DATA / LOGS ---
     async function loadLogs(type) {
-        showLoader(); logData[type] = await (await fetch(`${API_URL}/logs/${type}`)).json();
+        showLoader(); const data = await (await fetch(`${API_URL}/logs/${type}`)).json();
         const listDiv = document.getElementById(type === 'register' ? 'dataList' : 'logsList'); listDiv.innerHTML = '';
-        if(type==='register') selectedData = []; else selectedLogs = []; document.getElementById(type === 'register' ? 'selectAllData' : 'selectAllLogs').checked = false;
-        
-        logData[type].forEach(log => {
-            const row = document.createElement('div'); row.className = 'log-row';
-            row.innerHTML = `<div><input type="checkbox" class="${type}-check" value="${log.id}" onchange="toggleLogSel(this, '${type}')"></div><div style="padding-right:15px;">${log.message}</div><div style="color:var(--text-muted); font-size:12px;">${new Date(log.timestamp).toLocaleString()}</div>`;
-            listDiv.appendChild(row);
-        });
-        updateBulkBtn(type); hideLoader();
+        data.forEach(log => {
+            listDiv.innerHTML += `<div class="data-row grid-logs"><div>-</div><div>${log.message}</div><div style="color:var(--text-muted); font-size:12px;">${new Date(log.timestamp).toLocaleString()}</div></div>`;
+        }); hideLoader();
     }
-    function toggleLogSel(cb, type) { let arr = type === 'register' ? selectedData : selectedLogs; if (cb.checked) arr.push(cb.value); else { const idx = arr.indexOf(cb.value); if(idx > -1) arr.splice(idx, 1); } updateBulkBtn(type); }
-    function toggleAllLogs(type) { const isData = type === 'data'; const valStr = isData ? 'register' : 'admin'; const master = document.getElementById(isData ? 'selectAllData' : 'selectAllLogs'); let arr = []; document.querySelectorAll(`.${valStr}-check`).forEach(cb => { cb.checked = master.checked; if (master.checked) arr.push(cb.value); }); if(isData) selectedData = arr; else selectedLogs = arr; updateBulkBtn(valStr); }
-    function updateBulkBtn(type) {
-        if(type === 'song') { const btn = document.getElementById('bulkDeleteSongsBtn'); if (selectedSongs.length > 0) { btn.classList.add('active'); btn.innerText = `Delete (${selectedSongs.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Delete Selected'; } }
-        else { const arr = type === 'register' ? selectedData : selectedLogs; const btn = document.getElementById(type === 'register' ? 'bulkDeleteDataBtn' : 'bulkDeleteLogsBtn'); if(arr.length > 0) { btn.classList.add('active'); btn.innerText = `Clear (${arr.length})`; } else { btn.classList.remove('active'); btn.innerText = 'Clear Selected'; } }
-    }
-    async function clearLogs(type, isAll) {
-        showLoader();
-        if(isAll) await fetch(`${API_URL}/logs/${type}/all`, { method: 'DELETE' });
-        else { const arr = type === 'register' ? selectedData : selectedLogs; if(arr.length === 0) { hideLoader(); return; } await fetch(`${API_URL}/logs/delete`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ids: arr}) }); }
-        loadLogs(type); showToast("Logs cleared.");
-    }
-
-    function openSettingsModal(id, name, price) { currentEditId = id; document.getElementById('settingName').value = name.replace(/\.[^/.]+$/, ""); document.getElementById('settingPrice').value = price; document.getElementById('songSettingsModal').style.display = 'flex'; }
-    async function saveSongSettings() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName: document.getElementById('settingName').value, newPrice: document.getElementById('settingPrice').value}) }); closeModals(); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Settings Updated"); }
-    async function executeDeleteFromModal() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}`, { method: 'DELETE' }); closeModals(); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Deleted successfully."); }
-    async function executeDelete() { showLoader(); await Promise.all(selectedSongs.map(id => fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }))); openGenreSongs(currentAdminGenreId, document.getElementById('currentGenreTitle').innerText); showToast("Deleted successfully."); }
+    async function clearLogs(type, isAll) { showLoader(); await fetch(`${API_URL}/logs/${type}/all`, { method: 'DELETE' }); loadLogs(type); showToast("Logs cleared."); }
 
     loadInitial();
 </script>
