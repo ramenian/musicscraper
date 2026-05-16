@@ -60,7 +60,7 @@ app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'music.html')); }
 
 async function logEvent(type, message) { try { if(db) await db.collection('logs').add({ type, message, timestamp: new Date().toISOString() }); } catch(e) {} }
 
-// --- SECURE AUDIO PROXY ---
+// --- SECURE AUDIO PROXY & PLAY TRACKING ---
 app.get('/api/stream/:songId', async (req, res) => {
     try {
         if(!db) return res.status(500).send('Database not connected');
@@ -77,13 +77,13 @@ app.get('/api/stream/:songId', async (req, res) => {
         const songRef = db.collection('songs').doc(req.params.songId);
         const songDoc = await songRef.get();
         if (!songDoc.exists) return res.status(404).send('Song not found');
-        const fileUrl = songDoc.data().filepath;
-
-        // Increment Plays
-        if (req.headers.range === "bytes=0-" || !req.headers.range) {
+        
+        // Track the play count
+        if (req.headers.range === 'bytes=0-' || !req.headers.range) {
             await songRef.update({ plays: admin.firestore.FieldValue.increment(1) });
         }
 
+        const fileUrl = songDoc.data().filepath;
         const fetchHeaders = {}; if (req.headers.range) fetchHeaders.Range = req.headers.range;
         const response = await fetch(fileUrl, { headers: fetchHeaders });
         if (!response.ok) throw new Error('Cloudinary fetch failed');
@@ -178,10 +178,11 @@ app.post('/api/users/:username/purchase', async (req, res) => {
             user.tokens -= price;
             const purchaseId = Math.random().toString(36).substr(2, 10).toUpperCase();
             user.purchases.push({ songId: req.body.songId, songName: song.filename, filepath: song.filepath, coverUrl: song.coverUrl, tokensSpent: price, purchaseId, purchaseTime: new Date().toISOString() });
-            
             await userRef.update({ tokens: user.tokens, purchases: user.purchases });
-            await songRef.update({ downloads: admin.firestore.FieldValue.increment(1) }); // Increment Downloads
-
+            
+            // Increment download count on the song
+            await songRef.update({ downloads: admin.firestore.FieldValue.increment(1) });
+            
             res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
         } else res.status(400).send('Insufficient tokens');
     } catch (e) { res.status(500).send(e.message); }
@@ -226,7 +227,7 @@ async function saveSongData(fileBuffer, originalName, reqBody) {
     const newSong = {
         filename: reqBody.title || originalName, filepath: url, coverUrl: coverUrl, genreId: reqBody.genreId || 'none',
         size: fileBuffer.length, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: parseInt(reqBody.price) || 10,
-        downloads: 0, plays: 0, status: 'APPROVED' // Initialize metrics
+        downloads: 0, plays: 0, status: 'APPROVED'
     };
     const docRef = await db.collection('songs').add(newSong); return { id: docRef.id, ...newSong };
 }
@@ -248,8 +249,10 @@ app.put('/api/songs/:id/settings', async (req, res) => {
     let updates = {};
     if (req.body.newName) updates.filename = req.body.newName;
     if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
-    if (req.body.status) updates.status = req.body.status;
     await db.collection('songs').doc(req.params.id).update(updates); res.send('Updated');
+});
+app.put('/api/songs/:id/status', async (req, res) => {
+    await db.collection('songs').doc(req.params.id).update({ status: req.body.status }); res.send('Updated');
 });
 app.put('/api/songs/reorder', async (req, res) => {
     const batch = db.batch(); req.body.orderedIds.forEach((id, index) => { batch.update(db.collection('songs').doc(id), { sequence: index + 1 }); }); await batch.commit(); res.send('Reordered');
@@ -258,8 +261,8 @@ app.delete('/api/songs/:id', async (req, res) => { await db.collection('songs').
 
 // --- SETTINGS & LOGS ---
 app.get('/api/settings', async (req, res) => {
-    if(!db) return res.json({ headerTitle: 'FULKKIK Admin', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
-    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'FULKKIK Admin', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
+    if(!db) return res.json({ headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
+    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
 });
 app.put('/api/settings', async (req, res) => { await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle, heroTitle: req.body.heroTitle }, { merge: true }); res.send('Updated'); });
 
