@@ -15,7 +15,6 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(__dirname));
 
-// --- 1. FIREBASE INITIALIZATION ---
 let db, bucket;
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     console.error("❌ FATAL ERROR: Missing FIREBASE_SERVICE_ACCOUNT_JSON!");
@@ -28,7 +27,6 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     } catch (error) { console.error('❌ Firebase Error:', error.message); }
 }
 
-// --- 2. CLOUDINARY INITIALIZATION ---
 if (process.env.CLOUDINARY_CLOUD_NAME) {
     cloudinary.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET });
     console.log('✅ Cloudinary Storage Connected!');
@@ -62,56 +60,6 @@ app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'music.html')); }
 
 async function logEvent(type, message) { try { if(db) await db.collection('logs').add({ type, message, timestamp: new Date().toISOString() }); } catch(e) {} }
 
-// --- 3. DASHBOARD STATS API ---
-app.get('/api/stats', async (req, res) => {
-    if(!db) return res.status(500).json({error: 'DB disconnected'});
-    try {
-        const usersSnap = await db.collection('users').get();
-        const songsSnap = await db.collection('songs').get();
-
-        let totalUsers = 0, vipUsers = 0, normalUsers = 0, totalRevenue = 0;
-        let todayReg = 0, yesterdayReg = 0, todaySongs = 0, yesterdaySongs = 0, todayOrders = 0, yesterdayOrders = 0;
-
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-        usersSnap.forEach(doc => {
-            const u = doc.data(); totalUsers++;
-            if(u.isVip) vipUsers++; else normalUsers++;
-            if(u.createdAt && u.createdAt.startsWith(todayStr)) todayReg++;
-            if(u.createdAt && u.createdAt.startsWith(yesterdayStr)) yesterdayReg++;
-            if(u.purchases) {
-                u.purchases.forEach(p => {
-                    totalRevenue += (p.tokensSpent || 0);
-                    if(p.purchaseTime && p.purchaseTime.startsWith(todayStr)) todayOrders++;
-                    if(p.purchaseTime && p.purchaseTime.startsWith(yesterdayStr)) yesterdayOrders++;
-                });
-            }
-        });
-
-        const totalSongs = songsSnap.size;
-        songsSnap.forEach(doc => {
-            const s = doc.data();
-            if(s.uploadTime && s.uploadTime.startsWith(todayStr)) todaySongs++;
-            if(s.uploadTime && s.uploadTime.startsWith(yesterdayStr)) yesterdaySongs++;
-        });
-
-        // Generate Chart Data (30 Days Array)
-        let chartLabels = [], newUsersData = [], newSongsData = [];
-        for(let i=29; i>=0; i--) {
-            let d = new Date(); d.setDate(d.getDate() - i);
-            chartLabels.push(d.toISOString().split('T')[0].substring(5)); // MM-DD format
-            newUsersData.push(i === 0 ? todayReg : (i === 1 ? yesterdayReg : Math.floor(Math.random() * 5))); // Mock history, precise recent
-            newSongsData.push(i === 0 ? todaySongs : (i === 1 ? yesterdaySongs : Math.floor(Math.random() * 8)));
-        }
-
-        res.json({ totalUsers, vipUsers, normalUsers, totalSongs, totalRevenue, todayReg, yesterdayReg, todaySongs, yesterdaySongs, todayOrders, yesterdayOrders, chartLabels, newUsersData, newSongsData });
-    } catch(e) { res.status(500).json({error: e.message}); }
-});
-
-// --- 4. SECURE AUDIO PROXY ---
 app.get('/api/stream/:songId', async (req, res) => {
     try {
         if(!db) return res.status(500).send('Database not connected');
@@ -120,20 +68,25 @@ app.get('/api/stream/:songId', async (req, res) => {
         const isFromApp = referer.includes(req.get('host'));
 
         if (!isFromApp && !isAudioTag) {
-            return res.status(403).send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>403 - Forbidden</title><style>body { background-color: #0b0b13; background-image: radial-gradient(circle at 50% 0%, #1a1a3a 0%, #0b0b13 70%); color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } .container { text-align: center; background: rgba(20, 20, 35, 0.8); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 320px; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } } .icon { width: 80px; height: 80px; fill: #ff453a; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,69,58,0.5)); } h1 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.5px; } p { color: #a0a0b0; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; } .btn { background: #ff453a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: 0.2s; display: inline-block; } .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255,69,58,0.4); }</style></head><body><div class="container"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h1>403 Forbidden</h1><p>Direct linking is not allowed. Please play or download music directly through the platform.</p><a href="/" class="btn">Return to Portal</a></div></body></html>`);
+            return res.status(403).send(`
+                <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>403 - Forbidden</title><style>body { background-color: #0b0b13; background-image: radial-gradient(circle at 50% 0%, #1a1a3a 0%, #0b0b13 70%); color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } .container { text-align: center; background: rgba(20, 20, 35, 0.8); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 320px; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } } .icon { width: 80px; height: 80px; fill: #ff453a; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,69,58,0.5)); } h1 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.5px; } p { color: #a0a0b0; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; } .btn { background: #ff453a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: 0.2s; display: inline-block; } .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255,69,58,0.4); }</style></head><body><div class="container"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h1>403 Forbidden</h1><p>Direct linking is not allowed. Please play or download music directly through the platform.</p><a href="/" class="btn">Return to Portal</a></div></body></html>
+            `);
         }
 
         const songDoc = await db.collection('songs').doc(req.params.songId).get();
         if (!songDoc.exists) return res.status(404).send('Song not found');
-        
+        const fileUrl = songDoc.data().filepath;
+
         const fetchHeaders = {}; if (req.headers.range) fetchHeaders.Range = req.headers.range;
-        const response = await fetch(songDoc.data().filepath, { headers: fetchHeaders });
+        const response = await fetch(fileUrl, { headers: fetchHeaders });
         if (!response.ok) throw new Error('Cloudinary fetch failed');
 
         const contentType = response.headers.get('content-type'); const contentLength = response.headers.get('content-length'); const contentRange = response.headers.get('content-range'); const acceptRanges = response.headers.get('accept-ranges');
         if (contentType) res.setHeader('Content-Type', contentType); if (contentLength) res.setHeader('Content-Length', contentLength); if (contentRange) res.setHeader('Content-Range', contentRange); if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
 
-        res.status(response.status); Readable.fromWeb(response.body).pipe(res);
+        res.status(response.status); 
+        Readable.fromWeb(response.body).pipe(res);
+
     } catch (e) { console.error('Stream Error:', e.message); res.status(500).end(); }
 });
 
