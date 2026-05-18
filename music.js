@@ -157,7 +157,6 @@ app.post('/api/users/:username/topup', async (req, res) => {
     const newTokens = (doc.data().tokens || 0) + req.body.amount; await userRef.update({ tokens: newTokens }); res.json({ tokens: newTokens });
 });
 
-// INCREASE DOWNLOAD COUNT ON PURCHASE
 app.post('/api/users/:username/purchase', async (req, res) => {
     try {
         const songDoc = await db.collection('songs').doc(req.body.songId).get(); if (!songDoc.exists) return res.status(404).send('Song not found');
@@ -196,6 +195,7 @@ app.put('/api/genres/:id', async (req, res) => {
         let updates = {};
         if(req.body.name) updates.name = req.body.name;
         if(req.body.status) updates.status = req.body.status;
+        if(req.body.sequence !== undefined) updates.sequence = parseInt(req.body.sequence);
         if(req.body.coverBase64) updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_genres');
         await db.collection('genres').doc(req.params.id).update(updates); res.send('Updated');
     } catch(e) { res.status(500).send(e.message); }
@@ -239,17 +239,20 @@ app.post('/api/transload', async (req, res) => {
     } catch (e) { res.status(400).send(e.message); }
 });
 
+// 🛠️ Updated Settings Handler for Genres and Covers
 app.put('/api/songs/:id/settings', async (req, res) => {
     try {
         let updates = {};
         if (req.body.newName) updates.filename = req.body.newName;
         if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
-        if (req.body.status) updates.status = req.body.status;
+        if (req.body.status) updates.status = req.body.status; 
         if (req.body.genreId) updates.genreId = req.body.genreId;
-        if (req.body.coverBase64) updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_covers');
         
+        if (req.body.coverBase64) {
+            updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_covers');
+        }
         await db.collection('songs').doc(req.params.id).update(updates); res.send('Updated');
-    } catch (e) { res.status(500).send('DB Error: ' + e.message); }
+    } catch(e) { res.status(500).send(e.message); }
 });
 
 app.put('/api/songs/reorder', async (req, res) => {
@@ -259,8 +262,8 @@ app.delete('/api/songs/:id', async (req, res) => { await db.collection('songs').
 
 // --- SETTINGS & LOGS ---
 app.get('/api/settings', async (req, res) => {
-    if(!db) return res.json({ headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
-    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'MusicScraper', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
+    if(!db) return res.json({ headerTitle: 'FULKKIK Admin', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
+    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'FULKKIK Admin', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
 });
 app.put('/api/settings', async (req, res) => { await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle, heroTitle: req.body.heroTitle }, { merge: true }); res.send('Updated'); });
 
