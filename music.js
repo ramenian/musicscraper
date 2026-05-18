@@ -173,7 +173,6 @@ app.post('/api/users/:username/purchase', async (req, res) => {
             user.purchases.push({ songId: req.body.songId, songName: song.filename, filepath: song.filepath, coverUrl: song.coverUrl, tokensSpent: price, purchaseId, purchaseTime: new Date().toISOString() });
             
             await userRef.update({ tokens: user.tokens, purchases: user.purchases });
-            // Increment downloads for the song
             await db.collection('songs').doc(req.body.songId).update({ downloads: admin.firestore.FieldValue.increment(1) });
 
             res.json({ success: true, tokens: user.tokens, purchases: user.purchases });
@@ -188,13 +187,15 @@ app.get('/api/genres', async (req, res) => {
 app.post('/api/genres', async (req, res) => {
     try {
         let coverUrl = req.body.coverBase64 ? await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_genres') : '';
-        const newGenre = { name: req.body.name, coverUrl, sequence: (await db.collection('genres').get()).size + 1 };
+        const newGenre = { name: req.body.name, coverUrl, status: 'ACTIVE', sequence: (await db.collection('genres').get()).size + 1 };
         const docRef = await db.collection('genres').add(newGenre); res.json({ id: docRef.id, ...newGenre });
     } catch(e) { res.status(500).send(e.message); }
 });
 app.put('/api/genres/:id', async (req, res) => {
     try {
-        let updates = { name: req.body.name };
+        let updates = {};
+        if(req.body.name) updates.name = req.body.name;
+        if(req.body.status) updates.status = req.body.status;
         if(req.body.coverBase64) updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_genres');
         await db.collection('genres').doc(req.params.id).update(updates); res.send('Updated');
     } catch(e) { res.status(500).send(e.message); }
@@ -220,7 +221,7 @@ async function saveSongData(fileBuffer, originalName, reqBody) {
     const newSong = {
         filename: reqBody.title || originalName, filepath: url, coverUrl: coverUrl, genreId: reqBody.genreId || 'none',
         size: fileBuffer.length, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: parseInt(reqBody.price) || 10,
-        downloads: 0, plays: 0, status: 'APPROVED' // Initialize Stats
+        downloads: 0, plays: 0, status: 'APPROVED'
     };
     const docRef = await db.collection('songs').add(newSong); return { id: docRef.id, ...newSong };
 }
@@ -239,11 +240,16 @@ app.post('/api/transload', async (req, res) => {
 });
 
 app.put('/api/songs/:id/settings', async (req, res) => {
-    let updates = {};
-    if (req.body.newName) updates.filename = req.body.newName;
-    if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
-    if (req.body.status) updates.status = req.body.status; // Support Status Toggling
-    await db.collection('songs').doc(req.params.id).update(updates); res.send('Updated');
+    try {
+        let updates = {};
+        if (req.body.newName) updates.filename = req.body.newName;
+        if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
+        if (req.body.status) updates.status = req.body.status;
+        if (req.body.genreId) updates.genreId = req.body.genreId;
+        if (req.body.coverBase64) updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_covers');
+        
+        await db.collection('songs').doc(req.params.id).update(updates); res.send('Updated');
+    } catch (e) { res.status(500).send('DB Error: ' + e.message); }
 });
 
 app.put('/api/songs/reorder', async (req, res) => {
