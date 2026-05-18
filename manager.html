@@ -9,7 +9,6 @@
         :root { --bg-dark: #111116; --bg-main: #09090b; --card-bg: #16161d; --border-color: #23232d; --text-main: #f5f5f7; --text-muted: #a0a0a5; --accent: #8a5cff; --accent-light: #a37dfc; --danger: #ff453a; --success: #34c759; --token: #00e5ff; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-main); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; color-scheme: dark;}
         
-        /* SIDEBAR */
         .sidebar { width: 220px; background-color: var(--bg-dark); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border-color); overflow-y: auto;}
         .sidebar-header { padding: 30px 20px; }
         .sidebar-logo { font-size: 18px; font-weight: 800; letter-spacing: 1px; color: white; display: flex; flex-direction: column;}
@@ -28,7 +27,6 @@
         .sub-nav-item:hover { color: white; }
         .sub-nav-item.active { color: var(--accent); font-weight: bold; }
 
-        /* MAIN CONTENT */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-main);}
         
         .top-bar { height: 60px; min-height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; border-bottom: 1px solid var(--border-color); background: var(--bg-dark);}
@@ -41,7 +39,7 @@
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- DASHBOARD UI --- */
+        /* DASHBOARD */
         .dash-header { margin-bottom: 25px; }
         .dash-header h2 { margin: 0 0 5px 0; font-size: 24px;}
         .dash-header p { margin: 0; font-size: 12px; color: var(--text-muted);}
@@ -85,12 +83,10 @@
         .data-row { display: grid; padding: 16px 20px; align-items: center; border-bottom: 1px solid var(--border-color); font-size: 13px; transition: 0.2s;}
         .data-row:hover { background: rgba(255,255,255,0.02); }
         
-        /* Specific Grids */
         .grid-users { grid-template-columns: 1.5fr 2fr 100px 100px 120px 100px 120px 100px; }
         .grid-logs { grid-template-columns: 40px 1fr 180px; }
-        
-        /* COMPLEX SONG GRID (Matching Image) */
         .grid-songs-complex { grid-template-columns: 40px 40px 3fr 100px 100px 60px 80px 80px 100px 100px 60px; gap: 10px;}
+        
         .song-cell-info { display: flex; gap: 15px; align-items: center; overflow: hidden; min-width: 0;}
         .song-cell-cover { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; flex-shrink: 0;}
         .song-cell-text { display: flex; flex-direction: column; gap: 5px; overflow: hidden; min-width: 0;}
@@ -101,7 +97,6 @@
         .btn-text-action:hover { color: white; }
         .btn-text-action.danger { color: var(--danger); border: 1px solid rgba(255,69,58,0.3); border-radius: 4px; padding: 2px 6px; background: rgba(255,69,58,0.1); margin-top:2px;}
 
-        /* BADGES */
         .badge-role { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; letter-spacing: 0.5px;}
         .badge-role.normal { border: 1px solid #444; background: #222; color: #ccc;}
         .badge-role.vip { border: 1px solid #ffcc00; background: rgba(255, 204, 0, 0.1); color: #ffcc00;}
@@ -114,7 +109,6 @@
         .status-approved { border-color: var(--success); color: var(--success); background: rgba(52, 199, 89, 0.1); }
         .status-removed { border-color: #666; color: #aaa; background: rgba(255, 255, 255, 0.05); }
 
-        /* ACTION BUTTON & DROPDOWN */
         .btn-manage { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: 0.2s;}
         .btn-manage:hover { background: var(--accent-light); }
         .manage-dropdown { position: absolute; right: 20px; top: 40px; background: #2a2a35; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none; flex-direction: column; overflow: hidden; z-index: 100; min-width: 120px;}
@@ -124,11 +118,12 @@
         
         /* GENRES GRID */
         .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px;}
-        .genre-card { aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; cursor: pointer; background: #1a1a24; border: 1px solid transparent; transition: 0.2s;}
+        .genre-card { aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; cursor: grab; background: #1a1a24; border: 1px solid transparent; transition: 0.2s;}
+        .genre-card.drag-over { border-top: 3px solid var(--accent); }
         .genre-card:hover { border-color: var(--accent); }
         .genre-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8;}
-        .genre-card .overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 15px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);}
-        .genre-settings-icon { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 6px; border-radius: 50%; display: flex; transition: 0.2s; z-index: 10;}
+        .genre-card .overlay { position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: flex-end; flex-direction: column; padding: 15px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);}
+        .genre-settings-icon { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 6px; border-radius: 50%; display: flex; transition: 0.2s; z-index: 10; cursor: pointer;}
         .genre-settings-icon:hover { background: var(--accent); }
         .add-genre-card { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); color: var(--text-muted); cursor: pointer;}
 
@@ -378,7 +373,7 @@
                 <img id="genreCoverPreview" src="" style="width: 100%; height: 100%; object-fit: cover; background: #333;">
                 <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); text-align: center; font-size: 10px; padding: 4px 0;">EDIT IMG</div>
             </div>
-            <input type="file" id="genreCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'genreCoverPreview')">
+            <input type="file" id="genreCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'genreCoverPreview', 'genre')">
             <label class="input-label">Genre Name</label><input type="text" id="genreNameInput" class="modal-input" style="margin-bottom:0;">
             <div id="genreDeleteArea"></div>
         </div>
@@ -394,10 +389,10 @@
                 <img id="songCoverPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E" style="width: 100%; height: 100%; object-fit: cover;">
                 <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); text-align: center; font-size: 10px; padding: 4px 0;">COVER PNG</div>
             </div>
-            <input type="file" id="songCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'songCoverPreview')">
+            <input type="file" id="songCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'songCoverPreview', 'upload')">
             
             <label class="input-label">Category (Genre)</label>
-            <select id="uploadGenreSelect" class="modal-input" style="background:#222;"></select>
+            <select id="uploadGenreSelect" class="modal-input" style="background:#0b0b10; margin-bottom:15px;"></select>
 
             <div id="uploadFileArea" style="margin-bottom:10px;"><label class="btn-primary" style="display:block; text-align:center; width:100%; box-sizing:border-box;">Select MP3 <input type="file" id="uploadFileInput" accept="audio/*" style="display:none;"></label></div>
             <div id="transloadFileArea" style="margin-bottom:10px; display:none;"><label class="input-label">URL (.m4a)</label><input type="text" id="transloadUrlInput" class="modal-input" style="margin-bottom:0;"></div>
@@ -412,9 +407,20 @@
 <div class="modal-overlay" id="songSettingsModal">
     <div class="modal-box">
         <div class="modal-content">
-            <h3 style="margin: 0 0 5px 0; text-align:center;">Edit Song</h3>
-            <label class="input-label">Song Title</label><input type="text" id="settingName" class="modal-input">
-            <label class="input-label">Token Cost</label><input type="number" id="settingPrice" class="modal-input" min="0">
+            <h3 style="margin: 0 0 15px 0; text-align:center;">编制歌曲 (Edit Song)</h3>
+            
+            <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 10px auto; cursor: pointer; border-radius: 8px; overflow:hidden;" onclick="document.getElementById('editSongCoverUpload').click()">
+                <img id="editSongCoverPreview" src="" style="width: 100%; height: 100%; object-fit: cover; background: #333;">
+                <div style="position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); text-align: center; font-size: 10px; padding: 4px 0;">修改封面</div>
+            </div>
+            <input type="file" id="editSongCoverUpload" accept="image/*" style="display:none;" onchange="handleImgPreview(event, 'editSongCoverPreview', 'editSong')">
+            
+            <label class="input-label">分类 (Genre)</label>
+            <select id="editSongGenreSelect" class="modal-input" style="background:#0b0b10; margin-bottom:10px;"></select>
+
+            <label class="input-label">歌曲名称 (Song Title)</label><input type="text" id="settingName" class="modal-input" style="margin-bottom:10px;">
+            <label class="input-label">价格 (Token Cost)</label><input type="number" id="settingPrice" class="modal-input" min="0" style="margin-bottom:15px;">
+            <button class="btn-danger-full" style="margin-top:0;" onclick="executeDeleteFromModal()">删除歌曲 (Delete)</button>
         </div>
         <div class="modal-actions"><button class="modal-btn cancel" onclick="closeModals()">Cancel</button><button class="modal-btn" onclick="saveSongSettings()" style="color:var(--accent);">Save</button></div>
     </div>
@@ -424,7 +430,9 @@
     const API_URL = '/api'; 
     let allSongs = [], allUsers = [], logData = { register: [], admin: [] }, allGenres = [];
     let currentEditUser = null, currentEditSongId = null;
-    let pendingUploadBase64 = null; let isTransloadMode = false;
+    let draggedGenreId = null;
+    let pendingUploadBase64 = null; let pendingEditSongBase64 = null; let pendingGenreBase64 = null;
+    let isTransloadMode = false;
     let chartInstances = {};
 
     function showLoader() { document.getElementById('globalLoader').style.display = 'flex'; }
@@ -432,7 +440,9 @@
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if(m.id !== 'globalLoader') m.style.display = 'none'; }); }
 
-    function closeDropdowns(e) { if(!e.target.closest('.btn-manage')) { document.querySelectorAll('.manage-dropdown').forEach(d => d.classList.remove('show')); } }
+    function closeDropdowns(e) {
+        if(!e.target.closest('.btn-manage')) { document.querySelectorAll('.manage-dropdown').forEach(d => d.classList.remove('show')); }
+    }
 
     function switchView(viewId, titleStr = '') {
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
@@ -472,10 +482,13 @@
 
     function populateGenreDropdowns() {
         const filters = document.getElementById('songGenreFilter'); filters.innerHTML = '<option value="ALL">全部分类</option>';
-        const uploadSel = document.getElementById('uploadGenreSelect'); uploadSel.innerHTML = '';
+        const uploadSel = document.getElementById('uploadGenreSelect'); uploadSel.innerHTML = '<option value="none">未分类</option>';
+        const editSel = document.getElementById('editSongGenreSelect'); editSel.innerHTML = '<option value="none">未分类</option>';
+        
         allGenres.forEach(g => {
             filters.innerHTML += `<option value="${g.id}">${g.name}</option>`;
             uploadSel.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+            editSel.innerHTML += `<option value="${g.id}">${g.name}</option>`;
         });
     }
 
@@ -526,32 +539,86 @@
     function renderGenres() {
         const grid = document.getElementById('genreGrid'); grid.innerHTML = '';
         allGenres.forEach(g => {
+            const count = allSongs.filter(s => s.genreId === g.id).length;
+            const statusBadge = g.status === 'DISABLED' ? '<span style="color:#ff453a; font-size:11px; padding:2px 6px; border:1px solid #ff453a; border-radius:4px; position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); z-index:5;">已停用</span>' : '';
             const cover = g.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%231a1a24"/%3E%3C/svg%3E';
-            const card = document.createElement('div'); card.className = 'genre-card'; 
-            card.innerHTML = `<img src="${cover}"><div class="overlay"><h4>${g.name}</h4></div><div class="genre-settings-icon" onclick="openGenreModal('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${cover}')"><svg viewBox="0 0 24 24"><path d="M19.14... (icon omitted) ...15.6z"/><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>`;
+            const card = document.createElement('div'); card.className = 'genre-card'; card.draggable = true; card.dataset.id = g.id;
+            
+            card.addEventListener('dragstart', (e) => { draggedGenreId = g.id; e.dataTransfer.effectAllowed = 'move'; });
+            card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('drag-over'); });
+            card.addEventListener('dragleave', () => { card.classList.remove('drag-over'); });
+            card.addEventListener('drop', (e) => { e.preventDefault(); card.classList.remove('drag-over'); if (draggedGenreId && draggedGenreId !== g.id) handleGenreReorder(draggedGenreId, g.id); });
+
+            card.innerHTML = `
+                ${statusBadge}
+                <div style="width:100%;height:100%;">
+                    <img src="${cover}">
+                    <div class="overlay" style="flex-direction:column; align-items:flex-start; justify-content:flex-end;">
+                        <h4>${g.name}</h4>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:5px;">共 ${count} 首歌曲</div>
+                    </div>
+                </div>
+                <div class="genre-settings-icon" onclick="event.stopPropagation(); openGenreModal('${g.id}', '${g.name.replace(/'/g, "\\'")}', '${cover}', '${g.status || 'ACTIVE'}')">
+                    <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+                </div>
+            `;
             grid.appendChild(card);
         });
         grid.innerHTML += `<div class="genre-card add-genre-card" onclick="openGenreModal()"><div style="font-size:30px; font-weight:100; margin-bottom:5px;">+</div><div>添加分类</div></div>`;
     }
 
-    function handleImgPreview(event, targetId) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { pendingUploadBase64 = e.target.result; document.getElementById(targetId).src = pendingUploadBase64; }; reader.readAsDataURL(file); }
+    async function handleGenreReorder(dragId, dropId) {
+        showLoader(); const fromIndex = allGenres.findIndex(g => g.id === dragId); const toIndex = allGenres.findIndex(g => g.id === dropId);
+        const [moved] = allGenres.splice(fromIndex, 1); allGenres.splice(toIndex, 0, moved);
+        const orderedIds = allGenres.map(g => g.id); await fetch(`${API_URL}/genres/reorder`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({orderedIds}) }); await loadInitial();
+    }
 
-    function openGenreModal(id = null, name = '', cover = '') {
-        pendingUploadBase64 = null;
+    function handleImgPreview(event, targetId, type) { 
+        const file = event.target.files[0]; if(!file) return; 
+        const reader = new FileReader(); 
+        reader.onload = function(e) { 
+            const b64 = e.target.result;
+            document.getElementById(targetId).src = b64; 
+            if(type === 'upload') pendingUploadBase64 = b64;
+            if(type === 'editSong') pendingEditSongBase64 = b64;
+            if(type === 'genre') pendingGenreBase64 = b64;
+        }; 
+        reader.readAsDataURL(file); 
+    }
+
+    function openGenreModal(id = null, name = '', cover = '', status = 'ACTIVE') {
+        pendingGenreBase64 = null;
         document.getElementById('genreModalTitle').innerText = id ? 'Edit Genre' : 'Add Genre'; document.getElementById('genreNameInput').value = name;
         document.getElementById('genreCoverPreview').src = cover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23333"/%3E%3C/svg%3E';
-        document.getElementById('genreDeleteArea').innerHTML = id ? `<button class="btn-danger-full" onclick="deleteGenre('${id}')">Delete Genre</button>` : '';
+        
+        let actionsHtml = '';
+        if(id) {
+            const toggleText = status === 'DISABLED' ? '启用分类 (Enable)' : '停用分类 (Disable)';
+            const newStatus = status === 'DISABLED' ? 'ACTIVE' : 'DISABLED';
+            actionsHtml = `
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button class="btn-danger-full" style="margin-top:0; background:rgba(255,255,255,0.1); color:white; border-color:rgba(255,255,255,0.2);" onclick="toggleGenreStatus('${id}', '${newStatus}')">${toggleText}</button>
+                    <button class="btn-danger-full" style="margin-top:0;" onclick="deleteGenre('${id}')">删除分类</button>
+                </div>
+            `;
+        }
+        document.getElementById('genreDeleteArea').innerHTML = actionsHtml;
         document.getElementById('genreModal').dataset.editId = id || ''; document.getElementById('genreModal').style.display = 'flex';
+    }
+
+    async function toggleGenreStatus(id, newStatus) {
+        showLoader(); await fetch(`${API_URL}/genres/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status: newStatus }) }); closeModals(); await loadInitial();
     }
 
     async function saveGenre() {
         showLoader(); const name = document.getElementById('genreNameInput').value; const editId = document.getElementById('genreModal').dataset.editId;
-        const payload = { name, coverBase64: pendingUploadBase64 };
+        const payload = { name, coverBase64: pendingGenreBase64 };
         if(editId) await fetch(`${API_URL}/genres/${editId}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         else await fetch(`${API_URL}/genres`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         closeModals(); await loadInitial();
     }
     async function deleteGenre(id) { if(!confirm("Delete genre?")) return; showLoader(); await fetch(`${API_URL}/genres/${id}`, { method: 'DELETE' }); closeModals(); await loadInitial(); }
+
 
     // --- SONGS ---
     async function loadSongs() { showLoader(); allSongs = await (await fetch(`${API_URL}/songs`)).json(); handleSongSearch(); hideLoader(); }
@@ -599,9 +666,8 @@
                     <div><span class="badge-status-pill ${statusClass}">${statusStr}</span></div>
                     <div style="color:var(--text-muted); font-size:11px; line-height:1.4;">${new Date(song.uploadTime).toISOString().split('T')[0]}</div>
                     <div class="song-action-col">
-                        <button class="btn-text-action" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price})">编辑</button>
+                        <button class="btn-text-action" onclick="openSettingsModal('${song.id}', '${song.filename.replace(/'/g, "\\'")}', ${song.price}, '${song.coverUrl}', '${song.genreId}')">编制 (Edit)</button>
                         <button class="btn-text-action" style="${actionToggleColor}" onclick="toggleSongStatus('${song.id}', '${statusStr}')">${actionToggleText}</button>
-                        <button class="btn-text-action danger" onclick="deleteSong('${song.id}')">删除</button>
                     </div>
                 </div>
             `;
@@ -624,8 +690,7 @@
         loadSongs();
     }
 
-    async function deleteSong(id) { if(!confirm("Delete song?")) return; showLoader(); await fetch(`${API_URL}/songs/${id}`, { method: 'DELETE' }); loadSongs(); }
-
+    // UPLOAD / TRANSLOAD
     function resetUploadModal() { document.getElementById('uploadTitleInput').value = ''; document.getElementById('uploadPriceInput').value = '10'; document.getElementById('songCoverPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E"; pendingUploadBase64 = null; }
     function openUploadModal() { isTransloadMode = false; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Upload Audio'; document.getElementById('uploadFileArea').style.display = 'block'; document.getElementById('transloadFileArea').style.display = 'none'; document.getElementById('uploadSongModal').style.display = 'flex'; }
     function openTransloadModal() { isTransloadMode = true; resetUploadModal(); document.getElementById('uploadModalTitle').innerText = 'Transload Audio'; document.getElementById('uploadFileArea').style.display = 'none'; document.getElementById('transloadFileArea').style.display = 'block'; document.getElementById('uploadSongModal').style.display = 'flex'; }
@@ -635,17 +700,40 @@
         if(isTransloadMode) {
             const url = document.getElementById('transloadUrlInput').value; if(!url) return; showLoader();
             const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, title, price, genreId: genreId, coverBase64: pendingUploadBase64 }) });
-            if (res.ok) { closeModals(); showToast("Transload successful!"); loadSongs(); } else { hideLoader(); showToast("Failed", true); }
+            if (res.ok) { closeModals(); showToast("Transload successful!"); loadSongs(); buildDashboardStats();} else { hideLoader(); showToast("Failed", true); }
         } else {
             const file = document.getElementById('uploadFileInput').files[0]; if(!file) return; showLoader();
             const fd = new FormData(); fd.append('mp3file', file); fd.append('title', title); fd.append('price', price); fd.append('genreId', genreId); if(pendingUploadBase64) fd.append('coverBase64', pendingUploadBase64);
             const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
-            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); loadSongs(); } else { hideLoader(); showToast("Failed", true); }
+            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); loadSongs(); buildDashboardStats();} else { hideLoader(); showToast("Failed", true); }
         }
     }
 
-    function openSettingsModal(id, name, price) { currentEditId = id; document.getElementById('settingName').value = name; document.getElementById('settingPrice').value = price; document.getElementById('songSettingsModal').style.display = 'flex'; }
-    async function saveSongSettings() { if(!currentEditId) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({newName: document.getElementById('settingName').value, newPrice: document.getElementById('settingPrice').value}) }); closeModals(); loadSongs(); showToast("Settings Updated"); }
+    function openSettingsModal(id, name, price, coverUrl, genreId) { 
+        currentEditSongId = id; 
+        pendingEditSongBase64 = null;
+        document.getElementById('settingName').value = name; 
+        document.getElementById('settingPrice').value = price; 
+        document.getElementById('editSongGenreSelect').value = genreId || 'none';
+        document.getElementById('editSongCoverPreview').src = coverUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3C/svg%3E";
+        document.getElementById('songSettingsModal').style.display = 'flex'; 
+    }
+
+    async function saveSongSettings() { 
+        if(!currentEditSongId) return; showLoader(); 
+        const payload = {
+            newName: document.getElementById('settingName').value, 
+            newPrice: document.getElementById('settingPrice').value,
+            genreId: document.getElementById('editSongGenreSelect').value
+        };
+        if(pendingEditSongBase64) payload.coverBase64 = pendingEditSongBase64;
+
+        await fetch(`${API_URL}/songs/${currentEditSongId}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+        closeModals(); loadSongs(); showToast("Settings Updated"); 
+    }
+    
+    async function executeDeleteFromModal() { if(!confirm("Delete song?")) return; showLoader(); await fetch(`${API_URL}/songs/${currentEditSongId}`, { method: 'DELETE' }); closeModals(); loadSongs(); showToast("Deleted successfully."); }
+
 
     // --- USERS ---
     async function loadUsers() { showLoader(); allUsers = await (await fetch(`${API_URL}/all-users`)).json(); handleUserSearch(); hideLoader(); }
