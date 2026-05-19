@@ -68,9 +68,7 @@ app.get('/api/stream/:songId', async (req, res) => {
         const isFromApp = referer.includes(req.get('host'));
 
         if (!isFromApp && !isAudioTag) {
-            return res.status(403).send(`
-                <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>403 - Forbidden</title><style>body { background-color: #0b0b13; background-image: radial-gradient(circle at 50% 0%, #1a1a3a 0%, #0b0b13 70%); color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } .container { text-align: center; background: rgba(20, 20, 35, 0.8); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 320px; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } } .icon { width: 80px; height: 80px; fill: #ff453a; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,69,58,0.5)); } h1 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.5px; } p { color: #a0a0b0; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; } .btn { background: #ff453a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: 0.2s; display: inline-block; } .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255,69,58,0.4); }</style></head><body><div class="container"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h1>403 Forbidden</h1><p>Direct linking is not allowed. Please play or download music directly through the platform.</p><a href="/" class="btn">Return to Portal</a></div></body></html>
-            `);
+            return res.status(403).send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>403 - Forbidden</title><style>body { background-color: #0b0b13; background-image: radial-gradient(circle at 50% 0%, #1a1a3a 0%, #0b0b13 70%); color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } .container { text-align: center; background: rgba(20, 20, 35, 0.8); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 320px; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } } .icon { width: 80px; height: 80px; fill: #ff453a; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,69,58,0.5)); } h1 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; letter-spacing: -0.5px; } p { color: #a0a0b0; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; } .btn { background: #ff453a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: 0.2s; display: inline-block; } .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(255,69,58,0.4); }</style></head><body><div class="container"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><h1>403 Forbidden</h1><p>Direct linking is not allowed. Please play or download music directly through the platform.</p><a href="/" class="btn">Return to Portal</a></div></body></html>`);
         }
 
         const songDoc = await db.collection('songs').doc(req.params.songId).get();
@@ -86,7 +84,6 @@ app.get('/api/stream/:songId', async (req, res) => {
 
         res.status(response.status); 
         Readable.fromWeb(response.body).pipe(res);
-
     } catch (e) { console.error('Stream Error:', e.message); res.status(500).end(); }
 });
 
@@ -119,14 +116,26 @@ app.get('/api/users/:username', async (req, res) => {
     if (doc.exists) res.json(doc.data()); else res.status(404).send('User not found');
 });
 
-app.get('/api/all-users', async (req, res) => { 
-    try { res.json((await db.collection('users').get()).docs.map(d => d.data())); } catch (e) { res.status(500).json([]); }
-});
+app.get('/api/all-users', async (req, res) => { try { res.json((await db.collection('users').get()).docs.map(d => d.data())); } catch (e) { res.status(500).json([]); }});
 
+// 🛠️ VIP UPGRADE ENDPOINT
 app.put('/api/users/:username/vip', async (req, res) => {
     try {
-        await db.collection('users').doc(req.params.username.toLowerCase()).update({ isVip: true });
+        const { djName, wechat } = req.body;
+        await db.collection('users').doc(req.params.username.toLowerCase()).update({ isVip: true, djName: djName, wechat: wechat });
         res.send('VIP Activated');
+    } catch(e) { res.status(500).send(e.message); }
+});
+
+// 🛠️ CHANGE PASSWORD ENDPOINT
+app.put('/api/users/:username/update-password', async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userRef = db.collection('users').doc(req.params.username.toLowerCase());
+        const doc = await userRef.get();
+        if (doc.data().password !== oldPassword) return res.status(400).send('Incorrect current password');
+        await userRef.update({ password: newPassword });
+        res.send('Password updated');
     } catch(e) { res.status(500).send(e.message); }
 });
 
@@ -148,8 +157,6 @@ app.put('/api/users/:username/change-username', async (req, res) => {
     } catch (e) { res.status(500).send(e.message); }
 });
 
-app.put('/api/users/:username/change-email', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ email: req.body.newEmail }); res.send('Updated'); });
-app.put('/api/users/:username/change-phone', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ phone: req.body.newPhone }); res.send('Updated'); });
 app.put('/api/users/:username/set-tokens', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ tokens: parseInt(req.body.tokens) || 0 }); await logEvent('admin', `Modified token balance for <span style="font-weight:600;">${req.params.username}</span> to ${req.body.tokens}`); res.send('Updated'); });
 app.delete('/api/users/:username', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).delete(); await logEvent('admin', `Deleted user account: <span style="font-weight:600; color:var(--danger);">${req.params.username}</span>`); res.send('Deleted'); });
 app.post('/api/users/:username/topup', async (req, res) => {
@@ -239,7 +246,6 @@ app.post('/api/transload', async (req, res) => {
     } catch (e) { res.status(400).send(e.message); }
 });
 
-// 🛠️ Updated Settings Handler for Genres and Covers
 app.put('/api/songs/:id/settings', async (req, res) => {
     try {
         let updates = {};
@@ -247,10 +253,7 @@ app.put('/api/songs/:id/settings', async (req, res) => {
         if (req.body.newPrice !== undefined) updates.price = parseInt(req.body.newPrice) || 0;
         if (req.body.status) updates.status = req.body.status; 
         if (req.body.genreId) updates.genreId = req.body.genreId;
-        
-        if (req.body.coverBase64) {
-            updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_covers');
-        }
+        if (req.body.coverBase64) updates.coverUrl = await uploadToCloudinaryBase64(req.body.coverBase64, 'dj_covers');
         await db.collection('songs').doc(req.params.id).update(updates); res.send('Updated');
     } catch(e) { res.status(500).send(e.message); }
 });
@@ -262,8 +265,8 @@ app.delete('/api/songs/:id', async (req, res) => { await db.collection('songs').
 
 // --- SETTINGS & LOGS ---
 app.get('/api/settings', async (req, res) => {
-    if(!db) return res.json({ headerTitle: 'FULKKIK Admin', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
-    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'FULKKIK Admin', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
+    if(!db) return res.json({ headerTitle: 'FULKKIK', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
+    const doc = await db.collection('settings').doc('global').get(); res.json(doc.exists ? doc.data() : { headerTitle: 'FULKKIK', heroTitle: '专属DJ节奏空间', bannerUrl: '' });
 });
 app.put('/api/settings', async (req, res) => { await db.collection('settings').doc('global').set({ headerTitle: req.body.headerTitle, heroTitle: req.body.heroTitle }, { merge: true }); res.send('Updated'); });
 
