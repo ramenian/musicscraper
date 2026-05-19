@@ -96,7 +96,7 @@ app.post('/api/register', async (req, res) => {
         if ((await userRef.get()).exists) return res.status(400).send('USER HAS BEEN REGISTERED');
         if (!(await db.collection('users').where('contact', '==', contact).get()).empty) return res.status(400).send('USER HAS BEEN REGISTERED');
         const isEmail = contact.includes('@');
-        await userRef.set({ username, contact, password, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact, tokens: 0, profilePic: '', purchases: [], isVip: false, createdAt: new Date().toISOString() });
+        await userRef.set({ username, contact, password, email: isEmail ? contact : '-', phone: isEmail ? '-' : contact, tokens: 0, profilePic: '', purchases: [], isVip: false, wechat: '', wechatPublic: false, createdAt: new Date().toISOString() });
         await logEvent('register', `<span style="color:#34c759; font-weight:600;">${username}</span> registered with ${contact}`);
         res.json({ success: true, username });
     } catch (e) { res.status(500).send(e.message); }
@@ -118,16 +118,24 @@ app.get('/api/users/:username', async (req, res) => {
 
 app.get('/api/all-users', async (req, res) => { try { res.json((await db.collection('users').get()).docs.map(d => d.data())); } catch (e) { res.status(500).json([]); }});
 
-// 🛠️ VIP UPGRADE ENDPOINT
 app.put('/api/users/:username/vip', async (req, res) => {
     try {
         const { djName, wechat } = req.body;
-        await db.collection('users').doc(req.params.username.toLowerCase()).update({ isVip: true, djName: djName, wechat: wechat });
+        await db.collection('users').doc(req.params.username.toLowerCase()).update({ isVip: true, djName: djName, wechat: wechat, wechatPublic: true });
         res.send('VIP Activated');
     } catch(e) { res.status(500).send(e.message); }
 });
 
-// 🛠️ CHANGE PASSWORD ENDPOINT
+app.put('/api/users/:username/settings', async (req, res) => {
+    try {
+        let updates = {};
+        if(req.body.wechat !== undefined) updates.wechat = req.body.wechat;
+        if(req.body.wechatPublic !== undefined) updates.wechatPublic = req.body.wechatPublic;
+        await db.collection('users').doc(req.params.username.toLowerCase()).update(updates);
+        res.send('Settings Updated');
+    } catch(e) { res.status(500).send(e.message); }
+});
+
 app.put('/api/users/:username/update-password', async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
@@ -157,6 +165,8 @@ app.put('/api/users/:username/change-username', async (req, res) => {
     } catch (e) { res.status(500).send(e.message); }
 });
 
+app.put('/api/users/:username/change-email', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ email: req.body.newEmail }); res.send('Updated'); });
+app.put('/api/users/:username/change-phone', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ phone: req.body.newPhone }); res.send('Updated'); });
 app.put('/api/users/:username/set-tokens', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).update({ tokens: parseInt(req.body.tokens) || 0 }); await logEvent('admin', `Modified token balance for <span style="font-weight:600;">${req.params.username}</span> to ${req.body.tokens}`); res.send('Updated'); });
 app.delete('/api/users/:username', async (req, res) => { await db.collection('users').doc(req.params.username.toLowerCase()).delete(); await logEvent('admin', `Deleted user account: <span style="font-weight:600; color:var(--danger);">${req.params.username}</span>`); res.send('Deleted'); });
 app.post('/api/users/:username/topup', async (req, res) => {
@@ -228,7 +238,7 @@ async function saveSongData(fileBuffer, originalName, reqBody) {
     const newSong = {
         filename: reqBody.title || originalName, filepath: url, coverUrl: coverUrl, genreId: reqBody.genreId || 'none',
         size: fileBuffer.length, uploadTime: new Date().toISOString(), sequence: snapshot.size + 1, price: parseInt(reqBody.price) || 10,
-        downloads: 0, plays: 0, status: 'APPROVED'
+        downloads: 0, plays: 0, status: reqBody.status || 'APPROVED', uploader: reqBody.uploader || 'Admin'
     };
     const docRef = await db.collection('songs').add(newSong); return { id: docRef.id, ...newSong };
 }
