@@ -9,7 +9,6 @@
         :root { --bg-dark: #111116; --bg-main: #09090b; --card-bg: #16161d; --border-color: #23232d; --text-main: #f5f5f7; --text-muted: #a0a0a5; --accent: #8a5cff; --accent-light: #a37dfc; --danger: #ff453a; --success: #34c759; --token: #00e5ff; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-main); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; color-scheme: dark;}
         
-        /* SIDEBAR */
         .sidebar { width: 220px; background-color: var(--bg-dark); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid var(--border-color); overflow-y: auto;}
         .sidebar-header { padding: 30px 20px; }
         .sidebar-logo { font-size: 18px; font-weight: 800; letter-spacing: 1px; color: white; display: flex; flex-direction: column;}
@@ -28,9 +27,7 @@
         .sub-nav-item:hover { color: white; }
         .sub-nav-item.active { color: var(--accent); font-weight: bold; }
 
-        /* MAIN CONTENT */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-main);}
-        
         .top-bar { height: 60px; min-height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; border-bottom: 1px solid var(--border-color); background: var(--bg-dark);}
         .breadcrumb { font-size: 13px; color: var(--text-muted); font-weight: 500;}
         .top-actions { display: flex; gap: 10px; align-items: center;}
@@ -41,7 +38,6 @@
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- DASHBOARD UI --- */
         .dash-header { margin-bottom: 25px; }
         .dash-header h2 { margin: 0 0 5px 0; font-size: 24px;}
         .dash-header p { margin: 0; font-size: 12px; color: var(--text-muted);}
@@ -66,7 +62,6 @@
         .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding-bottom: 40px;}
         .chart-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; height: 350px;}
 
-        /* CARDS & PANELS */
         .glass-panel { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; overflow: hidden;}
         .panel-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
         .btn-primary { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 13px; transition: 0.2s;}
@@ -78,7 +73,6 @@
         .input-text, .select-box { padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: #0f0f13; color: white; outline: none;}
         .btn-filter { background: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold;}
         
-        /* TABLE STYLES */
         .table-container { width: 100%; overflow-x: auto; }
         .table-inner { min-width: 900px; }
         .header-row { display: grid; padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-size: 12px; font-weight: bold; color: var(--text-muted); background: rgba(0,0,0,0.2);}
@@ -88,6 +82,7 @@
         .grid-users { grid-template-columns: 1.5fr 2fr 100px 100px 120px 100px 120px 100px; }
         .grid-logs { grid-template-columns: 40px 1fr 180px; }
         .grid-songs-complex { grid-template-columns: 40px 40px 3fr 100px 100px 60px 80px 80px 100px 100px 60px; gap: 10px;}
+        .grid-pending { grid-template-columns: 40px 3fr 150px 150px 150px 120px; gap: 10px;}
         
         .song-cell-info { display: flex; gap: 15px; align-items: center; overflow: hidden; min-width: 0;}
         .song-cell-cover { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; flex-shrink: 0;}
@@ -96,7 +91,6 @@
         .song-cell-sub { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
         .song-action-col { display: flex; flex-direction: column; gap: 5px; align-items: center;}
         
-        /* Clickable Cells for Quick Edit */
         .clickable-cell { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;}
         .clickable-cell:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
         
@@ -104,17 +98,19 @@
         .btn-text-action:hover { color: white; }
         .btn-text-action.danger { color: var(--danger); border: 1px solid rgba(255,69,58,0.3); border-radius: 4px; padding: 2px 6px; background: rgba(255,69,58,0.1); margin-top:2px;}
 
-        /* BADGES */
         .badge-role { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; letter-spacing: 0.5px;}
         .badge-role.normal { border: 1px solid #444; background: #222; color: #ccc;}
         .badge-role.vip { border: 1px solid #ffcc00; background: rgba(255, 204, 0, 0.1); color: #ffcc00;}
         .badge-status { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid var(--success); color: var(--success); background: rgba(52, 199, 89, 0.1);}
+        
         .badge-vip { font-size: 10px; font-weight: 800; color: white; line-height: 1.2;}
         .badge-vip span { display: inline-block; border: 1px solid var(--accent); color: var(--accent); padding: 1px 4px; border-radius: 2px; font-size: 9px; margin-top: 2px;}
 
         .badge-status-pill { padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; letter-spacing: 0.5px; border: 1px solid transparent; display: inline-block; text-align: center;}
         .status-approved { border-color: var(--success); color: var(--success); background: rgba(52, 199, 89, 0.1); }
         .status-removed { border-color: #666; color: #aaa; background: rgba(255, 255, 255, 0.05); }
+        .status-pending { border-color: #ffcc00; color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
+        .status-rejected { border-color: var(--danger); color: var(--danger); background: rgba(255, 69, 58, 0.1); }
 
         .btn-manage { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: 0.2s;}
         .btn-manage:hover { background: var(--accent-light); }
@@ -123,7 +119,6 @@
         .drop-btn { padding: 12px 15px; background: none; border: none; color: white; font-size: 13px; text-align: left; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.2s;}
         .drop-btn:hover { background: rgba(255,255,255,0.1); }
         
-        /* GENRES GRID */
         .genre-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px;}
         .genre-card { aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden; cursor: grab; background: #1a1a24; border: 1px solid transparent; transition: 0.2s;}
         .genre-card.drag-over { border-top: 3px solid var(--accent); }
@@ -168,6 +163,7 @@
             .chart-grid { grid-template-columns: 1fr; }
             .grid-users { grid-template-columns: 120px 150px 100px 100px; } 
             .grid-songs-complex { grid-template-columns: 30px 30px 2fr 80px; }
+            .grid-pending { grid-template-columns: 120px 100px 80px 100px; }
         }
     </style>
 </head>
@@ -187,15 +183,17 @@
 
     <div class="nav-section">
         <div class="nav-title">内容</div>
+        
         <div class="nav-item-group">
             <button class="nav-item" onclick="switchView('songs', '歌曲管理'); document.getElementById('sub-songs').classList.toggle('show');" id="nav-songs">♪ 歌曲管理</button>
             <div class="sub-nav" id="sub-songs">
                 <button class="sub-nav-item active" onclick="switchView('songs', '歌曲管理 / 全部歌曲')">全部歌曲</button>
-                <button class="sub-nav-item" onclick="switchView('wip', '歌曲管理 / 待审队列')">待审队列</button>
+                <button class="sub-nav-item" onclick="switchView('pending', '歌曲管理 / 待审队列')">待审队列</button>
                 <button class="sub-nav-item" onclick="openUploadModal()">上传歌曲</button>
                 <button class="sub-nav-item" onclick="switchView('wip', '歌曲管理 / 批量上传')">批量上传</button>
             </div>
         </div>
+
         <button class="nav-item" onclick="switchView('wip', '首页内容')" id="nav-wip1">⌂ 首页内容</button>
         <button class="nav-item" onclick="switchView('categories', '分类管理')" id="nav-categories">≡ 分类管理</button>
         <button class="nav-item" onclick="switchView('wip', '推荐分类')" id="nav-wip3">✦ 推荐分类</button>
@@ -232,7 +230,7 @@
         <div class="dash-header"><h2>总览</h2><p id="dash-date">平台数据 · Loading...</p></div>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-title">总用户数</div><div class="stat-val" id="stat-total-users">0</div><div class="stat-sub" id="stat-vip-users">0 VIP · 0 普通</div></div>
-            <div class="stat-card highlight"><div class="stat-title">已上架歌曲</div><div class="stat-val" style="color: var(--accent-light);" id="stat-total-songs">0</div><div class="stat-sub">0 首待审</div></div>
+            <div class="stat-card highlight"><div class="stat-title">已上架歌曲</div><div class="stat-val" style="color: var(--accent-light);" id="stat-total-songs">0</div><div class="stat-sub" id="stat-pend-sub">0 首待审</div></div>
             <div class="stat-card"><div class="stat-title">平台总收入 (💎 消耗)</div><div class="stat-val" id="stat-total-rev">0 <span style="font-size:16px; color:var(--token);">💎</span></div><div class="stat-sub" style="color: var(--token);">VIP 已分成 0 💎</div></div>
             <div class="stat-card"><div class="stat-title">待审提现</div><div class="stat-val" style="color: #ffcc00;">0</div><div class="stat-sub">等待审核</div></div>
         </div>
@@ -255,6 +253,8 @@
         </div>
     </div>
 
+    <div id="view-wip" class="view-section"><div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted); font-size:20px; font-weight:500;">此页正在开发中...</div></div>
+
     <div id="view-categories" class="view-section">
         <div class="dash-header"><h2 style="margin-bottom:10px;">分类管理</h2><p>管理首页推荐和歌曲分类</p></div>
         <div class="glass-panel" style="padding: 15px 20px; display:flex; flex-wrap:wrap; gap: 10px; align-items:flex-end;">
@@ -263,6 +263,18 @@
             <button class="btn-primary" style="height:38px;" onclick="saveSettings()">Save Configuration</button>
         </div>
         <div class="glass-panel"><div class="genre-grid" id="genreGrid"></div></div>
+    </div>
+
+    <div id="view-pending" class="view-section">
+        <div class="dash-header"><h2 style="margin-bottom:10px;">待审队列</h2><p>来自 VIP 用户的上传审核请求</p></div>
+        <div class="glass-panel">
+            <div class="table-container">
+                <div class="table-inner">
+                    <div class="header-row grid-pending"><div></div><div>歌曲信息</div><div>上传者</div><div>期望代币</div><div>上传时间</div><div style="text-align:right;">操作</div></div>
+                    <div id="pendingSongList"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="view-songs" class="view-section">
@@ -277,7 +289,7 @@
             <div style="padding: 15px 20px; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">共 <span style="color:white;font-weight:bold;" id="count-all">0</span> 首 · 已上架 <span style="color:white;font-weight:bold;" id="count-approved">0</span> · 已下架 <span style="color:white;font-weight:bold;" id="count-removed">0</span></div>
             <div class="table-container">
                 <div class="table-inner">
-                    <div class="header-row grid-songs-complex"><div>编号</div><div></div><div>歌曲</div><div>VIP</div><div>分类</div><div>价格</div><div>下载</div><div>播放</div><div>状态</div><div>创建</div><div style="text-align:center;">操作</div></div>
+                    <div class="header-row grid-songs-complex"><div>编号</div><div></div><div>歌曲</div><div>上传者</div><div>分类</div><div>价格</div><div>下载</div><div>播放</div><div>状态</div><div>创建</div><div style="text-align:center;">操作</div></div>
                     <div id="complexSongList"></div>
                 </div>
             </div>
@@ -301,13 +313,13 @@
         </div>
     </div>
 
-    <div id="view-wip" class="view-section"><div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted); font-size:20px; font-weight:500;">此页正在开发中...</div></div>
     <div id="view-data" class="view-section">
         <div class="glass-panel">
             <div class="panel-header"><span style="font-weight: 600;">交易记录</span><button class="btn-primary" style="background:var(--danger)" onclick="clearLogs('register', true)">Clear All</button></div>
             <div class="table-container"><div class="table-inner"><div class="header-row grid-logs"><div></div><div>Event</div><div>Date</div></div><div id="dataList"></div></div></div>
         </div>
     </div>
+    
     <div id="view-logs" class="view-section">
         <div class="glass-panel">
             <div class="panel-header"><span style="font-weight: 600;">充值订单</span><button class="btn-primary" style="background:var(--danger)" onclick="clearLogs('admin', true)">Clear All</button></div>
@@ -401,7 +413,9 @@
     function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if(m.id !== 'globalLoader') m.style.display = 'none'; }); }
 
-    function closeDropdowns(e) { if(!e.target.closest('.btn-manage')) { document.querySelectorAll('.manage-dropdown').forEach(d => d.classList.remove('show')); } }
+    function closeDropdowns(e) {
+        if(!e.target.closest('.btn-manage')) { document.querySelectorAll('.manage-dropdown').forEach(d => d.classList.remove('show')); }
+    }
 
     function switchView(viewId, titleStr = '') {
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
@@ -412,7 +426,11 @@
         if(document.getElementById(`view-${viewId}`)) document.getElementById(`view-${viewId}`).classList.add('active');
         if(titleStr) document.getElementById('breadcrumb-current').innerText = titleStr;
 
-        if(viewId === 'users') loadUsers(); if(viewId === 'data') loadLogs('register'); if(viewId === 'logs') loadLogs('admin'); if(viewId === 'songs') loadSongs();
+        if(viewId === 'users') loadUsers(); 
+        if(viewId === 'data') loadLogs('register'); 
+        if(viewId === 'logs') loadLogs('admin');
+        if(viewId === 'songs') loadSongs();
+        if(viewId === 'pending') loadPending();
     }
 
     function publishChanges() { showLoader(); setTimeout(() => { hideLoader(); showToast("Changes Published!"); }, 800); }
@@ -466,9 +484,11 @@
         const todayStr = now.toISOString().split('T')[0];
         const usersToday = allUsers.filter(u => u.createdAt && u.createdAt.startsWith(todayStr)).length;
         const songsToday = allSongs.filter(s => s.uploadTime && s.uploadTime.startsWith(todayStr)).length;
+        const pends = allSongs.filter(s => s.status === 'PENDING').length;
 
         document.getElementById('stat-total-users').innerText = totalUsers; document.getElementById('stat-vip-users').innerText = `${vipUsers} VIP · ${totalUsers - vipUsers} 普通`;
         document.getElementById('stat-total-songs').innerText = allSongs.length; document.getElementById('totalSongsText').innerText = allSongs.length;
+        document.getElementById('stat-pend-sub').innerText = `${pends} 首待审`;
         document.getElementById('stat-total-rev').innerHTML = `${totalRev} <span style="font-size:16px; color:var(--token);">💎</span>`;
         
         document.getElementById('ops-orders').innerText = orders; document.getElementById('ops-success').innerText = orders;
@@ -489,12 +509,45 @@
         chartInstances[canvasId] = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: title, data: data, borderColor: color, backgroundColor: bgColor, borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: title, color: '#f5f5f7', align: 'start', font: { size: 14 } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#86868b' } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#86868b' }, beginAtZero: true } } } });
     }
 
+    // --- PENDING QUEUE ---
+    function loadPending() {
+        showLoader();
+        const pends = allSongs.filter(s => s.status === 'PENDING');
+        const listDiv = document.getElementById('pendingSongList'); listDiv.innerHTML = '';
+        pends.forEach(song => {
+            listDiv.innerHTML += `
+                <div class="data-row grid-pending">
+                    <div><button class="icon-btn" onclick="playAudioPreview('${song.filepath}')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div>
+                    <div class="song-cell-info">
+                        <img src="${song.coverUrl || 'data:image/svg+xml,%3Csvg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'100\\\' height=\\\'100\\\'%3E%3Crect width=\\\'100\\\' height=\\\'100\\\' fill=\\\'%23333\\\'/%3E%3C/svg%3E'}" class="song-cell-cover">
+                        <div class="song-cell-text"><div class="song-cell-title">${song.filename}</div></div>
+                    </div>
+                    <div style="font-weight:bold; color:var(--accent-light);"><span style="font-size:10px; border:1px solid var(--accent); padding:2px 4px; border-radius:4px; margin-right:5px;">上传 by</span>${song.uploader}</div>
+                    <div style="color: var(--token); font-weight: bold;">💎 ${song.price || 10}</div>
+                    <div style="color: var(--text-muted); font-size:12px;">${new Date(song.uploadTime).toLocaleString()}</div>
+                    <div style="text-align:right;">
+                        <button class="btn-primary" style="background:var(--success); margin-bottom:5px;" onclick="resolvePending('${song.id}', 'APPROVED')">通过 (Approve)</button><br>
+                        <button class="btn-primary" style="background:var(--danger);" onclick="resolvePending('${song.id}', 'REJECTED')">驳回 (Decline)</button>
+                    </div>
+                </div>
+            `;
+        });
+        if(pends.length === 0) listDiv.innerHTML = `<div style="padding:30px; text-align:center; color:var(--text-muted);">暂无待审内容 (Queue is empty)</div>`;
+        hideLoader();
+    }
+
+    async function resolvePending(id, newStatus) {
+        showLoader(); await fetch(`${API_URL}/songs/${id}/settings`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status: newStatus }) });
+        allSongs = await (await fetch(`${API_URL}/songs`)).json();
+        loadPending(); buildDashboardStats(); showToast("Song Resolved");
+    }
+
     // --- GENRES ---
     function renderGenres() {
         const grid = document.getElementById('genreGrid'); grid.innerHTML = '';
         allGenres.forEach(g => {
             const cover = g.coverUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%231a1a24"/%3E%3C/svg%3E';
-            const count = allSongs.filter(s => s.genreId === g.id).length;
+            const count = allSongs.filter(s => s.genreId === g.id && s.status === 'APPROVED').length;
             const card = document.createElement('div'); card.className = 'genre-card'; card.draggable = true; card.dataset.id = g.id;
             if(g.status === 'DISABLED') card.classList.add('disabled');
             
@@ -554,7 +607,7 @@
     
     function handleSongSearch() {
         const query = document.getElementById('songSearchInput').value.toLowerCase(); const status = document.getElementById('songStatusFilter').value; const genreId = document.getElementById('songGenreFilter').value;
-        const filtered = allSongs.filter(s => { const mQ = s.filename.toLowerCase().includes(query); const mS = status === 'ALL' || s.status === status; const mG = genreId === 'ALL' || s.genreId === genreId; return mQ && mS && mG; });
+        const filtered = allSongs.filter(s => { const mQ = s.filename.toLowerCase().includes(query) || (s.uploader && s.uploader.toLowerCase().includes(query)); const mS = status === 'ALL' || s.status === status; const mG = genreId === 'ALL' || s.genreId === genreId; return mQ && mS && mG && s.status !== 'PENDING'; });
         renderSongList(filtered);
     }
 
@@ -576,7 +629,7 @@
                         <img src="${song.coverUrl || 'data:image/svg+xml,%3Csvg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'100\\\' height=\\\'100\\\'%3E%3Crect width=\\\'100\\\' height=\\\'100\\\' fill=\\\'%23333\\\'/%3E%3C/svg%3E'}" class="song-cell-cover">
                         <div class="song-cell-text"><div class="song-cell-title" title="${song.filename}">${song.filename}</div><div class="song-cell-sub">FULKKIK - ${song.filename}</div></div>
                     </div>
-                    <div><div class="badge-vip">FULKKIK<br><span>R1</span></div></div>
+                    <div><div class="badge-vip">UPLOADER<br><span>${song.uploader}</span></div></div>
                     <div class="clickable-cell" onclick="openQuickGenre('${song.id}', '${song.genreId}')"><div style="color:var(--text-muted); font-size:12px; line-height:1.4;">${genreName}<br>· 音乐</div></div>
                     <div class="clickable-cell" onclick="openQuickPrice('${song.id}', ${song.price || 10})"><div style="color:var(--token); font-weight:bold; display:flex; align-items:center; gap:3px;"><svg style="width:12px;fill:var(--token);" viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11zM12 22l-5.5-9h11z"/></svg> ${song.price || 10}</div></div>
                     <div style="font-weight:bold;">${(song.downloads || 0).toLocaleString()}</div>
@@ -609,12 +662,12 @@
         if(isTransloadMode) {
             const url = document.getElementById('transloadUrlInput').value; if(!url) return; showLoader();
             const res = await fetch(`${API_URL}/transload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, title, price, genreId: genreId, coverBase64: pendingUploadBase64 }) });
-            if (res.ok) { closeModals(); showToast("Transload successful!"); loadSongs(); } else { hideLoader(); showToast("Failed", true); }
+            if (res.ok) { closeModals(); showToast("Transload successful!"); loadSongs(); } else { hideLoader(); showToast("Failed: " + await res.text(), true); }
         } else {
             const file = document.getElementById('uploadFileInput').files[0]; if(!file) return; showLoader();
             const fd = new FormData(); fd.append('mp3file', file); fd.append('title', title); fd.append('price', price); fd.append('genreId', genreId); if(pendingUploadBase64) fd.append('coverBase64', pendingUploadBase64);
             const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd }); 
-            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); loadSongs(); } else { hideLoader(); showToast("Failed", true); }
+            if (res.ok) { closeModals(); showToast("Audio Uploaded!"); loadSongs(); } else { hideLoader(); showToast("Failed: " + await res.text(), true); }
         }
     }
 
